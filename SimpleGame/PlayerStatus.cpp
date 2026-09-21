@@ -6,6 +6,7 @@ namespace
 	const float kTiltPerOverflow = 0.05f;
 	const float kCapacityPerUpgrade = 4.f;
 	const float kHealthPerUpgrade = 10.f;
+	const float kInvulnDuration = 0.4f;
 
 	float Clamp(float value, float low, float high)
 	{
@@ -18,6 +19,14 @@ namespace
 			return high;
 		}
 		return value;
+	}
+}
+
+void PlayerStatus::Tick(float deltaTime)
+{
+	if (m_InvulnTimer > 0.f)
+	{
+		m_InvulnTimer -= deltaTime;
 	}
 }
 
@@ -58,7 +67,14 @@ void PlayerStatus::SpendIfBothFull()
 	upgrades++;
 }
 
-void PlayerStatus::Damage(float amount)
+bool PlayerStatus::TryDamage(float amount)
 {
+	if (m_InvulnTimer > 0.f)
+	{
+		return false;
+	}
+
 	health = Clamp(health - amount, 0.f, maxHealth);
+	m_InvulnTimer = kInvulnDuration;
+	return true;
 }

@@ -26,6 +26,11 @@ public:
 	void SetClip(float left, float bottom, float width, float height);
 	void ClearClip();
 
+	// Every shape drawn anywhere funnels through one glDraw call here, so this
+	// count is the exact number of draw calls issued since the last reset.
+	unsigned int DrawCallCount() const;
+	void ResetDrawCallCount();
+
 private:
 	void Initialize(int windowSizeX, int windowSizeY);
 	void CreateVertexBufferObjects();
@@ -46,4 +51,6 @@ private:
 	GLint m_LocTransform = -1;
 	GLint m_LocColor = -1;
 	GLint m_AttribPosition = -1;
+
+	unsigned int m_DrawCallCount = 0;
 };

@@ -4,6 +4,9 @@
 // Power banks into two halves; only when both fill do they spend together and
 // upgrade the player. Surplus poured into an already-full half leaks out and
 // tilts the player away from the midpoint.
+//
+// The brief window of invulnerability after a hit lives here too, so several
+// monsters landing on the same frame cannot all bill the player for it.
 struct PlayerStatus
 {
 	float light = 0.f;
@@ -18,10 +21,16 @@ struct PlayerStatus
 
 	int upgrades = 0;
 
+	void Tick(float deltaTime);
+
 	void AddLight(float amount);
 	void AddDark(float amount);
-	void Damage(float amount);
+
+	// Returns whether the hit actually landed.
+	bool TryDamage(float amount);
 
 private:
 	void SpendIfBothFull();
+
+	float m_InvulnTimer = 0.f;
 };

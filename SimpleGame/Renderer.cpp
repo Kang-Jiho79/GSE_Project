@@ -91,8 +91,19 @@ void Renderer::SubmitQuad(float x, float y, const float transform[4], float r, f
 	glVertexAttribPointer(m_AttribPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+	m_DrawCallCount++;
 
 	glDisableVertexAttribArray(m_AttribPosition);
+}
+
+unsigned int Renderer::DrawCallCount() const
+{
+	return m_DrawCallCount;
+}
+
+void Renderer::ResetDrawCallCount()
+{
+	m_DrawCallCount = 0;
 }
 
 void Renderer::SetClip(float left, float bottom, float width, float height)

@@ -17,6 +17,7 @@ but WITHOUT ANY WARRANTY.
 #include "Scene.h"
 #include "Hud.h"
 #include "PlayerStatus.h"
+#include "Profiler.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
@@ -25,6 +26,7 @@ Renderer* g_Renderer = NULL;
 Scene g_Scene;
 Hud g_Hud;
 PlayerStatus g_Status;
+Profiler g_Profiler;
 
 bool g_MoveUp = false;
 bool g_MoveDown = false;
@@ -41,12 +43,14 @@ bool g_FireDarkHeld = false;
 
 void RenderScene(void)
 {
+	g_Renderer->ResetDrawCallCount();
+
 	glClearColor(0.045f, 0.043f, 0.055f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	g_Scene.Render(g_Renderer, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+	g_Scene.Render(g_Renderer, g_Status);
 	g_Hud.Render(g_Renderer, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
-	g_Scene.RenderMinimap(g_Renderer, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+	g_Scene.RenderMinimap(g_Renderer);
 
 	glutSwapBuffers();
 }
@@ -57,11 +61,19 @@ void Idle(void)
 	float deltaTime = (g_LastTimeMs == 0) ? 0.f : (nowMs - g_LastTimeMs) / 1000.f;
 	g_LastTimeMs = nowMs;
 
-	float screenRight = (g_MoveRight ? 1.f : 0.f) - (g_MoveLeft ? 1.f : 0.f);
-	float screenUp = (g_MoveUp ? 1.f : 0.f) - (g_MoveDown ? 1.f : 0.f);
-	g_Scene.Update(screenRight, screenUp, g_FireLightHeld, g_FireDarkHeld, g_MouseX, g_MouseY, deltaTime, g_Status);
+	InputState input;
+	input.moveRight = (g_MoveRight ? 1.f : 0.f) - (g_MoveLeft ? 1.f : 0.f);
+	input.moveUp = (g_MoveUp ? 1.f : 0.f) - (g_MoveDown ? 1.f : 0.f);
+	input.fireLight = g_FireLightHeld;
+	input.fireDark = g_FireDarkHeld;
+	input.aimX = g_MouseX;
+	input.aimY = g_MouseY;
+
+	g_Scene.Update(input, deltaTime, g_Status);
 
 	RenderScene();
+
+	g_Profiler.AddFrame(deltaTime, g_Renderer->DrawCallCount());
 }
 
 void UpdateMousePosition(int x, int y)
@@ -131,7 +143,7 @@ void KeyInput(unsigned char key, int x, int y)
 	case 'c':
 	case 'C':
 	{
-		g_Status.Damage(12.f);
+		g_Status.TryDamage(12.f);
 		break;
 	}
 	case 27:
@@ -251,6 +263,8 @@ int main(int argc, char **argv)
 	{
 		std::cout << "Renderer could not be initialized..\n";
 	}
+
+	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
 	std::cout << "WASD/Arrow keys: move   Left click: light bolt   Right click: dark bolt   C: take damage   Esc: quit\n";
 
