@@ -66,7 +66,7 @@
     <ClInclude Include="TerrainActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="RuinsActor.h">
+    <ClInclude Include="PropsActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="PlayerActor.h">
@@ -125,7 +125,7 @@
     <ClCompile Include="TerrainActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="RuinsActor.cpp">
+    <ClCompile Include="PropsActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="PlayerActor.cpp">

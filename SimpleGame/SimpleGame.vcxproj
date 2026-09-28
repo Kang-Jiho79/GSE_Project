@@ -168,7 +168,7 @@
     <ClInclude Include="ProjectileActor.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="RuinsActor.h" />
+    <ClInclude Include="PropsActor.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneGraph.h" />
     <ClInclude Include="Shader.h" />
@@ -189,7 +189,7 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="ProjectileActor.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="RuinsActor.cpp" />
+    <ClCompile Include="PropsActor.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneGraph.cpp" />
     <ClCompile Include="Shader.cpp" />

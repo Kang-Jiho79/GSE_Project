@@ -68,12 +68,10 @@ namespace WorldGrid
 		return (float)(col + row);
 	}
 
-	// Smoothed value noise quantized into terraces, so the ground has plateaus
-	// and cliffs instead of per-tile static.
-	float Elevation(int col, int row)
+	float Noise(float col, float row, float cellSize)
 	{
-		float fx = col / kNoiseCell;
-		float fy = row / kNoiseCell;
+		float fx = col / cellSize;
+		float fy = row / cellSize;
 		int x0 = (int)floorf(fx);
 		int y0 = (int)floorf(fy);
 
@@ -89,7 +87,14 @@ namespace WorldGrid
 
 		float top = v00 + (v10 - v00) * tx;
 		float bottom = v01 + (v11 - v01) * tx;
-		float noise = top + (bottom - top) * ty;
+		return top + (bottom - top) * ty;
+	}
+
+	// The same noise quantized into terraces, so the ground has plateaus and
+	// cliffs instead of per-tile static.
+	float Elevation(int col, int row)
+	{
+		float noise = Noise((float)col, (float)row, kNoiseCell);
 
 		int level = (int)(noise * kTerraceLevels);
 		if (level < 0)
@@ -114,5 +119,13 @@ namespace WorldGrid
 	{
 		col = Clamp(col, 0.f, (float)(kMapCols - 1));
 		row = Clamp(row, 0.f, (float)(kMapRows - 1));
+	}
+
+	float SmoothApproach(float current, float target, float rate, float deltaTime)
+	{
+		// Exponential decay of the remaining gap, so the result does not change
+		// with the frame rate the way a plain lerp by (rate * dt) would.
+		float blend = 1.f - expf(-rate * deltaTime);
+		return current + (target - current) * blend;
 	}
 }

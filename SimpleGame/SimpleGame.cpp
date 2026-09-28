@@ -26,7 +26,6 @@ Renderer* g_Renderer = NULL;
 Scene g_Scene;
 Hud g_Hud;
 PlayerStatus g_Status;
-Profiler g_Profiler;
 
 bool g_MoveUp = false;
 bool g_MoveDown = false;
@@ -43,16 +42,26 @@ bool g_FireDarkHeld = false;
 
 void RenderScene(void)
 {
-	g_Renderer->ResetDrawCallCount();
+	g_Renderer->ResetCounts();
 
 	glClearColor(0.045f, 0.043f, 0.055f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	g_Scene.Render(g_Renderer, g_Status);
-	g_Hud.Render(g_Renderer, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
-	g_Scene.RenderMinimap(g_Renderer);
 
-	glutSwapBuffers();
+	{
+		ProfileScope scope("hud");
+		g_Hud.Render(g_Renderer, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+		g_Scene.RenderMinimap(g_Renderer);
+	}
+
+	// present: the final flush (upload + instanced draw of the queued world)
+	// plus the buffer swap. With vsync on, the swap will dominate this number.
+	{
+		ProfileScope scope("present");
+		g_Renderer->EndFrame();
+		glutSwapBuffers();
+	}
 }
 
 void Idle(void)
@@ -73,7 +82,7 @@ void Idle(void)
 
 	RenderScene();
 
-	g_Profiler.AddFrame(deltaTime, g_Renderer->DrawCallCount());
+	Profiler::Get().AddFrame(deltaTime, g_Renderer->DrawCallCount(), g_Renderer->QuadCount());
 }
 
 void UpdateMousePosition(int x, int y)
@@ -249,13 +258,15 @@ int main(int argc, char **argv)
 	glutCreateWindow("The Darkest Light - Prototype");
 
 	glewInit();
-	if (glewIsSupported("GL_VERSION_3_0"))
+	// Instanced drawing (glDrawArraysInstanced, glVertexAttribDivisor) is core
+	// in 3.3, which the #version 330 shaders already require anyway.
+	if (glewIsSupported("GL_VERSION_3_3"))
 	{
-		std::cout << "GLEW Version is 3.0\n";
+		std::cout << "OpenGL 3.3 available\n";
 	}
 	else
 	{
-		std::cout << "GLEW 3.0 not supported\n";
+		std::cout << "OpenGL 3.3 not supported - instanced rendering will not work\n";
 	}
 
 	g_Renderer = new Renderer(WINDOW_SIZE_X, WINDOW_SIZE_Y);

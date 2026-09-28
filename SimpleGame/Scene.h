@@ -24,6 +24,7 @@ public:
 private:
 	void BuildLevel();
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
+	void RecordPopulation();
 
 	SceneGraph m_Graph;
 	DrawList m_DrawList;

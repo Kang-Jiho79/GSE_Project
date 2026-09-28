@@ -2,13 +2,16 @@
 #include "Scene.h"
 #include "Renderer.h"
 #include "PlayerStatus.h"
+#include "Profiler.h"
 #include "WorldGrid.h"
 #include "Random.h"
 
 #include "TerrainActor.h"
-#include "RuinsActor.h"
+#include "PropsActor.h"
 #include "PlayerActor.h"
 #include "MonsterActor.h"
+#include "ProjectileActor.h"
+#include "ParticleActor.h"
 
 namespace
 {
@@ -17,6 +20,16 @@ namespace
 
 	const float kPlayerStartCol = 60.f;
 	const float kPlayerStartRow = 60.f;
+
+	// Dark fantasy: a small pool of ground around the player at full value, then
+	// a long fall-off into the same near-black the window clears to, so the
+	// world dissolves into the dark instead of ending at a visible edge.
+	const float kLightRadius = 150.f;
+	const float kFogStart = 210.f;
+	const float kFogEnd = 620.f;
+	const float kFogR = 0.045f;
+	const float kFogG = 0.043f;
+	const float kFogB = 0.055f;
 
 	const float kMinimapSize = 150.f;
 	const float kMinimapBorder = 4.f;
@@ -40,7 +53,7 @@ void Scene::BuildLevel()
 	// living on it. Everything spawned later joins the second one.
 	Actor* environment = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
 	environment->AddChild(std::unique_ptr<Actor>(new TerrainActor()));
-	environment->AddChild(std::unique_ptr<Actor>(new RuinsActor()));
+	environment->AddChild(std::unique_ptr<Actor>(new PropsActor()));
 
 	Actor* entities = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
 	m_Graph.SetSpawnParent(entities);
@@ -58,7 +71,20 @@ void Scene::BuildLevel()
 		int row = Random::Range(kSpawnMargin, WorldGrid::kMapRows - kSpawnMargin);
 
 		Alignment alignment = (Random::Range(0, 2) == 0) ? Alignment::Light : Alignment::Dark;
-		std::unique_ptr<MonsterActor> monster(new MonsterActor(alignment));
+
+		// Rolled separately from alignment, so the build never hints at the side.
+		MonsterActor::Kind kind = MonsterActor::Kind::Crawler;
+		int kindRoll = Random::Range(0, 3);
+		if (kindRoll == 0)
+		{
+			kind = MonsterActor::Kind::Brute;
+		}
+		else if (kindRoll == 1)
+		{
+			kind = MonsterActor::Kind::Stalker;
+		}
+
+		std::unique_ptr<MonsterActor> monster(new MonsterActor(alignment, kind));
 
 		float x, y;
 		WorldGrid::IsoPosition((float)col, (float)row, x, y);
@@ -93,16 +119,63 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	ActorContext ctx = MakeContext(deltaTime, status);
 	ctx.input = input;
 
-	m_Graph.Update(ctx);
+	{
+		ProfileScope scope("update");
+		m_Graph.Update(ctx);
+	}
+
+	RecordPopulation();
+}
+
+void Scene::RecordPopulation()
+{
+	int monsters = 0;
+	int projectiles = 0;
+	int particles = 0;
+
+	m_Graph.ForEach<MonsterActor>([&](MonsterActor&)
+	{
+		monsters++;
+	});
+	m_Graph.ForEach<ProjectileActor>([&](ProjectileActor&)
+	{
+		projectiles++;
+	});
+	m_Graph.ForEach<ParticleActor>([&](ParticleActor&)
+	{
+		particles++;
+	});
+
+	Profiler::Get().SetGauge("monsters", monsters);
+	Profiler::Get().SetGauge("projectiles", projectiles);
+	Profiler::Get().SetGauge("particles", particles);
 }
 
 void Scene::Render(Renderer* renderer, PlayerStatus& status)
 {
 	ActorContext ctx = MakeContext(0.f, status);
 
-	m_DrawList.Clear();
-	m_Graph.Draw(m_DrawList, ctx);
-	m_DrawList.SubmitSorted(renderer);
+	// collect: actors deciding what is visible and pushing quads. This is the
+	// per-frame terrain walk - it is meant to be cheap, and this is where to
+	// look if it ever is not.
+	{
+		ProfileScope scope("collect");
+		m_DrawList.Clear();
+		m_DrawList.SetAtmosphere(kLightRadius, kFogStart, kFogEnd, kFogR, kFogG, kFogB);
+		m_Graph.Draw(m_DrawList, ctx);
+	}
+
+	{
+		ProfileScope scope("sort");
+		m_DrawList.Sort();
+	}
+
+	{
+		ProfileScope scope("submit");
+		m_DrawList.Submit(renderer);
+	}
+
+	Profiler::Get().SetGauge("world_quads", (int)m_DrawList.Count());
 }
 
 void Scene::RenderMinimap(Renderer* renderer)

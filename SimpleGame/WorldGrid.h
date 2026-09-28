@@ -28,8 +28,17 @@ namespace WorldGrid
 	// Sort key shared by terrain and everything standing on it.
 	float TileDepth(float worldX, float worldY);
 
+	// Smooth 0..1 value noise over the grid. cellSize is how many tiles one
+	// "feature" spans - small for fine grain, large for broad regions.
+	float Noise(float col, float row, float cellSize);
+
 	float Elevation(int col, int row);
 	float GroundHeightAt(float worldX, float worldY);
 
 	void ClampToMap(float& col, float& row);
+
+	// Eases a value toward a target at a rate independent of frame length.
+	// The terraces are genuine steps, so anything walking them has to be
+	// carried up smoothly or it reads as teleporting between levels.
+	float SmoothApproach(float current, float target, float rate, float deltaTime);
 }

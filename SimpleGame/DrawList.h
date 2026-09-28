@@ -23,20 +23,51 @@ class DrawList
 {
 public:
 	void Clear();
-	void SubmitSorted(Renderer* renderer);
+	void Sort();
+	void Submit(Renderer* renderer);
+	size_t Count() const;
+
+	// The world darkens and fogs out with distance from the player, which is
+	// what the near/far radii are measured from. Applied as quads are pushed,
+	// so every actor gets it without knowing it exists. HUD and minimap go
+	// straight to the renderer and are deliberately left untouched.
+	void SetAtmosphere(float lightRadius, float fogStart, float fogEnd,
+		float fogR, float fogG, float fogB);
 
 	void AddQuad(float depth, float x, float y, float edgeAX, float edgeAY, float edgeBX, float edgeBY,
 		float r, float g, float b, float a);
+	// Four corners in screen pixels, wound bottom-left, top-left, top-right,
+	// bottom-right. A face whose top edge is shorter than its bottom is what
+	// makes a trunk taper or a boulder round off.
+	void AddCorners(float depth, const float corners[8], float r, float g, float b, float a);
 	void AddDiamond(float depth, float x, float y, float width, float height,
+		float r, float g, float b, float a);
+	// A screen-aligned rectangle - for small details like eyes that should not
+	// tilt with the ground.
+	void AddRect(float depth, float x, float y, float width, float height,
 		float r, float g, float b, float a);
 
 	// An isometric box: two shaded side faces then a lit top, which covers the
 	// seam between them. baseY is where it meets the ground.
-	void AddBox(float depth, float x, float baseY, float footWidth, float footHeight, float boxHeight,
+	//
+	// The footprint is given in tiles along the two ground axes, so a cube on
+	// one tile is (1, 1) and a wall running along the col axis is e.g. (2, 0.3).
+	void AddBox(float depth, float x, float baseY, float footCols, float footRows, float boxHeight,
 		float r, float g, float b);
+	// A box whose top face is a fraction of its base - the side faces come out
+	// as trapezoids. taper of 1 is an ordinary box, 0.5 halves the top, and
+	// above 1 flares outward (shoulders wider than a waist). lean shifts the
+	// top sideways so the whole thing tilts.
+	void AddTaperedBox(float depth, float x, float baseY, float footCols, float footRows, float boxHeight,
+		float taper, float leanX, float leanY, float r, float g, float b);
+	void AddTaperedBoxFaces(float depth, float x, float baseY, float footCols, float footRows, float boxHeight,
+		float taper, float leanX, float leanY,
+		float topR, float topG, float topB,
+		float leftR, float leftG, float leftB,
+		float rightR, float rightG, float rightB);
 	// Same box, but each face colored outright - for something that carries a
 	// different power on each side.
-	void AddBoxFaces(float depth, float x, float baseY, float footWidth, float footHeight, float boxHeight,
+	void AddBoxFaces(float depth, float x, float baseY, float footCols, float footRows, float boxHeight,
 		float topR, float topG, float topB,
 		float leftR, float leftG, float leftB,
 		float rightR, float rightG, float rightB);
@@ -50,12 +81,24 @@ public:
 	void AddGlow(float depth, float x, float y, float radius, float r, float g, float b, float strength);
 
 private:
+	// Returns the colour after light falloff and fog at that screen point.
+	void Weather(float x, float y, float& r, float& g, float& b) const;
+
+	float m_LightRadius = 0.f;
+	float m_FogStart = 0.f;
+	float m_FogEnd = 0.f;
+	float m_FogR = 0.f;
+	float m_FogG = 0.f;
+	float m_FogB = 0.f;
+
 	struct Quad
 	{
 		float depth;
 		float x, y;
 		float edgeAX, edgeAY;
 		float edgeBX, edgeBY;
+		float corners[8];
+		bool useCorners;
 		float r, g, b, a;
 	};
 
