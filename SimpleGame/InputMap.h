@@ -12,6 +12,8 @@ namespace InputMap
 	const unsigned char kMoveRight = 'd';
 
 	const unsigned char kSwitchForm = ' ';
+	const unsigned char kSkill = 'e';
+	const unsigned char kSpecial = 'q';
 
 	const unsigned char kDebugDamage = 'c';
 	const unsigned char kQuit = 27; // Esc

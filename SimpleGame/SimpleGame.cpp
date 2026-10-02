@@ -46,6 +46,8 @@ bool g_RunHeld = false;
 // exactly once however long the key is held.
 bool g_SwitchFormPressed = false;
 bool g_DodgePressed = false;
+bool g_SkillPressed = false;
+bool g_SpecialPressed = false;
 
 void RenderScene(void)
 {
@@ -84,11 +86,15 @@ void Idle(void)
 	input.run = g_RunHeld;
 	input.switchForm = g_SwitchFormPressed;
 	input.dodge = g_DodgePressed;
+	input.skill = g_SkillPressed;
+	input.special = g_SpecialPressed;
 	input.aimX = g_MouseX;
 	input.aimY = g_MouseY;
 
 	g_SwitchFormPressed = false;
 	g_DodgePressed = false;
+	g_SkillPressed = false;
+	g_SpecialPressed = false;
 
 	g_Scene.Update(input, deltaTime, g_Status);
 
@@ -162,6 +168,16 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kSwitchForm:
 	{
 		g_SwitchFormPressed = true;
+		break;
+	}
+	case InputMap::kSkill:
+	{
+		g_SkillPressed = true;
+		break;
+	}
+	case InputMap::kSpecial:
+	{
+		g_SpecialPressed = true;
 		break;
 	}
 	// Stand-in until combat can actually hurt the player some other way.
@@ -260,7 +276,7 @@ int main(int argc, char **argv)
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   C: take damage   Esc: quit\n";
+	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   Esc: quit\n";
 
 	glutDisplayFunc(RenderScene);
 	glutIdleFunc(Idle);

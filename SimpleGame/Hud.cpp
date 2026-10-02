@@ -21,6 +21,11 @@ namespace
 	const float kFormBarWidth = 72.f;
 	const float kFormBarHeight = 6.f;
 
+	// E is a square, Q a diamond - told apart by shape, since the HUD has no
+	// lettering yet.
+	const float kSkillSize = 18.f;
+	const float kSkillSpacing = 28.f;
+
 	float Clamp01(float value)
 	{
 		if (value < 0.f)
@@ -47,6 +52,7 @@ void Hud::Render(Renderer* renderer, const PlayerStatus& status, int windowSizeX
 	DrawHealth(renderer, status, left + 132.f, vesselCenterY + 20.f);
 	DrawUpgradePips(renderer, status, left + 132.f, vesselCenterY - 12.f);
 	DrawForm(renderer, status, left + 132.f, vesselCenterY - 38.f);
+	DrawSkills(renderer, status, left + 238.f, vesselCenterY - 38.f);
 }
 
 void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
@@ -135,4 +141,47 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 		renderer->DrawSolidRect(barLeft + fillWidth / 2.f, centerY, fillWidth, kFormBarHeight,
 			r * shade, g * shade, b * shade, 1.f);
 	}
+}
+
+void Hud::DrawSkills(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
+{
+	float r, g, b;
+	AlignmentColor::Core(FormAlignment(status.form), r, g, b);
+
+	float x = left + kSkillSize / 2.f;
+	DrawSkillSlot(renderer, status.SkillCooldown(status.form), false, x, centerY, r, g, b);
+	DrawSkillSlot(renderer, status.SpecialCooldown(status.form), true, x + kSkillSpacing, centerY, r, g, b);
+}
+
+void Hud::DrawSkillSlot(Renderer* renderer, const Cooldown& cooldown, bool diamond,
+	float centerX, float centerY, float r, float g, float b)
+{
+	float size = diamond ? kSkillSize * 1.3f : kSkillSize;
+	float half = size / 2.f;
+
+	if (diamond)
+	{
+		renderer->DrawSolidDiamond(centerX, centerY, size + 6.f, size + 6.f, 0.32f, 0.31f, 0.34f, 1.f);
+		renderer->DrawSolidDiamond(centerX, centerY, size, size, 0.10f, 0.10f, 0.12f, 1.f);
+	}
+	else
+	{
+		renderer->DrawSolidRect(centerX, centerY, size + 4.f, size + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
+		renderer->DrawSolidRect(centerX, centerY, size, size, 0.10f, 0.10f, 0.12f, 1.f);
+	}
+
+	// Refills from the bottom while it recharges; full and bright once ready.
+	float progress = Clamp01(cooldown.Progress());
+	float shade = cooldown.Ready() ? 1.f : 0.45f;
+
+	renderer->SetClip(centerX - half, centerY - half, size, size * progress);
+	if (diamond)
+	{
+		renderer->DrawSolidDiamond(centerX, centerY, size, size, r * shade, g * shade, b * shade, 1.f);
+	}
+	else
+	{
+		renderer->DrawSolidRect(centerX, centerY, size, size, r * shade, g * shade, b * shade, 1.f);
+	}
+	renderer->ClearClip();
 }

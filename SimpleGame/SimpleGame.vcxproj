@@ -180,6 +180,13 @@
     <ClInclude Include="Form.h" />
     <ClInclude Include="InputMap.h" />
     <ClInclude Include="Combat.h" />
+    <ClInclude Include="FormMoves.h" />
+    <ClInclude Include="LightFormMoves.h" />
+    <ClInclude Include="DarkFormMoves.h" />
+    <ClInclude Include="BurstActor.h" />
+    <ClInclude Include="Cooldown.h" />
+    <ClInclude Include="BeamActor.h" />
+    <ClInclude Include="LightningActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
@@ -201,6 +208,11 @@
     <ClCompile Include="TerrainActor.cpp" />
     <ClCompile Include="WorldGrid.cpp" />
     <ClCompile Include="Combat.cpp" />
+    <ClCompile Include="LightFormMoves.cpp" />
+    <ClCompile Include="DarkFormMoves.cpp" />
+    <ClCompile Include="BurstActor.cpp" />
+    <ClCompile Include="BeamActor.cpp" />
+    <ClCompile Include="LightningActor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

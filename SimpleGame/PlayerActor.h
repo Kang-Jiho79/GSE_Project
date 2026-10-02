@@ -1,10 +1,14 @@
 #pragma once
 
 #include "Actor.h"
-#include "Alignment.h"
+#include "Form.h"
+#include "LightFormMoves.h"
+#include "DarkFormMoves.h"
 
-// The one who holds both powers at once. Moves on the screen axes, throws bolts
-// at the mouse, and carries the two halves of the vessel on his own two sides.
+// The one who holds both powers at once. Moves on the screen axes, fights in
+// whichever form he is in, and carries the two halves of the vessel on his own
+// two sides. What each form does with the attack buttons lives in its own
+// FormMoves; this class only moves, rolls, and hands the buttons over.
 //
 // Drawn as a jointed figure - head, torso, two arms, two legs - that walks
 // when he moves, breathes when he does not, and looks toward the cursor.
@@ -15,6 +19,11 @@ public:
 	// before - no roll, combo or slash still in progress.
 	void Respawn(float x, float y);
 
+	// Carried along the ground on his own, whatever the keys say - a dash.
+	// Direction is a unit vector in tiles. He cannot walk, roll or attack
+	// until it ends.
+	void Lunge(float dirCol, float dirRow, float tiles, float seconds);
+
 protected:
 	void OnUpdate(const ActorContext& ctx) override;
 	void OnDraw(DrawList& out, const ActorContext& ctx) const override;
@@ -23,13 +32,13 @@ private:
 	void Move(const ActorContext& ctx);
 	void StartDodge(const ActorContext& ctx);
 	void Roll(const ActorContext& ctx);
+	void LungeStep(const ActorContext& ctx);
+	bool IsTravelling() const;
 	void StepOnGrid(float dirCol, float dirRow, float tiles);
-	void Attack(const ActorContext& ctx);
-	void Fire(const ActorContext& ctx, Alignment alignment) const;
-	void Slash(const ActorContext& ctx);
-	void DrawSlash(DrawList& out, float screenX, float screenY) const;
+	FormMoves& MovesFor(Form form);
 
-	float m_AttackCooldown = 0.f;
+	LightFormMoves m_LightMoves;
+	DarkFormMoves m_DarkMoves;
 
 	// The roll: time left in it, time until the next one, and its direction in
 	// tiles, fixed when it starts.
@@ -38,16 +47,11 @@ private:
 	float m_DodgeDirCol = 0.f;
 	float m_DodgeDirRow = 0.f;
 
-	// Dark form's combo: which cut comes next, and how long he has to make it
-	// before it starts over from the first.
-	int m_ComboStep = 0;
-	float m_ComboTimer = 0.f;
-
-	// The last cut, kept on screen briefly as a trail. Direction is in tiles.
-	int m_SlashStep = 0;
-	float m_SlashTimer = 0.f;
-	float m_SlashDirCol = 0.f;
-	float m_SlashDirRow = 0.f;
+	// A lunge in progress: time left, speed in tiles per second, direction.
+	float m_LungeTimer = 0.f;
+	float m_LungeSpeed = 0.f;
+	float m_LungeDirCol = 0.f;
+	float m_LungeDirRow = 0.f;
 
 	// Animation state. The walk phase advances with distance covered rather than
 	// time, so the stride always matches the ground going by.

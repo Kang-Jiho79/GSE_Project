@@ -1,33 +1,26 @@
 #include "stdafx.h"
 #include "PlayerActor.h"
-#include "ProjectileActor.h"
-#include "SceneGraph.h"
 #include "DrawList.h"
 #include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
-#include "Combat.h"
 #include <cmath>
 
 namespace
 {
 	const float kGlowRadius = 46.f;
 
-	const float kDegToRad = 3.14159265f / 180.f;
-
-	// The slash trail: a fan of quads on the ground around him, swept out over
-	// the first part of its life and faded over the rest.
-	const float kSlashShowTime = 0.16f;
-	const float kSlashSweepShare = 0.45f;
-	const int kSlashSegments = 7;
-	const float kSlashInner = 0.4f;   // tiles
-	const float kSlashBlade = 0.6f;   // where the bright outer band starts, 0..1 across the trail
-	const float kSlashLift = 12.f;    // pixels above the ground, about waist height
-
 	// The roll: he folds down to this fraction of his height at its middle and
 	// pitches his upper body this many pixels toward where he is going.
 	const float kRollSquash = 0.45f;
 	const float kRollLean = 7.f;
+
+	// Dashing: pitched forward this far, a little crouched.
+	const float kLungeLean = 9.f;
+	const float kLungeSquash = 0.88f;
+
+	// Spinning: how often he turns from one side to the other.
+	const float kSpinFlipTime = 0.08f;
 
 	// Fallen: slumped this far down and hunched toward the side he faces.
 	const float kFallSquash = 0.4f;
@@ -85,31 +78,6 @@ namespace
 		outRow = row / length;
 		return true;
 	}
-
-	// The aim is a screen offset; the iso mapping is linear, so the same
-	// conversion that turns positions into tiles turns it into a tile direction.
-	bool AimDirection(const InputState& input, float& outCol, float& outRow)
-	{
-		float col, row;
-		WorldGrid::InverseIso(input.aimX, input.aimY, col, row);
-
-		float length = sqrtf(col * col + row * row);
-		if (length < 0.001f)
-		{
-			return false;
-		}
-
-		outCol = col / length;
-		outRow = row / length;
-		return true;
-	}
-
-	// A point on the ground at this angle and distance from him, in tiles,
-	// returned as a screen offset.
-	void SlashPoint(float angle, float radius, float& outX, float& outY)
-	{
-		WorldGrid::IsoPosition(cosf(angle) * radius, sinf(angle) * radius, outX, outY);
-	}
 }
 
 void PlayerActor::Respawn(float x, float y)
@@ -119,12 +87,24 @@ void PlayerActor::Respawn(float x, float y)
 	// Snap to the new ground instead of climbing to it from where he fell.
 	m_GroundInitialized = false;
 
-	m_AttackCooldown = 0.f;
 	m_DodgeTimer = 0.f;
 	m_DodgeCooldown = 0.f;
-	m_ComboStep = 0;
-	m_ComboTimer = 0.f;
-	m_SlashTimer = 0.f;
+	m_LungeTimer = 0.f;
+	m_LightMoves = LightFormMoves();
+	m_DarkMoves = DarkFormMoves();
+}
+
+void PlayerActor::Lunge(float dirCol, float dirRow, float tiles, float seconds)
+{
+	m_LungeDirCol = dirCol;
+	m_LungeDirRow = dirRow;
+	m_LungeSpeed = tiles / seconds;
+	m_LungeTimer = seconds;
+}
+
+bool PlayerActor::IsTravelling() const
+{
+	return m_DodgeTimer > 0.f || m_LungeTimer > 0.f;
 }
 
 void PlayerActor::OnUpdate(const ActorContext& ctx)
@@ -136,7 +116,7 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	{
 		m_DodgeCooldown -= ctx.deltaTime;
 	}
-	if (ctx.input.dodge && m_DodgeTimer <= 0.f && m_DodgeCooldown <= 0.f)
+	if (ctx.input.dodge && !IsTravelling() && m_DodgeCooldown <= 0.f)
 	{
 		StartDodge(ctx);
 	}
@@ -145,6 +125,10 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	if (m_DodgeTimer > 0.f)
 	{
 		Roll(ctx);
+	}
+	else if (m_LungeTimer > 0.f)
+	{
+		LungeStep(ctx);
 	}
 	else
 	{
@@ -171,79 +155,65 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 		m_Facing = -1.f;
 	}
 
-	// Mid-roll he faces where he is rolling, not where the cursor is.
-	if (m_DodgeTimer > 0.f)
+	// Mid-roll or mid-dash he faces where he is going, not where the cursor is.
+	if (IsTravelling())
 	{
+		float dirCol = (m_DodgeTimer > 0.f) ? m_DodgeDirCol : m_LungeDirCol;
+		float dirRow = (m_DodgeTimer > 0.f) ? m_DodgeDirRow : m_LungeDirRow;
+
 		float screenX, screenY;
-		WorldGrid::IsoPosition(m_DodgeDirCol, m_DodgeDirRow, screenX, screenY);
+		WorldGrid::IsoPosition(dirCol, dirRow, screenX, screenY);
 		if (fabsf(screenX) > 0.01f)
 		{
 			m_Facing = (screenX > 0.f) ? 1.f : -1.f;
 		}
 	}
 
-	if (ctx.input.switchForm && ctx.status->TrySwitchForm())
+	// Spinning, he whips from side to side.
+	if (m_DarkMoves.IsSpinning())
 	{
-		m_ComboStep = 0;
+		m_Facing = (fmodf(m_Time, kSpinFlipTime * 2.f) < kSpinFlipTime) ? 1.f : -1.f;
 	}
 
-	if (m_AttackCooldown > 0.f)
+	m_LightMoves.Update(ctx, *this);
+	m_DarkMoves.Update(ctx, *this);
+
+	if (ctx.input.switchForm)
 	{
-		m_AttackCooldown -= ctx.deltaTime;
-	}
-	if (m_ComboTimer > 0.f)
-	{
-		m_ComboTimer -= ctx.deltaTime;
-	}
-	if (m_SlashTimer > 0.f)
-	{
-		m_SlashTimer -= ctx.deltaTime;
+		Form leaving = ctx.status->form;
+		if (ctx.status->TrySwitchForm())
+		{
+			MovesFor(leaving).Interrupt();
+			MovesFor(ctx.status->form).Enter(ctx, *this);
+		}
 	}
 
-	if (ctx.input.attack && m_AttackCooldown <= 0.f && m_DodgeTimer <= 0.f)
+	// Nothing is thrown or swung mid-roll or mid-dash.
+	if (!IsTravelling())
 	{
-		Attack(ctx);
+		FormMoves& moves = MovesFor(ctx.status->form);
+		if (ctx.input.attack)
+		{
+			moves.Attack(ctx, *this);
+		}
+		if (ctx.input.skill)
+		{
+			moves.Skill(ctx, *this);
+		}
+		if (ctx.input.special)
+		{
+			moves.Special(ctx, *this);
+		}
 	}
 }
 
-void PlayerActor::Attack(const ActorContext& ctx)
+FormMoves& PlayerActor::MovesFor(Form form)
 {
-	if (ctx.status->form == Form::Dark)
+	if (form == Form::Light)
 	{
-		Slash(ctx);
-		return;
+		return m_LightMoves;
 	}
-
-	Fire(ctx, Alignment::Light);
-	m_AttackCooldown = Tuning::LightForm::kBoltCooldown;
-}
-
-void PlayerActor::Slash(const ActorContext& ctx)
-{
-	float dirCol, dirRow;
-	if (!AimDirection(ctx.input, dirCol, dirRow))
-	{
-		return;
-	}
-
-	if (m_ComboTimer <= 0.f)
-	{
-		m_ComboStep = 0;
-	}
-
-	Combat::HitArc(*ctx.graph, WorldX(), WorldY(), dirCol, dirRow,
-		Tuning::DarkForm::kSlashRange, Tuning::DarkForm::kSlashArcDegrees,
-		Combat::SlashDamage(m_ComboStep));
-
-	m_SlashStep = m_ComboStep;
-	m_SlashTimer = kSlashShowTime;
-	m_SlashDirCol = dirCol;
-	m_SlashDirRow = dirRow;
-
-	bool finisher = (m_ComboStep == Tuning::DarkForm::kComboLength - 1);
-	m_AttackCooldown = finisher ? Tuning::DarkForm::kFinisherRecovery : Tuning::DarkForm::kSlashInterval;
-	m_ComboStep = finisher ? 0 : m_ComboStep + 1;
-	m_ComboTimer = Tuning::DarkForm::kComboWindow;
+	return m_DarkMoves;
 }
 
 void PlayerActor::Move(const ActorContext& ctx)
@@ -274,13 +244,9 @@ void PlayerActor::StartDodge(const ActorContext& ctx)
 	// Rolls the way he is walking; standing still, toward the cursor; with the
 	// cursor on top of him, the way he is facing.
 	if (!MoveDirection(ctx.input, m_DodgeDirCol, m_DodgeDirRow)
-		&& !AimDirection(ctx.input, m_DodgeDirCol, m_DodgeDirRow))
+		&& !WorldGrid::ScreenToGroundDirection(ctx.input.aimX, ctx.input.aimY, m_DodgeDirCol, m_DodgeDirRow))
 	{
-		float col, row;
-		WorldGrid::InverseIso(m_Facing, 0.f, col, row);
-		float length = sqrtf(col * col + row * row);
-		m_DodgeDirCol = col / length;
-		m_DodgeDirRow = row / length;
+		WorldGrid::ScreenToGroundDirection(m_Facing, 0.f, m_DodgeDirCol, m_DodgeDirRow);
 	}
 
 	m_DodgeTimer = Tuning::Dodge::kDuration;
@@ -300,6 +266,16 @@ void PlayerActor::Roll(const ActorContext& ctx)
 	m_DodgeTimer -= ctx.deltaTime;
 }
 
+void PlayerActor::LungeStep(const ActorContext& ctx)
+{
+	// Like the roll, the last frame covers only what is left.
+	float time = (ctx.deltaTime < m_LungeTimer) ? ctx.deltaTime : m_LungeTimer;
+
+	StepOnGrid(m_LungeDirCol, m_LungeDirRow, m_LungeSpeed * time);
+
+	m_LungeTimer -= ctx.deltaTime;
+}
+
 void PlayerActor::StepOnGrid(float dirCol, float dirRow, float tiles)
 {
 	float col, row;
@@ -312,22 +288,6 @@ void PlayerActor::StepOnGrid(float dirCol, float dirRow, float tiles)
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);
 	SetLocalPosition(x, y);
-}
-
-void PlayerActor::Fire(const ActorContext& ctx, Alignment alignment) const
-{
-	float aimLength = sqrtf(ctx.input.aimX * ctx.input.aimX + ctx.input.aimY * ctx.input.aimY);
-	if (aimLength < 0.001f)
-	{
-		return;
-	}
-
-	std::unique_ptr<ProjectileActor> bolt(new ProjectileActor(alignment,
-		(ctx.input.aimX / aimLength) * Tuning::LightForm::kBoltSpeedPx,
-		(ctx.input.aimY / aimLength) * Tuning::LightForm::kBoltSpeedPx));
-	bolt->SetLocalPosition(WorldX(), WorldY());
-
-	ctx.graph->Spawn(std::move(bolt));
 }
 
 void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
@@ -382,6 +342,20 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 		squash = 1.f - kRollSquash * fold;
 		lean = (dirX / dirLength) * kRollLean * fold;
+		swing = 0.f;
+		leftLift = 0.f;
+		rightLift = 0.f;
+		bob = 0.f;
+	}
+
+	if (m_LungeTimer > 0.f)
+	{
+		float dirX, dirY;
+		WorldGrid::IsoPosition(m_LungeDirCol, m_LungeDirRow, dirX, dirY);
+		float dirLength = sqrtf(dirX * dirX + dirY * dirY);
+
+		squash = kLungeSquash;
+		lean = (dirX / dirLength) * kLungeLean;
 		swing = 0.f;
 		leftLift = 0.f;
 		rightLift = 0.f;
@@ -472,84 +446,6 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.AddRect(depth + 0.05f, eyeX - 2.f, eyeY, 1.6f, 1.8f, 0.10f, 0.09f, 0.11f, 1.f);
 	out.AddRect(depth + 0.05f, eyeX + 2.f, eyeY, 1.6f, 1.8f, 0.10f, 0.09f, 0.11f, 1.f);
 
-	DrawSlash(out, x, y);
-}
-
-void PlayerActor::DrawSlash(DrawList& out, float screenX, float screenY) const
-{
-	if (m_SlashTimer <= 0.f)
-	{
-		return;
-	}
-
-	bool finisher = (m_SlashStep == Tuning::DarkForm::kComboLength - 1);
-
-	float progress = 1.f - m_SlashTimer / kSlashShowTime;
-	float sweep = Clamp(progress / kSlashSweepShare, 0.f, 1.f);
-	float fade = 1.f;
-	if (progress > kSlashSweepShare)
-	{
-		fade = 1.f - (progress - kSlashSweepShare) / (1.f - kSlashSweepShare);
-	}
-
-	// The finisher lands all at once and brighter, so the third cut reads as
-	// the heavy one.
-	if (finisher)
-	{
-		sweep = 1.f;
-	}
-	int visible = (int)ceilf(sweep * kSlashSegments);
-
-	float r, g, b;
-	AlignmentColor::Core(Alignment::Dark, r, g, b);
-	if (finisher)
-	{
-		r += (1.f - r) * 0.35f;
-		g += (1.f - g) * 0.35f;
-		b += (1.f - b) * 0.35f;
-	}
-	float alpha = (finisher ? 0.9f : 0.7f) * fade;
-
-	float center = atan2f(m_SlashDirRow, m_SlashDirCol);
-	float half = Tuning::DarkForm::kSlashArcDegrees * 0.5f * kDegToRad;
-	float segmentAngle = half * 2.f / kSlashSegments;
-
-	float inner = kSlashInner;
-	float outer = Tuning::DarkForm::kSlashRange;
-	float blade = inner + (outer - inner) * kSlashBlade;
-	float baseY = screenY + m_GroundHeight + kSlashLift;
-
-	for (int i = 0; i < visible; i++)
-	{
-		// The middle cut sweeps back the other way, so the combo reads as
-		// swings to and fro rather than the same stroke three times.
-		int segment = (m_SlashStep == 1) ? kSlashSegments - 1 - i : i;
-		float a0 = center - half + segment * segmentAngle;
-		float a1 = a0 + segmentAngle;
-
-		// Sorted by the ground under the middle of the piece, so the part of
-		// the arc in front of him is not buried under the tiles it passes over.
-		float midX, midY;
-		SlashPoint((a0 + a1) * 0.5f, (inner + outer) * 0.5f, midX, midY);
-		float depth = WorldGrid::TileDepth(WorldX() + midX, WorldY() + midY) + 0.7f;
-
-		// Dim trail on the inside, the bright edge of the blade on the outside.
-		const float radii[3] = { inner, blade, outer };
-		const float bandAlpha[2] = { alpha * 0.45f, alpha };
-		for (int band = 0; band < 2; band++)
-		{
-			float corners[8];
-			SlashPoint(a0, radii[band], corners[0], corners[1]);
-			SlashPoint(a0, radii[band + 1], corners[2], corners[3]);
-			SlashPoint(a1, radii[band + 1], corners[4], corners[5]);
-			SlashPoint(a1, radii[band], corners[6], corners[7]);
-			for (int c = 0; c < 4; c++)
-			{
-				corners[c * 2] += screenX;
-				corners[c * 2 + 1] += baseY;
-			}
-
-			out.AddCorners(depth, corners, r, g, b, bandAlpha[band]);
-		}
-	}
+	m_LightMoves.Draw(out, *this, x, groundY);
+	m_DarkMoves.Draw(out, *this, x, groundY);
 }

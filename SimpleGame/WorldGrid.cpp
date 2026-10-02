@@ -50,6 +50,22 @@ namespace WorldGrid
 		outRow = (v - u) / 2.f;
 	}
 
+	bool ScreenToGroundDirection(float screenX, float screenY, float& outCol, float& outRow)
+	{
+		float col, row;
+		InverseIso(screenX, screenY, col, row);
+
+		float length = sqrtf(col * col + row * row);
+		if (length < 0.001f)
+		{
+			return false;
+		}
+
+		outCol = col / length;
+		outRow = row / length;
+		return true;
+	}
+
 	void WorldToTile(float worldX, float worldY, int& outCol, int& outRow)
 	{
 		float col, row;

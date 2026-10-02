@@ -32,6 +32,21 @@ void PlayerStatus::Tick(float deltaTime)
 			formCooldown = 0.f;
 		}
 	}
+
+	lightSkill.Tick(deltaTime);
+	lightSpecial.Tick(deltaTime);
+	darkSkill.Tick(deltaTime);
+	darkSpecial.Tick(deltaTime);
+}
+
+const Cooldown& PlayerStatus::SkillCooldown(Form which) const
+{
+	return (which == Form::Light) ? lightSkill : darkSkill;
+}
+
+const Cooldown& PlayerStatus::SpecialCooldown(Form which) const
+{
+	return (which == Form::Light) ? lightSpecial : darkSpecial;
 }
 
 void PlayerStatus::AddLight(float amount)
@@ -91,10 +106,24 @@ void PlayerStatus::GrantInvuln(float seconds)
 	}
 }
 
+void PlayerStatus::Heal(float amount)
+{
+	if (health <= 0.f)
+	{
+		return;
+	}
+
+	health = Clamp(health + amount, 0.f, maxHealth);
+}
+
 void PlayerStatus::Revive()
 {
 	health = maxHealth;
 	formCooldown = 0.f;
+	lightSkill = Cooldown();
+	lightSpecial = Cooldown();
+	darkSkill = Cooldown();
+	darkSpecial = Cooldown();
 	GrantInvuln(Tuning::Death::kReviveInvuln);
 }
 

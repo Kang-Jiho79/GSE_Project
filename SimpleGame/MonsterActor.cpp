@@ -49,15 +49,15 @@ namespace
 		{
 		case MonsterActor::Kind::Brute:
 		{
-			return 5.f;
+			return Tuning::Monster::kBruteHealth;
 		}
 		case MonsterActor::Kind::Stalker:
 		{
-			return 2.f;
+			return Tuning::Monster::kStalkerHealth;
 		}
 		default:
 		{
-			return 3.f;
+			return Tuning::Monster::kCrawlerHealth;
 		}
 		}
 	}
@@ -73,9 +73,26 @@ MonsterActor::MonsterActor(Alignment alignment, Kind kind)
 	m_Time = Random::Unit() * 10.f;
 }
 
-void MonsterActor::TakeHit(float damage)
+float MonsterActor::TakeHit(float damage)
 {
+	if (m_Health <= 0.f)
+	{
+		return 0.f;
+	}
+
+	float landed = (damage < m_Health) ? damage : m_Health;
 	m_Health -= damage;
+	return landed;
+}
+
+void MonsterActor::Shove(float offsetCol, float offsetRow)
+{
+	float offsetX, offsetY;
+	WorldGrid::IsoPosition(offsetCol, offsetRow, offsetX, offsetY);
+
+	m_ShoveVelX = offsetX / Tuning::Shove::kDuration;
+	m_ShoveVelY = offsetY / Tuning::Shove::kDuration;
+	m_ShoveTimer = Tuning::Shove::kDuration;
 }
 
 void MonsterActor::OnUpdate(const ActorContext& ctx)
@@ -107,6 +124,24 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 
 	m_GroundHeight = WorldGrid::SmoothApproach(m_GroundHeight,
 		WorldGrid::GroundHeightAt(WorldX(), WorldY()), kClimbRate, ctx.deltaTime);
+
+	if (m_ShoveTimer > 0.f)
+	{
+		// The last frame covers only what is left, so every shove travels its
+		// full distance and no further.
+		float time = (ctx.deltaTime < m_ShoveTimer) ? ctx.deltaTime : m_ShoveTimer;
+
+		float col, row;
+		WorldGrid::InverseIso(LocalX() + m_ShoveVelX * time, LocalY() + m_ShoveVelY * time, col, row);
+		WorldGrid::ClampToMap(col, row);
+
+		float x, y;
+		WorldGrid::IsoPosition(col, row, x, y);
+		SetLocalPosition(x, y);
+
+		m_ShoveTimer -= ctx.deltaTime;
+		return;
+	}
 
 	float toPlayerX = ctx.playerX - WorldX();
 

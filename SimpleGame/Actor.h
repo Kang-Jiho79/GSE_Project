@@ -22,6 +22,8 @@ struct InputState
 	// not repeat the action.
 	bool switchForm = false;
 	bool dodge = false;
+	bool skill = false;   // E
+	bool special = false; // Q
 
 	float aimX = 0.f; // mouse relative to the window center
 	float aimY = 0.f;

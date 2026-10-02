@@ -72,6 +72,15 @@ public:
 		float leftR, float leftG, float leftB,
 		float rightR, float rightG, float rightB);
 
+	// A band of a circle lying flat on the ground around a world point - a
+	// ring, a wedge, a slash trail. Cut into pieces that each sort with the
+	// ground under them, so the near side is not buried under the tiles in
+	// front of its centre. Radii are in tiles; angles are radians on the ground
+	// (0 along +col). screenX/screenY is the centre on screen.
+	void AddGroundArc(float worldX, float worldY, float screenX, float screenY,
+		float innerTiles, float outerTiles, float fromAngle, float toAngle, int segments,
+		float r, float g, float b, float a);
+
 	// A dark patch on the ground, so a standing thing does not look pasted on.
 	void AddShadow(float depth, float x, float baseY, float width, float height);
 

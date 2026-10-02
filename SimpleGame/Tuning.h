@@ -41,20 +41,63 @@ namespace Tuning
 		const float kSwitchCooldown = 1.f;
 	}
 
+	namespace SwapSkill
+	{
+		// Light -> dark: a burst at his feet that drags everything nearby in,
+		// so the switch to melee arrives already in reach.
+		const float kDarkBurstRadius = 2.f;
+		const float kDarkBurstDamage = 15.f;
+		const float kDarkBurstPull = 1.2f;
+
+		// Dark -> light: a burst that throws everything back and covers the
+		// way out of melee.
+		const float kLightBurstRadius = 2.f;
+		const float kLightBurstPush = 2.f;
+		const float kLightBurstInvuln = 0.5f;
+	}
+
+	namespace Shove
+	{
+		// A push or pull plays out over this long, and the monster does nothing
+		// else meanwhile.
+		const float kDuration = 0.18f;
+		// A pull stops this far from its centre instead of stacking everything
+		// on top of the player.
+		const float kPullStop = 0.6f;
+	}
+
 	namespace LightForm
 	{
 		const float kBoltCooldown = 0.3f;
 		const float kBoltSpeedPx = 420.f;
-		const float kBoltDamage = 1.f;
+		const float kBoltDamage = 10.f;
 		const float kBoltLifetime = 1.1f;
 		const float kBoltHitRadiusPx = 20.f;
+
+		// E: a beam straight through everything in a line.
+		const float kBeamLength = 7.f;
+		const float kBeamWidth = 0.6f;
+		const float kBeamDamage = 25.f;
+		const float kBeamCooldown = 4.f;
+
+		// Q: lightning called down on the cursor - slow to land, wide when it
+		// does.
+		const float kStrikeMaxRange = 7.f;
+		const float kStrikeDelay = 0.8f;
+		const float kStrikeRadius = 2.f;
+		const float kStrikeDamage = 50.f;
+		const float kStrikeCooldown = 10.f;
 	}
 
 	namespace DarkForm
 	{
 		// Three cuts; the last one hits hardest.
 		const int kComboLength = 3;
-		const float kSlashDamage[kComboLength] = { 1.f, 1.f, 2.f };
+		const float kSlashDamage[kComboLength] = { 10.f, 10.f, 20.f };
+
+		// Share of melee damage dealt that comes back as health. Only blows that
+		// land in reach count - never anything thrown or lingering.
+		const float kLifesteal = 0.09f;
 
 		// Kept clear of Monster::kAttackRange, so a cut can land before the
 		// monster is close enough to strike back.
@@ -66,6 +109,22 @@ namespace Tuning
 		const float kSlashInterval = 0.28f;   // between cuts while the combo runs
 		const float kFinisherRecovery = 0.55f; // after the last cut
 		const float kComboWindow = 0.7f;       // a longer pause starts the combo over
+
+		// E: a short dash through whatever is in the way, cutting all of it.
+		// Invulnerable for the length of the dash.
+		const float kDashDistance = 3.f;
+		const float kDashDuration = 0.2f;
+		const float kDashWidth = 1.f;
+		const float kDashDamage = 20.f;
+		const float kDashCooldown = 5.f;
+
+		// Q: a spin that keeps cutting everything around him for a while.
+		const float kSpinDuration = 1.5f;
+		const float kSpinInterval = 0.25f;
+		const float kSpinRadius = 1.6f;
+		const float kSpinDamage = 8.f;
+		const float kSpinLifestealScale = 2.f;
+		const float kSpinCooldown = 10.f;
 	}
 
 	namespace Monster
@@ -80,6 +139,10 @@ namespace Tuning
 
 		const float kAttackCooldown = 1.2f;
 		const float kAttackDamage = 8.f;
+
+		const float kBruteHealth = 50.f;
+		const float kStalkerHealth = 20.f;
+		const float kCrawlerHealth = 30.f;
 
 		// Still in screen pixels until monster movement moves onto the grid.
 		const float kChaseSpeedPx = 90.f;

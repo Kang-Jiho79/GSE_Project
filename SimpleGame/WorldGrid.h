@@ -20,6 +20,11 @@ namespace WorldGrid
 	void IsoPosition(float col, float row, float& outX, float& outY);
 	void InverseIso(float worldX, float worldY, float& outCol, float& outRow);
 
+	// A screen offset - an aim, a key direction - turned into a unit direction
+	// on the ground. The iso mapping is linear, so the conversion that turns
+	// positions into tiles turns directions too. False for a zero offset.
+	bool ScreenToGroundDirection(float screenX, float screenY, float& outCol, float& outRow);
+
 	// The nearest cell, since each tile's diamond owns the +/-0.5 span around
 	// its own integer (col, row). Keeps heights and depths locked to one whole
 	// tile at a time instead of drifting continuously between two.

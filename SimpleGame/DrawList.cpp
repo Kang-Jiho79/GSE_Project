@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "WorldGrid.h"
 #include <algorithm>
+#include <cmath>
 
 void DrawList::Clear()
 {
@@ -273,6 +274,42 @@ void DrawList::AddBoxFaces(float depth, float x, float baseY, float footCols, fl
 		rightR, rightG, rightB, 1.f);
 
 	AddQuad(depth, x, baseY + boxHeight, colX, colY, -rowX, rowY, topR, topG, topB, 1.f);
+}
+
+void DrawList::AddGroundArc(float worldX, float worldY, float screenX, float screenY,
+	float innerTiles, float outerTiles, float fromAngle, float toAngle, int segments,
+	float r, float g, float b, float a)
+{
+	float step = (toAngle - fromAngle) / segments;
+
+	for (int i = 0; i < segments; i++)
+	{
+		float a0 = fromAngle + i * step;
+		float a1 = a0 + step;
+		float cos0 = cosf(a0);
+		float sin0 = sinf(a0);
+		float cos1 = cosf(a1);
+		float sin1 = sinf(a1);
+
+		float midX, midY;
+		float midAngle = (a0 + a1) * 0.5f;
+		float midRadius = (innerTiles + outerTiles) * 0.5f;
+		WorldGrid::IsoPosition(cosf(midAngle) * midRadius, sinf(midAngle) * midRadius, midX, midY);
+		float depth = WorldGrid::TileDepth(worldX + midX, worldY + midY) + 0.7f;
+
+		float corners[8];
+		WorldGrid::IsoPosition(cos0 * innerTiles, sin0 * innerTiles, corners[0], corners[1]);
+		WorldGrid::IsoPosition(cos0 * outerTiles, sin0 * outerTiles, corners[2], corners[3]);
+		WorldGrid::IsoPosition(cos1 * outerTiles, sin1 * outerTiles, corners[4], corners[5]);
+		WorldGrid::IsoPosition(cos1 * innerTiles, sin1 * innerTiles, corners[6], corners[7]);
+		for (int c = 0; c < 4; c++)
+		{
+			corners[c * 2] += screenX;
+			corners[c * 2 + 1] += screenY;
+		}
+
+		AddCorners(depth, corners, r, g, b, a);
+	}
 }
 
 void DrawList::AddShadow(float depth, float x, float baseY, float width, float height)

@@ -21,7 +21,13 @@ public:
 
 	MonsterActor(Alignment alignment, Kind kind);
 
-	void TakeHit(float damage);
+	// Returns how much of it actually landed - never more than it had left, so
+	// overkill does not count toward anything that feeds on damage dealt.
+	float TakeHit(float damage);
+
+	// Knocked along the ground by this many tiles. It is carried there over a
+	// moment rather than teleported, and is staggered until it lands.
+	void Shove(float offsetCol, float offsetRow);
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;
@@ -57,6 +63,12 @@ private:
 
 	float m_AttackCooldown = 0.f;
 	float m_Health;
+
+	// A shove in progress: its speed in world pixels per second, and how long
+	// it has left.
+	float m_ShoveVelX = 0.f;
+	float m_ShoveVelY = 0.f;
+	float m_ShoveTimer = 0.f;
 	bool m_Anchored = false;
 
 	float m_Time = 0.f;
