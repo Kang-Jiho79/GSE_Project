@@ -5,6 +5,7 @@
 #include "Profiler.h"
 #include "WorldGrid.h"
 #include "Random.h"
+#include "Tuning.h"
 
 #include "TerrainActor.h"
 #include "PropsActor.h"
@@ -116,8 +117,16 @@ ActorContext Scene::MakeContext(float deltaTime, PlayerStatus& status)
 
 void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& status)
 {
+	UpdateDeath(deltaTime, status);
+
 	ActorContext ctx = MakeContext(deltaTime, status);
-	ctx.input = input;
+
+	// A fallen player gets no say until he is back on his feet; the rest of
+	// the world carries on around him.
+	if (m_DeathElapsed < 0.f)
+	{
+		ctx.input = input;
+	}
 
 	{
 		ProfileScope scope("update");
@@ -125,6 +134,61 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	}
 
 	RecordPopulation();
+}
+
+void Scene::UpdateDeath(float deltaTime, PlayerStatus& status)
+{
+	if (m_DeathElapsed < 0.f)
+	{
+		if (status.health <= 0.f)
+		{
+			m_DeathElapsed = 0.f;
+		}
+		return;
+	}
+
+	float before = m_DeathElapsed;
+	m_DeathElapsed += deltaTime;
+
+	// Moved on the frame the screen goes fully dark, so the jump is never seen.
+	if (before < Tuning::Death::kFadeOut && m_DeathElapsed >= Tuning::Death::kFadeOut)
+	{
+		float x, y;
+		WorldGrid::IsoPosition(kPlayerStartCol, kPlayerStartRow, x, y);
+		m_Player->Respawn(x, y);
+		status.Revive();
+	}
+
+	float total = Tuning::Death::kFadeOut + Tuning::Death::kHold + Tuning::Death::kFadeIn;
+	if (m_DeathElapsed >= total)
+	{
+		m_DeathElapsed = -1.f;
+	}
+}
+
+void Scene::DrawDeathFade(Renderer* renderer) const
+{
+	if (m_DeathElapsed < 0.f)
+	{
+		return;
+	}
+
+	float fadeInStart = Tuning::Death::kFadeOut + Tuning::Death::kHold;
+
+	float alpha = 1.f;
+	if (m_DeathElapsed < Tuning::Death::kFadeOut)
+	{
+		alpha = m_DeathElapsed / Tuning::Death::kFadeOut;
+	}
+	else if (m_DeathElapsed > fadeInStart)
+	{
+		alpha = 1.f - (m_DeathElapsed - fadeInStart) / Tuning::Death::kFadeIn;
+	}
+
+	// The same near-black the world already dissolves into at its edges, so
+	// dying reads as the dark closing in rather than a screen going black.
+	renderer->DrawSolidRect(0.f, 0.f, (float)m_WindowSizeX, (float)m_WindowSizeY,
+		kFogR, kFogG, kFogB, alpha);
 }
 
 void Scene::RecordPopulation()
@@ -174,6 +238,10 @@ void Scene::Render(Renderer* renderer, PlayerStatus& status)
 		ProfileScope scope("submit");
 		m_DrawList.Submit(renderer);
 	}
+
+	// Over the world only; the HUD drawn after it stays readable, so the
+	// health bar can be seen refilling.
+	DrawDeathFade(renderer);
 
 	Profiler::Get().SetGauge("world_quads", (int)m_DrawList.Count());
 }

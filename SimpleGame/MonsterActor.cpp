@@ -6,20 +6,11 @@
 #include "PlayerStatus.h"
 #include "Random.h"
 #include "WorldGrid.h"
+#include "Tuning.h"
 #include <cmath>
 
 namespace
 {
-	const float kDetectRadius = 200.f;
-	const float kGiveUpRadius = 300.f;
-	const float kAttackRadius = 34.f;
-
-	const float kBaseChaseSpeed = 90.f; // pixels per second
-	const float kBaseRoamSpeed = 36.f;
-	const float kRoamRadius = 70.f;
-
-	const float kAttackCooldown = 1.2f;
-	const float kAttackDamage = 8.f;
 	// How long after landing a hit the body is still thrown forward.
 	const float kLungeDuration = 0.18f;
 	const float kLungeDistance = 9.f;
@@ -118,8 +109,15 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 		WorldGrid::GroundHeightAt(WorldX(), WorldY()), kClimbRate, ctx.deltaTime);
 
 	float toPlayerX = ctx.playerX - WorldX();
-	float toPlayerY = ctx.playerY - WorldY();
-	float distance = sqrtf(toPlayerX * toPlayerX + toPlayerY * toPlayerY);
+
+	// Ranges are judged on the ground, in tiles, so its reach is the same
+	// whether the player stands beside it on screen or above it.
+	float col, row, playerCol, playerRow;
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+	float toPlayerCol = playerCol - col;
+	float toPlayerRow = playerRow - row;
+	float distance = sqrtf(toPlayerCol * toPlayerCol + toPlayerRow * toPlayerRow);
 
 	UpdateState(distance);
 
@@ -130,16 +128,16 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 
 	if (m_State == State::Attack)
 	{
-		if (m_AttackCooldown <= 0.f && ctx.status->TryDamage(kAttackDamage))
+		if (m_AttackCooldown <= 0.f && ctx.status->TryDamage(Tuning::Monster::kAttackDamage))
 		{
-			m_AttackCooldown = kAttackCooldown;
+			m_AttackCooldown = Tuning::Monster::kAttackCooldown;
 		}
 		return;
 	}
 
 	if (m_State == State::Chase)
 	{
-		MoveToward(ctx.playerX, ctx.playerY, kBaseChaseSpeed * SpeedScale(m_Kind), ctx.deltaTime);
+		MoveToward(ctx.playerX, ctx.playerY, Tuning::Monster::kChaseSpeedPx * SpeedScale(m_Kind), ctx.deltaTime);
 		return;
 	}
 
@@ -148,11 +146,9 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 
 void MonsterActor::UpdateState(float distanceToPlayer)
 {
-	// The give-up radius is deliberately wider than the detect radius, so one
-	// sitting on the boundary does not flicker between wandering and chasing.
 	if (m_State == State::Attack)
 	{
-		if (distanceToPlayer > kAttackRadius)
+		if (distanceToPlayer > Tuning::Monster::kAttackRange)
 		{
 			m_State = State::Chase;
 		}
@@ -161,20 +157,20 @@ void MonsterActor::UpdateState(float distanceToPlayer)
 
 	if (m_State == State::Chase)
 	{
-		if (distanceToPlayer > kGiveUpRadius)
+		if (distanceToPlayer > Tuning::Monster::kGiveUpRange)
 		{
 			m_State = State::Roam;
 			m_RoamTargetX = m_OriginX;
 			m_RoamTargetY = m_OriginY;
 		}
-		else if (distanceToPlayer <= kAttackRadius)
+		else if (distanceToPlayer <= Tuning::Monster::kAttackRange)
 		{
 			m_State = State::Attack;
 		}
 		return;
 	}
 
-	if (distanceToPlayer <= kDetectRadius)
+	if (distanceToPlayer <= Tuning::Monster::kDetectRange)
 	{
 		m_State = State::Chase;
 	}
@@ -213,7 +209,7 @@ void MonsterActor::Roam(const ActorContext& ctx)
 
 	if (distance >= 4.f)
 	{
-		MoveToward(m_RoamTargetX, m_RoamTargetY, kBaseRoamSpeed * SpeedScale(m_Kind), ctx.deltaTime);
+		MoveToward(m_RoamTargetX, m_RoamTargetY, Tuning::Monster::kRoamSpeedPx * SpeedScale(m_Kind), ctx.deltaTime);
 		return;
 	}
 
@@ -224,7 +220,7 @@ void MonsterActor::Roam(const ActorContext& ctx)
 	}
 
 	float angle = Random::Angle();
-	float radius = Random::Unit() * kRoamRadius;
+	float radius = Random::Unit() * Tuning::Monster::kRoamRadiusPx;
 	m_RoamTargetX = m_OriginX + cosf(angle) * radius;
 	m_RoamTargetY = m_OriginY + sinf(angle) * radius;
 	m_RoamWaitTimer = 1.5f + Random::Unit() * 2.f;
@@ -261,7 +257,7 @@ void MonsterActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	// Right after landing a hit the whole body is thrown toward the player and
 	// eases back - the only tell the player gets that they were just struck.
 	float lunge = 0.f;
-	float sinceHit = kAttackCooldown - m_AttackCooldown;
+	float sinceHit = Tuning::Monster::kAttackCooldown - m_AttackCooldown;
 	if (m_State == State::Attack && sinceHit < kLungeDuration)
 	{
 		lunge = (1.f - sinceHit / kLungeDuration) * kLungeDistance * m_Facing;

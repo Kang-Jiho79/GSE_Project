@@ -26,6 +26,11 @@ private:
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
 	void RecordPopulation();
 
+	// Death: the world fades out, he is moved back to the start while it is
+	// fully dark, and it fades back in.
+	void UpdateDeath(float deltaTime, PlayerStatus& status);
+	void DrawDeathFade(Renderer* renderer) const;
+
 	SceneGraph m_Graph;
 	DrawList m_DrawList;
 
@@ -35,4 +40,7 @@ private:
 
 	int m_WindowSizeX = 0;
 	int m_WindowSizeY = 0;
+
+	// Seconds since he fell; negative while he is alive.
+	float m_DeathElapsed = -1.f;
 };

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Hud.h"
+#include "Tuning.h"
 
 namespace
 {
@@ -14,6 +15,11 @@ namespace
 	const float kPipHeight = 12.f;
 	const float kPipSpacing = 16.f;
 	const int kPipCount = 6;
+
+	const float kFormMarkWidth = 12.f;
+	const float kFormMarkHeight = 16.f;
+	const float kFormBarWidth = 72.f;
+	const float kFormBarHeight = 6.f;
 
 	float Clamp01(float value)
 	{
@@ -40,6 +46,7 @@ void Hud::Render(Renderer* renderer, const PlayerStatus& status, int windowSizeX
 	DrawVessel(renderer, status, vesselCenterX, vesselCenterY);
 	DrawHealth(renderer, status, left + 132.f, vesselCenterY + 20.f);
 	DrawUpgradePips(renderer, status, left + 132.f, vesselCenterY - 12.f);
+	DrawForm(renderer, status, left + 132.f, vesselCenterY - 38.f);
 }
 
 void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
@@ -100,5 +107,32 @@ void Hud::DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float 
 
 		renderer->DrawSolidDiamond(x, centerY, kPipWidth, kPipHeight,
 			earned ? 0.72f : 0.20f, earned ? 0.70f : 0.20f, earned ? 0.64f : 0.22f, 1.f);
+	}
+}
+
+void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
+{
+	float r, g, b;
+	AlignmentColor::Core(FormAlignment(status.form), r, g, b);
+
+	float markX = left + kFormMarkWidth / 2.f;
+	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth + 4.f, kFormMarkHeight + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
+	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth, kFormMarkHeight, r, g, b, 1.f);
+
+	// Refills while the switch cools down; full means Space will work.
+	float ready = 1.f - Clamp01(status.formCooldown / Tuning::FormSwitch::kSwitchCooldown);
+	float barLeft = left + kFormMarkWidth + 8.f;
+	float fillWidth = kFormBarWidth * ready;
+	float shade = (ready >= 1.f) ? 1.f : 0.45f;
+
+	renderer->DrawSolidRect(barLeft + kFormBarWidth / 2.f, centerY,
+		kFormBarWidth + 4.f, kFormBarHeight + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
+	renderer->DrawSolidRect(barLeft + kFormBarWidth / 2.f, centerY,
+		kFormBarWidth, kFormBarHeight, 0.10f, 0.10f, 0.12f, 1.f);
+
+	if (fillWidth > 0.f)
+	{
+		renderer->DrawSolidRect(barLeft + fillWidth / 2.f, centerY, fillWidth, kFormBarHeight,
+			r * shade, g * shade, b * shade, 1.f);
 	}
 }

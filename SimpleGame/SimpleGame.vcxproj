@@ -176,6 +176,10 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TerrainActor.h" />
     <ClInclude Include="WorldGrid.h" />
+    <ClInclude Include="Tuning.h" />
+    <ClInclude Include="Form.h" />
+    <ClInclude Include="InputMap.h" />
+    <ClInclude Include="Combat.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
@@ -196,6 +200,7 @@
     <ClCompile Include="SimpleGame.cpp" />
     <ClCompile Include="TerrainActor.cpp" />
     <ClCompile Include="WorldGrid.cpp" />
+    <ClCompile Include="Combat.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

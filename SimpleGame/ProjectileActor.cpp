@@ -4,14 +4,12 @@
 #include "SceneGraph.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
+#include "Combat.h"
+#include "Tuning.h"
 #include <cmath>
 
 namespace
 {
-	const float kLifetime = 1.1f;
-	const float kHitRadius = 20.f;
-	const float kDamage = 1.f;
-
 	const float kGlowRadius = 26.f;
 	const float kMarkWidth = 12.f;
 	const float kMarkHeight = 8.f;
@@ -22,7 +20,7 @@ ProjectileActor::ProjectileActor(Alignment alignment, float velX, float velY)
 	: m_Alignment(alignment)
 	, m_VelX(velX)
 	, m_VelY(velY)
-	, m_Life(kLifetime)
+	, m_Life(Tuning::LightForm::kBoltLifetime)
 {
 }
 
@@ -50,14 +48,14 @@ void ProjectileActor::OnUpdate(const ActorContext& ctx)
 
 		float dx = monster.WorldX() - x;
 		float dy = monster.WorldY() - y;
-		if (sqrtf(dx * dx + dy * dy) > kHitRadius)
+		if (sqrtf(dx * dx + dy * dy) > Tuning::LightForm::kBoltHitRadiusPx)
 		{
 			return;
 		}
 
 		// Both colours hurt a gray thing equally - gray is opposed to colour
 		// itself, not to one side of it.
-		monster.TakeHit(kDamage);
+		monster.TakeHit(Combat::BoltDamage());
 		spent = true;
 	});
 

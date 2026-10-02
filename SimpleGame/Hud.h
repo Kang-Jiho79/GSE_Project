@@ -5,7 +5,7 @@
 
 // Screen-space overlay, anchored to the top-left corner: one diamond split down
 // the middle - dark fills the left half, light the right - with the health bar
-// beside it.
+// beside it, and under that the current form and how soon it can change.
 class Hud
 {
 public:
@@ -15,4 +15,5 @@ private:
 	void DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY);
 	void DrawHealth(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 	void DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
+	void DrawForm(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 };

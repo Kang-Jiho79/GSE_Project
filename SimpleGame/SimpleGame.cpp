@@ -10,6 +10,7 @@ but WITHOUT ANY WARRANTY.
 
 #include "stdafx.h"
 #include <iostream>
+#include <cctype>
 #include "Dependencies\glew.h"
 #include "Dependencies\freeglut.h"
 
@@ -18,6 +19,7 @@ but WITHOUT ANY WARRANTY.
 #include "Hud.h"
 #include "PlayerStatus.h"
 #include "Profiler.h"
+#include "InputMap.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
@@ -37,8 +39,13 @@ int g_LastTimeMs = 0;
 // in, since the camera always centers on him.
 float g_MouseX = 0.f;
 float g_MouseY = 0.f;
-bool g_FireLightHeld = false;
-bool g_FireDarkHeld = false;
+bool g_AttackHeld = false;
+bool g_RunHeld = false;
+
+// Set by the key callback, consumed by the next frame, so a press is seen
+// exactly once however long the key is held.
+bool g_SwitchFormPressed = false;
+bool g_DodgePressed = false;
 
 void RenderScene(void)
 {
@@ -73,10 +80,15 @@ void Idle(void)
 	InputState input;
 	input.moveRight = (g_MoveRight ? 1.f : 0.f) - (g_MoveLeft ? 1.f : 0.f);
 	input.moveUp = (g_MoveUp ? 1.f : 0.f) - (g_MoveDown ? 1.f : 0.f);
-	input.fireLight = g_FireLightHeld;
-	input.fireDark = g_FireDarkHeld;
+	input.attack = g_AttackHeld;
+	input.run = g_RunHeld;
+	input.switchForm = g_SwitchFormPressed;
+	input.dodge = g_DodgePressed;
 	input.aimX = g_MouseX;
 	input.aimY = g_MouseY;
+
+	g_SwitchFormPressed = false;
+	g_DodgePressed = false;
 
 	g_Scene.Update(input, deltaTime, g_Status);
 
@@ -107,14 +119,17 @@ void MouseInput(int button, int state, int x, int y)
 
 	switch (button)
 	{
-	case GLUT_LEFT_BUTTON:
+	case InputMap::kAttackButton:
 	{
-		g_FireLightHeld = (state == GLUT_DOWN);
+		g_AttackHeld = (state == GLUT_DOWN);
 		break;
 	}
-	case GLUT_RIGHT_BUTTON:
+	case InputMap::kDodgeButton:
 	{
-		g_FireDarkHeld = (state == GLUT_DOWN);
+		if (state == GLUT_DOWN)
+		{
+			g_DodgePressed = true;
+		}
 		break;
 	}
 	}
@@ -122,40 +137,40 @@ void MouseInput(int button, int state, int x, int y)
 
 void KeyInput(unsigned char key, int x, int y)
 {
-	switch (key)
+	switch (tolower(key))
 	{
-	case 'w':
-	case 'W':
+	case InputMap::kMoveUp:
 	{
 		g_MoveUp = true;
 		break;
 	}
-	case 's':
-	case 'S':
+	case InputMap::kMoveDown:
 	{
 		g_MoveDown = true;
 		break;
 	}
-	case 'a':
-	case 'A':
+	case InputMap::kMoveLeft:
 	{
 		g_MoveLeft = true;
 		break;
 	}
-	case 'd':
-	case 'D':
+	case InputMap::kMoveRight:
 	{
 		g_MoveRight = true;
 		break;
 	}
+	case InputMap::kSwitchForm:
+	{
+		g_SwitchFormPressed = true;
+		break;
+	}
 	// Stand-in until combat can actually hurt the player some other way.
-	case 'c':
-	case 'C':
+	case InputMap::kDebugDamage:
 	{
 		g_Status.TryDamage(12.f);
 		break;
 	}
-	case 27:
+	case InputMap::kQuit:
 	{
 		glutLeaveMainLoop();
 		break;
@@ -165,28 +180,24 @@ void KeyInput(unsigned char key, int x, int y)
 
 void KeyInputUp(unsigned char key, int x, int y)
 {
-	switch (key)
+	switch (tolower(key))
 	{
-	case 'w':
-	case 'W':
+	case InputMap::kMoveUp:
 	{
 		g_MoveUp = false;
 		break;
 	}
-	case 's':
-	case 'S':
+	case InputMap::kMoveDown:
 	{
 		g_MoveDown = false;
 		break;
 	}
-	case 'a':
-	case 'A':
+	case InputMap::kMoveLeft:
 	{
 		g_MoveLeft = false;
 		break;
 	}
-	case 'd':
-	case 'D':
+	case InputMap::kMoveRight:
 	{
 		g_MoveRight = false;
 		break;
@@ -198,24 +209,10 @@ void SpecialKeyInput(int key, int x, int y)
 {
 	switch (key)
 	{
-	case GLUT_KEY_UP:
+	case InputMap::kRunKeyLeft:
+	case InputMap::kRunKeyRight:
 	{
-		g_MoveUp = true;
-		break;
-	}
-	case GLUT_KEY_DOWN:
-	{
-		g_MoveDown = true;
-		break;
-	}
-	case GLUT_KEY_LEFT:
-	{
-		g_MoveLeft = true;
-		break;
-	}
-	case GLUT_KEY_RIGHT:
-	{
-		g_MoveRight = true;
+		g_RunHeld = true;
 		break;
 	}
 	}
@@ -225,24 +222,10 @@ void SpecialKeyInputUp(int key, int x, int y)
 {
 	switch (key)
 	{
-	case GLUT_KEY_UP:
+	case InputMap::kRunKeyLeft:
+	case InputMap::kRunKeyRight:
 	{
-		g_MoveUp = false;
-		break;
-	}
-	case GLUT_KEY_DOWN:
-	{
-		g_MoveDown = false;
-		break;
-	}
-	case GLUT_KEY_LEFT:
-	{
-		g_MoveLeft = false;
-		break;
-	}
-	case GLUT_KEY_RIGHT:
-	{
-		g_MoveRight = false;
+		g_RunHeld = false;
 		break;
 	}
 	}
@@ -277,10 +260,13 @@ int main(int argc, char **argv)
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-	std::cout << "WASD/Arrow keys: move   Left click: light bolt   Right click: dark bolt   C: take damage   Esc: quit\n";
+	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   C: take damage   Esc: quit\n";
 
 	glutDisplayFunc(RenderScene);
 	glutIdleFunc(Idle);
+	// Held keys are tracked by their down/up pair; repeats would only re-fire
+	// single-press actions like the form switch.
+	glutIgnoreKeyRepeat(1);
 	glutKeyboardFunc(KeyInput);
 	glutKeyboardUpFunc(KeyInputUp);
 	glutMouseFunc(MouseInput);

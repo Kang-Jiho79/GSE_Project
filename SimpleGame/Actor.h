@@ -13,8 +13,16 @@ struct InputState
 {
 	float moveRight = 0.f; // -1..1
 	float moveUp = 0.f;    // -1..1
-	bool fireLight = false;
-	bool fireDark = false;
+
+	// Held: true every frame the button is down.
+	bool attack = false;
+	bool run = false;
+
+	// Pressed: true only on the frame the key went down, so holding it does
+	// not repeat the action.
+	bool switchForm = false;
+	bool dodge = false;
+
 	float aimX = 0.f; // mouse relative to the window center
 	float aimY = 0.f;
 };
