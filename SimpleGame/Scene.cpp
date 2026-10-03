@@ -7,6 +7,7 @@
 #include "Random.h"
 #include "Tuning.h"
 #include "Palette.h"
+#include "TextRenderer.h"
 #include <cmath>
 
 #include "TerrainActor.h"
@@ -155,6 +156,7 @@ void Scene::UpdateDeath(float deltaTime, PlayerStatus& status)
 		if (status.health <= 0.f)
 		{
 			m_DeathElapsed = 0.f;
+			m_DeathByGray = fabsf(status.BalanceRatio()) > 1.f;
 		}
 		return;
 	}
@@ -178,6 +180,25 @@ void Scene::UpdateDeath(float deltaTime, PlayerStatus& status)
 	}
 }
 
+float Scene::DeathFadeAlpha() const
+{
+	if (m_DeathElapsed < 0.f)
+	{
+		return 0.f;
+	}
+
+	float fadeInStart = Tuning::Death::kFadeOut + Tuning::Death::kHold;
+	if (m_DeathElapsed < Tuning::Death::kFadeOut)
+	{
+		return m_DeathElapsed / Tuning::Death::kFadeOut;
+	}
+	if (m_DeathElapsed > fadeInStart)
+	{
+		return 1.f - (m_DeathElapsed - fadeInStart) / Tuning::Death::kFadeIn;
+	}
+	return 1.f;
+}
+
 void Scene::DrawDeathFade(Renderer* renderer) const
 {
 	if (m_DeathElapsed < 0.f)
@@ -185,22 +206,25 @@ void Scene::DrawDeathFade(Renderer* renderer) const
 		return;
 	}
 
-	float fadeInStart = Tuning::Death::kFadeOut + Tuning::Death::kHold;
-
-	float alpha = 1.f;
-	if (m_DeathElapsed < Tuning::Death::kFadeOut)
-	{
-		alpha = m_DeathElapsed / Tuning::Death::kFadeOut;
-	}
-	else if (m_DeathElapsed > fadeInStart)
-	{
-		alpha = 1.f - (m_DeathElapsed - fadeInStart) / Tuning::Death::kFadeIn;
-	}
+	float alpha = DeathFadeAlpha();
 
 	// The same near-black the world already dissolves into at its edges, so
 	// dying reads as the dark closing in rather than a screen going black.
 	renderer->DrawSolidRect(0.f, 0.f, (float)m_WindowSizeX, (float)m_WindowSizeY,
 		Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b, alpha);
+}
+
+void Scene::RenderDeathText(TextRenderer* text) const
+{
+	if (m_DeathElapsed < 0.f)
+	{
+		return;
+	}
+
+	// Taken by the gray, he is told so - and in its colour.
+	const char* line = m_DeathByGray ? "잿빛에 삼켜졌다" : "쓰러졌다";
+	const Palette::Color& color = m_DeathByGray ? Palette::kAsh : Palette::kUiBone;
+	text->Draw(TextRenderer::Face::Title, line, 0.f, 0.f, color, DeathFadeAlpha(), TextRenderer::Align::Center);
 }
 
 void Scene::DrawErosionTint(Renderer* renderer, const PlayerStatus& status) const

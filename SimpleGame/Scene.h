@@ -5,6 +5,7 @@
 #include "Impact.h"
 
 class Renderer;
+class TextRenderer;
 class PlayerActor;
 struct PlayerStatus;
 
@@ -21,6 +22,9 @@ public:
 	void Update(const InputState& input, float deltaTime, PlayerStatus& status);
 	void Render(Renderer* renderer, PlayerStatus& status);
 	void RenderMinimap(Renderer* renderer);
+	// Words over the darkness while he is down. Drawn with the HUD, above
+	// the fade.
+	void RenderDeathText(TextRenderer* text) const;
 
 	// Sprays, hit stops and screen shake, together.
 	void SetEffectsEnabled(bool enabled);
@@ -35,6 +39,8 @@ private:
 	// fully dark, and it fades back in.
 	void UpdateDeath(float deltaTime, PlayerStatus& status);
 	void DrawDeathFade(Renderer* renderer) const;
+	// How dark the fade is right now, 0..1.
+	float DeathFadeAlpha() const;
 	// The world washing toward gray as his balance goes.
 	void DrawErosionTint(Renderer* renderer, const PlayerStatus& status) const;
 
@@ -49,6 +55,8 @@ private:
 	int m_WindowSizeX = 0;
 	int m_WindowSizeY = 0;
 
-	// Seconds since he fell; negative while he is alive.
+	// Seconds since he fell; negative while he is alive. Whether it was the
+	// gray that took him, for what is written over it.
 	float m_DeathElapsed = -1.f;
+	bool m_DeathByGray = false;
 };

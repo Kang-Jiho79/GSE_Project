@@ -22,12 +22,14 @@ but WITHOUT ANY WARRANTY.
 #include "InputMap.h"
 #include "Palette.h"
 #include "PostProcess.h"
+#include "TextRenderer.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
 
 Renderer* g_Renderer = NULL;
 PostProcess* g_PostProcess = NULL;
+TextRenderer* g_Text = NULL;
 Scene g_Scene;
 Hud g_Hud;
 PlayerStatus g_Status;
@@ -68,15 +70,21 @@ void RenderScene(void)
 
 	{
 		ProfileScope scope("hud");
-		g_Hud.Render(g_Renderer, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+		g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 		g_Scene.RenderMinimap(g_Renderer);
+		g_Scene.RenderDeathText(g_Text);
+
+		g_Text->Draw(TextRenderer::Face::Small,
+			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬",
+			0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 	}
 
-	// present: the final flush (upload + instanced draw of the HUD) plus the
-	// buffer swap. With vsync on, the swap will dominate this number.
+	// present: the final flushes (the HUD's shapes, then its text on top) plus
+	// the buffer swap. With vsync on, the swap will dominate this number.
 	{
 		ProfileScope scope("present");
 		g_Renderer->EndFrame();
+		g_Text->Flush();
 		glutSwapBuffers();
 	}
 }
@@ -105,6 +113,7 @@ void Idle(void)
 	g_SpecialPressed = false;
 
 	g_Scene.Update(input, deltaTime, g_Status);
+	g_Hud.Tick(deltaTime);
 
 	RenderScene();
 
@@ -246,19 +255,19 @@ void SpecialKeyInput(int key, int x, int y)
 	case InputMap::kTogglePostProcess:
 	{
 		g_PostProcess->SetEnabled(!g_PostProcess->IsEnabled());
-		std::cout << "Post-processing " << (g_PostProcess->IsEnabled() ? "on" : "off") << "\n";
+		g_Hud.Notify(g_PostProcess->IsEnabled() ? "후처리 켬" : "후처리 끔");
 		break;
 	}
 	case InputMap::kToggleOutline:
 	{
 		g_PostProcess->SetOutlineEnabled(!g_PostProcess->IsOutlineEnabled());
-		std::cout << "Outlines " << (g_PostProcess->IsOutlineEnabled() ? "on" : "off") << "\n";
+		g_Hud.Notify(g_PostProcess->IsOutlineEnabled() ? "외곽선 켬" : "외곽선 끔");
 		break;
 	}
 	case InputMap::kToggleEffects:
 	{
 		g_Scene.SetEffectsEnabled(!g_Scene.AreEffectsEnabled());
-		std::cout << "Sprays, hit stop and shake " << (g_Scene.AreEffectsEnabled() ? "on" : "off") << "\n";
+		g_Hud.Notify(g_Scene.AreEffectsEnabled() ? "타격 효과 켬" : "타격 효과 끔");
 		break;
 	}
 	case InputMap::kRunKeyLeft:
@@ -313,6 +322,9 @@ int main(int argc, char **argv)
 	g_PostProcess = new PostProcess();
 	g_PostProcess->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
+	g_Text = new TextRenderer();
+	g_Text->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
+
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
 	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";
@@ -332,6 +344,7 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
+	delete g_Text;
 	delete g_PostProcess;
 	delete g_Renderer;
 

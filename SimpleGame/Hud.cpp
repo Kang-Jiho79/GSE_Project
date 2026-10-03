@@ -2,7 +2,9 @@
 #include "Hud.h"
 #include "Tuning.h"
 #include "Palette.h"
+#include "TextRenderer.h"
 #include <cmath>
+#include <cstdio>
 
 namespace
 {
@@ -39,6 +41,13 @@ namespace
 	const float kSkillSize = 18.f;
 	const float kSkillSpacing = 28.f;
 
+	// Small text sits this far below a centre line to look centred on it.
+	const float kSmallTextDrop = 4.5f;
+
+	const float kNoticeTime = 2.f;
+	const float kNoticeFade = 0.5f; // the last part of it, fading out
+	const float kNoticeDrop = 44.f; // below the top of the window
+
 	// Mixes a colour toward the ash gray by amount (0..1).
 	void Ash(float amount, float& r, float& g, float& b)
 	{
@@ -61,7 +70,7 @@ namespace
 	}
 }
 
-void Hud::Render(Renderer* renderer, const PlayerStatus& status, int windowSizeX, int windowSizeY)
+void Hud::Render(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, int windowSizeX, int windowSizeY)
 {
 	float left = -windowSizeX / 2.f;
 	float top = windowSizeY / 2.f;
@@ -71,10 +80,37 @@ void Hud::Render(Renderer* renderer, const PlayerStatus& status, int windowSizeX
 
 	DrawVessel(renderer, status, vesselCenterX, vesselCenterY);
 	DrawBalance(renderer, status, vesselCenterX, vesselCenterY);
-	DrawHealth(renderer, status, left + 132.f, vesselCenterY + 20.f);
+	DrawHealth(renderer, text, status, left + 132.f, vesselCenterY + 20.f);
 	DrawUpgradePips(renderer, status, left + 132.f, vesselCenterY - 12.f);
 	DrawForm(renderer, status, left + 132.f, vesselCenterY - 38.f);
-	DrawSkills(renderer, status, left + 238.f, vesselCenterY - 38.f);
+	DrawSkills(renderer, text, status, left + 238.f, vesselCenterY - 38.f);
+	DrawNotice(text, top);
+}
+
+void Hud::Notify(const std::string& message)
+{
+	m_Notice = message;
+	m_NoticeTimer = kNoticeTime;
+}
+
+void Hud::Tick(float deltaTime)
+{
+	if (m_NoticeTimer > 0.f)
+	{
+		m_NoticeTimer -= deltaTime;
+	}
+}
+
+void Hud::DrawNotice(TextRenderer* text, float top)
+{
+	if (m_NoticeTimer <= 0.f)
+	{
+		return;
+	}
+
+	float alpha = (m_NoticeTimer < kNoticeFade) ? m_NoticeTimer / kNoticeFade : 1.f;
+	text->Draw(TextRenderer::Face::Body, m_Notice.c_str(), 0.f, top - kNoticeDrop,
+		Palette::kUiBone, alpha, TextRenderer::Align::Center);
 }
 
 void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
@@ -158,7 +194,7 @@ void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float cent
 	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth, kNeedleHeight, r, g, b, 1.f);
 }
 
-void Hud::DrawHealth(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
+void Hud::DrawHealth(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float left, float centerY)
 {
 	float centerX = left + kHealthWidth / 2.f;
 	float fraction = Clamp01(status.health / status.maxHealth);
@@ -180,6 +216,11 @@ void Hud::DrawHealth(Renderer* renderer, const PlayerStatus& status, float left,
 	{
 		renderer->DrawSolidRect(left + fillWidth / 2.f, centerY, fillWidth, kHealthHeight, r, g, b, 1.f);
 	}
+
+	char numbers[32];
+	snprintf(numbers, sizeof(numbers), "%d / %d", (int)ceilf(status.health), (int)status.maxHealth);
+	text->Draw(TextRenderer::Face::Small, numbers, centerX, centerY - kSmallTextDrop,
+		Palette::kUiBone, 0.95f, TextRenderer::Align::Center);
 }
 
 void Hud::DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
@@ -221,18 +262,18 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 	}
 }
 
-void Hud::DrawSkills(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
+void Hud::DrawSkills(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float left, float centerY)
 {
 	float r, g, b;
 	AlignmentColor::Core(FormAlignment(status.form), r, g, b);
 
 	float x = left + kSkillSize / 2.f;
-	DrawSkillSlot(renderer, status.SkillCooldown(status.form), false, x, centerY, r, g, b);
-	DrawSkillSlot(renderer, status.SpecialCooldown(status.form), true, x + kSkillSpacing, centerY, r, g, b);
+	DrawSkillSlot(renderer, text, status.SkillCooldown(status.form), false, "E", x, centerY, r, g, b);
+	DrawSkillSlot(renderer, text, status.SpecialCooldown(status.form), true, "Q", x + kSkillSpacing, centerY, r, g, b);
 }
 
-void Hud::DrawSkillSlot(Renderer* renderer, const Cooldown& cooldown, bool diamond,
-	float centerX, float centerY, float r, float g, float b)
+void Hud::DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond,
+	const char* key, float centerX, float centerY, float r, float g, float b)
 {
 	float size = diamond ? kSkillSize * 1.3f : kSkillSize;
 	float half = size / 2.f;
@@ -262,4 +303,17 @@ void Hud::DrawSkillSlot(Renderer* renderer, const Cooldown& cooldown, bool diamo
 		renderer->DrawSolidRect(centerX, centerY, size, size, r * shade, g * shade, b * shade, 1.f);
 	}
 	renderer->ClearClip();
+
+	// Its key while ready; while recharging, the seconds left.
+	if (cooldown.Ready())
+	{
+		text->Draw(TextRenderer::Face::Small, key, centerX, centerY - kSmallTextDrop,
+			Palette::kUiInk, 1.f, TextRenderer::Align::Center, 0.f, false);
+		return;
+	}
+
+	char seconds[8];
+	snprintf(seconds, sizeof(seconds), "%d", (int)ceilf(cooldown.remaining));
+	text->Draw(TextRenderer::Face::Small, seconds, centerX, centerY - kSmallTextDrop,
+		Palette::kUiBone, 0.95f, TextRenderer::Align::Center);
 }

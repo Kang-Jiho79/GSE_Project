@@ -102,6 +102,12 @@
     <ClInclude Include="PostProcess.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Impact.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -150,6 +156,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="PostProcess.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Impact.cpp">
@@ -239,6 +251,12 @@
       <Filter>소스 파일\Shaders</Filter>
     </None>
     <None Include="Shaders\SolidRect.vs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Text.vs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Text.fs">
       <Filter>소스 파일\Shaders</Filter>
     </None>
     <None Include="Shaders\Fullscreen.vs">
