@@ -4,6 +4,8 @@
 #include "PlayerStatus.h"
 #include "BurstActor.h"
 #include "BeamActor.h"
+#include "SparkActor.h"
+#include "Impact.h"
 #include "SceneGraph.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
@@ -23,6 +25,11 @@ namespace
 	const float kSlashInner = 0.4f;   // tiles
 	const float kSlashBlade = 0.6f;   // where the bright outer band starts, 0..1 across the trail
 	const float kSlashLift = 12.f;    // pixels above the ground, about waist height
+
+	// The spray as the form turns over to dark.
+	const int kSwapSparks = 14;
+	const float kSwapSparkSpeed = 220.f;
+	const float kSwapSparkLift = 16.f;
 
 	// The spin: two blades sweeping round him inside a faint circle of reach.
 	const float kSpinTurnRate = 14.f;      // radians per second
@@ -73,6 +80,10 @@ void DarkFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 		float landed = Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
 			Tuning::DarkForm::kSpinRadius, Combat::SpinDamage(*ctx.status), 0.f);
 		ctx.status->Heal(Combat::Lifesteal(landed, Tuning::DarkForm::kSpinLifestealScale));
+		if (landed > 0.f)
+		{
+			ctx.impact->Shake(Tuning::Feel::kLightShake);
+		}
 		m_SpinTickTimer += Tuning::DarkForm::kSpinInterval;
 	}
 
@@ -107,6 +118,12 @@ void DarkFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 		Combat::SlashDamage(*ctx.status, m_ComboStep));
 	ctx.status->Heal(Combat::Lifesteal(landed));
 
+	if (landed > 0.f && m_ComboStep == Tuning::DarkForm::kComboLength - 1)
+	{
+		ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+		ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+	}
+
 	m_SlashStep = m_ComboStep;
 	m_SlashTimer = kSlashShowTime;
 	m_SlashDirCol = dirCol;
@@ -137,6 +154,11 @@ void DarkFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
 		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage(*ctx.status), false);
 	ctx.status->Heal(Combat::Lifesteal(landed));
+	if (landed > 0.f)
+	{
+		ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+		ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+	}
 
 	std::unique_ptr<BeamActor> streak(new BeamActor(Alignment::Dark, dirCol, dirRow, Tuning::DarkForm::kDashDistance));
 	streak->SetLocalPosition(player.WorldX(), player.WorldY());
@@ -164,8 +186,14 @@ void DarkFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 void DarkFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
 	// Not a blow in reach, so it feeds no lifesteal.
-	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
+	float landed = Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
 		Tuning::SwapSkill::kDarkBurstRadius, Combat::DarkBurstDamage(*ctx.status), -Tuning::SwapSkill::kDarkBurstPull);
+	if (landed > 0.f)
+	{
+		ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+	}
+	SparkActor::Burst(*ctx.graph, player.WorldX(), player.WorldY(), SparkActor::Style::Dark,
+		kSwapSparks, kSwapSparkSpeed, kSwapSparkLift);
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Dark, Tuning::SwapSkill::kDarkBurstRadius, true));
 	burst->SetLocalPosition(player.WorldX(), player.WorldY());

@@ -34,6 +34,21 @@ public:
 	void SetAtmosphere(float lightRadius, float fogStart, float fogEnd,
 		float fogR, float fogG, float fogB);
 
+	// Everything pushed from now on glows under bloom by this much, 0..1. For
+	// things that are light itself - a bolt's core, a strike. Reset to 0 after
+	// every actor draws, so one that forgets cannot leave the world glowing.
+	void SetGlow(float glow);
+	// Everything pushed from now on is part of a figure - a body, to be
+	// outlined - until set back. Shadows, glows and effects stay out of it.
+	// Reset after every actor draws, like the glow.
+	void SetFigure(bool figure);
+	// Everything pushed from now on is washed toward white by this much,
+	// 0..1 - the flash of something just struck.
+	void SetFlash(float flash);
+	// Back to plain: no glow, not a figure, no flash. Done after every actor
+	// draws, so one that forgets cannot leak its state into the next.
+	void ResetMaterial();
+
 	void AddQuad(float depth, float x, float y, float edgeAX, float edgeAY, float edgeBX, float edgeBY,
 		float r, float g, float b, float a);
 	// Four corners in screen pixels, wound bottom-left, top-left, top-right,
@@ -99,6 +114,7 @@ public:
 private:
 	// Returns the colour after light falloff and fog at that screen point.
 	void Weather(float x, float y, float& r, float& g, float& b) const;
+	void ApplyFlash(float& r, float& g, float& b) const;
 
 	float m_LightRadius = 0.f;
 	float m_FogStart = 0.f;
@@ -106,6 +122,10 @@ private:
 	float m_FogR = 0.f;
 	float m_FogG = 0.f;
 	float m_FogB = 0.f;
+
+	float m_Glow = 0.f;
+	bool m_Figure = false;
+	float m_Flash = 0.f;
 
 	struct Quad
 	{
@@ -116,6 +136,8 @@ private:
 		float corners[8];
 		bool useCorners;
 		float r, g, b, a;
+		float glow;
+		bool figure;
 	};
 
 	// Kept across frames so collecting does not reallocate every time.

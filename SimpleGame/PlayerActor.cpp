@@ -4,6 +4,8 @@
 #include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
+#include "SparkActor.h"
+#include "SceneGraph.h"
 #include <cmath>
 
 namespace
@@ -16,6 +18,10 @@ namespace
 	// pitches his upper body this many pixels toward where he is going.
 	const float kRollSquash = 0.45f;
 	const float kRollLean = 7.f;
+	// A puff of dust kicked up as the roll starts.
+	const int kRollDust = 8;
+	const float kRollDustSpeed = 60.f;
+	const float kRollDustLift = 2.f;
 
 	// Dashing: pitched forward this far, a little crouched.
 	const float kLungeLean = 9.f;
@@ -261,6 +267,9 @@ void PlayerActor::StartDodge(const ActorContext& ctx)
 		WorldGrid::ScreenToGroundDirection(m_Facing, 0.f, m_DodgeDirCol, m_DodgeDirRow);
 	}
 
+	SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkActor::Style::Dust,
+		kRollDust, kRollDustSpeed, kRollDustLift);
+
 	m_DodgeTimer = Tuning::Dodge::kDuration;
 	m_DodgeCooldown = Tuning::Dodge::kCooldown;
 	ctx.status->GrantInvuln(Tuning::Dodge::kInvulnDuration);
@@ -327,6 +336,9 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		ctx.status->dark / ctx.status->capacity * glowStrength);
 
 	out.AddShadow(depth - 0.01f, x, groundY, 26.f, 13.f);
+
+	// Everything from here to the effects is his body.
+	out.SetFigure(true);
 
 	// Walking: legs scissor, the trailing foot lifts, and the body bobs with
 	// each stride. Standing: only a slow breath.
@@ -471,6 +483,7 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.AddRect(depth + 0.05f, eyeX - 2.f, eyeY, 1.6f, 1.8f, 0.10f, 0.09f, 0.11f, 1.f);
 	out.AddRect(depth + 0.05f, eyeX + 2.f, eyeY, 1.6f, 1.8f, 0.10f, 0.09f, 0.11f, 1.f);
 
+	out.SetFigure(false);
 	m_LightMoves.Draw(out, *this, x, groundY);
 	m_DarkMoves.Draw(out, *this, x, groundY);
 }

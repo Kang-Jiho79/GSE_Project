@@ -25,6 +25,11 @@ namespace InputMap
 	const int kRunKeyLeft = GLUT_KEY_SHIFT_L;
 	const int kRunKeyRight = GLUT_KEY_SHIFT_R;
 
+	// Debug: bloom and grading on and off, to compare and to measure the cost.
+	const int kTogglePostProcess = GLUT_KEY_F1;
+	const int kToggleOutline = GLUT_KEY_F2;
+	const int kToggleEffects = GLUT_KEY_F3;
+
 	const int kAttackButton = GLUT_LEFT_BUTTON;
 	const int kDodgeButton = GLUT_RIGHT_BUTTON;
 }

@@ -260,6 +260,21 @@ namespace Tuning
 		const float kChargeCooldown = 5.f;
 	}
 
+	// How hard a blow is felt through the screen.
+	namespace Feel
+	{
+		// Struck: the world catches for a moment and the screen jolts.
+		const float kHurtStop = 0.06f;
+		const float kHurtShake = 6.f;
+		// A heavy blow of his landing - the third cut, a dash, a strike.
+		const float kHeavyStop = 0.07f;
+		const float kHeavyShake = 4.f;
+		// Blows that land often, kept to a tremor.
+		const float kLightShake = 1.5f;
+		// Lightning hitting the ground, whether or not it catches anything.
+		const float kStrikeShake = 7.f;
+	}
+
 	namespace Power
 	{
 		// Every attack of a power grows with the lifetime total of that power:

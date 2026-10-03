@@ -2,12 +2,36 @@
 #include "DrawList.h"
 #include "Renderer.h"
 #include "WorldGrid.h"
+#include "Palette.h"
 #include <algorithm>
 #include <cmath>
 
 void DrawList::Clear()
 {
 	m_Quads.clear();
+	ResetMaterial();
+}
+
+void DrawList::SetGlow(float glow)
+{
+	m_Glow = glow;
+}
+
+void DrawList::SetFigure(bool figure)
+{
+	m_Figure = figure;
+}
+
+void DrawList::SetFlash(float flash)
+{
+	m_Flash = flash;
+}
+
+void DrawList::ResetMaterial()
+{
+	m_Glow = 0.f;
+	m_Figure = false;
+	m_Flash = 0.f;
 }
 
 void DrawList::Sort()
@@ -26,6 +50,8 @@ void DrawList::Submit(Renderer* renderer)
 	for (size_t i = 0; i < m_Quads.size(); i++)
 	{
 		const Quad& quad = m_Quads[i];
+		renderer->SetGlow(quad.glow);
+		renderer->SetFigure(quad.figure);
 		if (quad.useCorners)
 		{
 			renderer->DrawSolidCorners(quad.corners, quad.r, quad.g, quad.b, quad.a);
@@ -36,6 +62,9 @@ void DrawList::Submit(Renderer* renderer)
 				quad.r, quad.g, quad.b, quad.a);
 		}
 	}
+
+	renderer->SetGlow(0.f);
+	renderer->SetFigure(false);
 }
 
 size_t DrawList::Count() const
@@ -97,10 +126,18 @@ void DrawList::Weather(float x, float y, float& r, float& g, float& b) const
 	b += (m_FogB - b) * fog;
 }
 
+void DrawList::ApplyFlash(float& r, float& g, float& b) const
+{
+	r += (1.f - r) * m_Flash;
+	g += (1.f - g) * m_Flash;
+	b += (1.f - b) * m_Flash;
+}
+
 void DrawList::AddQuad(float depth, float x, float y, float edgeAX, float edgeAY, float edgeBX, float edgeBY,
 	float r, float g, float b, float a)
 {
 	Weather(x, y, r, g, b);
+	ApplyFlash(r, g, b);
 
 	Quad quad;
 	quad.depth = depth;
@@ -116,6 +153,8 @@ void DrawList::AddQuad(float depth, float x, float y, float edgeAX, float edgeAY
 	quad.a = a;
 	quad.corners[0] = 0.f;
 	quad.useCorners = false;
+	quad.glow = m_Glow;
+	quad.figure = m_Figure;
 	m_Quads.push_back(quad);
 }
 
@@ -125,6 +164,7 @@ void DrawList::AddCorners(float depth, const float corners[8], float r, float g,
 	float centerX = (corners[0] + corners[2] + corners[4] + corners[6]) / 4.f;
 	float centerY = (corners[1] + corners[3] + corners[5] + corners[7]) / 4.f;
 	Weather(centerX, centerY, r, g, b);
+	ApplyFlash(r, g, b);
 
 	Quad quad;
 	quad.depth = depth;
@@ -137,6 +177,8 @@ void DrawList::AddCorners(float depth, const float corners[8], float r, float g,
 		quad.corners[i] = corners[i];
 	}
 	quad.useCorners = true;
+	quad.glow = m_Glow;
+	quad.figure = m_Figure;
 	m_Quads.push_back(quad);
 }
 
@@ -353,7 +395,7 @@ void DrawList::AddGroundStrip(float worldX, float worldY, float screenX, float s
 
 void DrawList::AddShadow(float depth, float x, float baseY, float width, float height)
 {
-	AddDiamond(depth, x, baseY, width, height, 0.085f, 0.08f, 0.10f, 1.f);
+	AddDiamond(depth, x, baseY, width, height, Palette::kShadow.r, Palette::kShadow.g, Palette::kShadow.b, 1.f);
 }
 
 void DrawList::AddGlow(float depth, float x, float y, float radius, float r, float g, float b, float strength)

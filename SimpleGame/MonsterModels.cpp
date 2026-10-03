@@ -2,25 +2,25 @@
 #include "MonsterModels.h"
 #include "DrawList.h"
 #include "Alignment.h"
+#include "Palette.h"
 #include <cmath>
 
 namespace
 {
 	const float kDegToRad = 3.14159265f / 180.f;
 
-	// Gray armour, the light side's a shade paler than the dark's.
-	const float kLightArmor = 0.31f;
-	const float kDarkArmor = 0.23f;
-	const float kSteel = 0.52f;
+	const float kLightArmor = Palette::kErodedLight;
+	const float kDarkArmor = Palette::kErodedDark;
+	const float kSteel = Palette::kErodedSteel;
 
 	// What is left of a power in them: faded and dimmed, but still telling.
 	void Remnant(Alignment alignment, float& r, float& g, float& b)
 	{
 		AlignmentColor::Core(alignment, r, g, b);
 		float gray = (r + g + b) / 3.f;
-		r = (r + (gray - r) * 0.45f) * 0.75f;
-		g = (g + (gray - g) * 0.45f) * 0.75f;
-		b = (b + (gray - b) * 0.45f) * 0.75f;
+		r = (r + (gray - r) * Palette::kRemnantWash) * Palette::kRemnantDim;
+		g = (g + (gray - g) * Palette::kRemnantWash) * Palette::kRemnantDim;
+		b = (b + (gray - b) * Palette::kRemnantWash) * Palette::kRemnantDim;
 	}
 
 	float Lerp(float from, float to, float t)
@@ -85,6 +85,7 @@ void MonsterModels::DrawLightKnight(DrawList& out, const Pose& pose)
 	Remnant(Alignment::Light, rr, rg, rb);
 
 	out.AddShadow(d, x, pose.groundY, 34.f, 17.f);
+	out.SetFigure(true);
 
 	// Straight legs, planted square.
 	const float kLegHeight = 14.f;
@@ -117,9 +118,14 @@ void MonsterModels::DrawLightKnight(DrawList& out, const Pose& pose)
 		0.94f, 0.f, 0.f, kLightArmor * 1.1f, kLightArmor * 1.1f, kLightArmor * 1.1f);
 	out.AddRect(d + 0.04f, headX + f * 3.5f, headBase + 6.f, 5.f, 1.4f, rr, rg, rb, 1.f);
 
-	// The halo it still wears: a flat ring floating over the helm.
+	// The halo it still wears: a flat ring floating over the helm, the last
+	// of its light still faintly shining.
+	out.SetFigure(false);
+	out.SetGlow(0.5f);
 	out.AddGroundArc(pose.worldX, pose.worldY, headX, headBase + 16.f, 0.30f, 0.38f,
 		0.f, 6.2831853f, 16, rr, rg, rb, 0.55f);
+	out.SetGlow(0.f);
+	out.SetFigure(true);
 
 	// The sword, in the far hand: hanging at rest, raised high and back while
 	// it gathers, brought down forward as the blow lands.
@@ -166,6 +172,7 @@ void MonsterModels::DrawDarkKnight(DrawList& out, const Pose& pose)
 	Remnant(Alignment::Dark, rr, rg, rb);
 
 	out.AddShadow(d, x, pose.groundY, 36.f, 18.f);
+	out.SetFigure(true);
 
 	// Short legs set wide, knees pushed forward into a crouch.
 	const float kLegHeight = 10.f;
@@ -237,11 +244,12 @@ void MonsterModels::DrawLightMage(DrawList& out, const Pose& pose)
 	float bob = pose.moving ? fabsf(sinf(pose.gait)) * 1.f : sinf(pose.time * 1.6f) * 0.5f;
 	float lean = (pose.windup * 1.5f + pose.strike * 2.f) * f;
 
-	const float kRobe = 0.34f;
+	const float kRobe = Palette::kErodedRobe;
 	float rr, rg, rb;
 	Remnant(Alignment::Light, rr, rg, rb);
 
 	out.AddShadow(d, x, pose.groundY, 26.f, 13.f);
+	out.SetFigure(true);
 
 	// A long robe, wide at the hem, rising narrow to the chest.
 	const float kRobeHeight = 24.f;
@@ -279,9 +287,13 @@ void MonsterModels::DrawLightMage(DrawList& out, const Pose& pose)
 	float charge = pose.windup + pose.strike;
 	float glowR, glowG, glowB;
 	AlignmentColor::Glow(Alignment::Light, glowR, glowG, glowB);
+	out.SetFigure(false);
 	out.AddGlow(d + 0.045f, tipX, tipY + 3.f, 10.f + 14.f * charge, glowR, glowG, glowB,
 		0.3f + 0.6f * (charge > 1.f ? 1.f : charge));
+	out.SetFigure(true);
+	out.SetGlow(0.4f + 0.6f * (charge > 1.f ? 1.f : charge));
 	out.AddDiamond(d + 0.05f, tipX, tipY + 3.f, 7.f, 9.f, rr, rg, rb, 1.f);
+	out.SetGlow(0.f);
 }
 
 void MonsterModels::DrawDarkMage(DrawList& out, const Pose& pose)
@@ -301,6 +313,7 @@ void MonsterModels::DrawDarkMage(DrawList& out, const Pose& pose)
 
 	// A smaller, fainter shadow, since it is not standing on it.
 	out.AddShadow(d, x, pose.groundY, 22.f, 11.f);
+	out.SetFigure(true);
 
 	// A ragged hem: strips hanging below the cloak, narrowing to points.
 	for (int strip = -1; strip <= 1; strip++)
@@ -340,7 +353,9 @@ void MonsterModels::DrawDarkMage(DrawList& out, const Pose& pose)
 	float orbY = handY + 5.f;
 	float glowR, glowG, glowB;
 	AlignmentColor::Glow(Alignment::Dark, glowR, glowG, glowB);
+	out.SetFigure(false);
 	out.AddGlow(d + 0.045f, handX, orbY, 10.f + 16.f * charge, glowR, glowG, glowB, 0.4f + 0.6f * charge);
+	out.SetFigure(true);
 	float size = 4.f + 8.f * charge;
 	out.AddDiamond(d + 0.05f, handX, orbY, size, size * 0.75f, rr, rg, rb, 1.f);
 }

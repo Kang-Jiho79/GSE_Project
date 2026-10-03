@@ -104,6 +104,7 @@ void Actor::DrawTree(DrawList& out, const ActorContext& ctx, float parentWorldX,
 	m_WorldY = parentWorldY + m_LocalY;
 
 	OnDraw(out, ctx);
+	out.ResetMaterial();
 
 	for (size_t i = 0; i < m_Children.size(); i++)
 	{

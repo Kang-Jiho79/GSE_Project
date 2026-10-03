@@ -2,6 +2,7 @@
 
 #include "SceneGraph.h"
 #include "DrawList.h"
+#include "Impact.h"
 
 class Renderer;
 class PlayerActor;
@@ -21,6 +22,10 @@ public:
 	void Render(Renderer* renderer, PlayerStatus& status);
 	void RenderMinimap(Renderer* renderer);
 
+	// Sprays, hit stops and screen shake, together.
+	void SetEffectsEnabled(bool enabled);
+	bool AreEffectsEnabled() const;
+
 private:
 	void BuildLevel();
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
@@ -35,6 +40,7 @@ private:
 
 	SceneGraph m_Graph;
 	DrawList m_DrawList;
+	Impact m_Impact;
 
 	// Owned by the graph; kept only because the camera and the monsters both
 	// need to know where he is.

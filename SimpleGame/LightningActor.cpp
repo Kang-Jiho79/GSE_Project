@@ -5,6 +5,8 @@
 #include "WorldGrid.h"
 #include "Alignment.h"
 #include "Combat.h"
+#include "Impact.h"
+#include "Tuning.h"
 #include "Random.h"
 #include <cmath>
 
@@ -40,7 +42,14 @@ void LightningActor::OnUpdate(const ActorContext& ctx)
 	{
 		if (m_Target == Target::Monsters)
 		{
-			Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), m_Radius, m_Damage, 0.f);
+			// His own lightning: the ground shakes either way, and the world
+			// catches if it struck anything.
+			float landed = Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), m_Radius, m_Damage, 0.f);
+			ctx.impact->Shake(Tuning::Feel::kStrikeShake);
+			if (landed > 0.f)
+			{
+				ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+			}
 		}
 		else
 		{
@@ -86,13 +95,7 @@ void LightningActor::DrawWarning(DrawList& out, float x, float groundY) const
 	// Called on the player, the mark is washed toward ash, so it reads as a
 	// threat rather than his own.
 	float r, g, b;
-	AlignmentColor::Core(Alignment::Light, r, g, b);
-	if (m_Target == Target::Player)
-	{
-		r += (0.75f - r) * 0.6f;
-		g += (0.73f - g) * 0.6f;
-		b += (0.72f - b) * 0.6f;
-	}
+	AlignmentColor::Warning(Alignment::Light, (m_Target == Target::Player) ? Palette::kWarningWash : 0.f, r, g, b);
 
 	// The edge of where it will land, pulsing faster as it nears.
 	float pulse = 0.45f + 0.25f * sinf(progress * progress * 40.f);
@@ -120,6 +123,7 @@ void LightningActor::DrawStrike(DrawList& out, float x, float groundY) const
 		r, g, b, fade);
 
 	AlignmentColor::Core(Alignment::Light, r, g, b);
+	out.SetGlow(1.f);
 	out.AddGroundArc(WorldX(), WorldY(), x, groundY + kLift, 0.f, m_Radius,
 		0.f, 6.2831853f, kRingSegments, r, g, b, 0.35f * fade);
 

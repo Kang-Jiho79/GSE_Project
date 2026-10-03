@@ -76,6 +76,9 @@ void BeamActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float coreG = g + (1.f - g) * 0.7f;
 	float coreB = b + (1.f - b) * 0.7f;
 
+	// The light's beam blazes; the dark's dash trail does not.
+	out.SetGlow(m_Alignment == Alignment::Light ? 1.f : 0.f);
+
 	int pieces = (int)ceilf((m_Length - kStart) / kPieceLength);
 	for (int i = 0; i < pieces; i++)
 	{

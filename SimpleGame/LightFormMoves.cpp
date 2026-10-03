@@ -5,12 +5,22 @@
 #include "BurstActor.h"
 #include "BeamActor.h"
 #include "LightningActor.h"
+#include "SparkActor.h"
+#include "Impact.h"
 #include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Combat.h"
 #include "SceneGraph.h"
 #include "Tuning.h"
 #include <cmath>
+
+namespace
+{
+	// The spray as the form turns over to light.
+	const int kSwapSparks = 14;
+	const float kSwapSparkSpeed = 220.f;
+	const float kSwapSparkLift = 16.f;
+}
 
 void LightFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 {
@@ -55,8 +65,12 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 		return;
 	}
 
-	Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
+	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
 		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage(*ctx.status), true);
+	if (landed > 0.f)
+	{
+		ctx.impact->Shake(Tuning::Feel::kLightShake);
+	}
 
 	std::unique_ptr<BeamActor> beam(new BeamActor(Alignment::Light, dirCol, dirRow, Tuning::LightForm::kBeamLength));
 	beam->SetLocalPosition(player.WorldX(), player.WorldY());
@@ -104,6 +118,8 @@ void LightFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
 	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
 		Tuning::SwapSkill::kLightBurstRadius, 0.f, Tuning::SwapSkill::kLightBurstPush);
+	SparkActor::Burst(*ctx.graph, player.WorldX(), player.WorldY(), SparkActor::Style::Light,
+		kSwapSparks, kSwapSparkSpeed, kSwapSparkLift);
 	ctx.status->GrantInvuln(Tuning::SwapSkill::kLightBurstInvuln);
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Light, Tuning::SwapSkill::kLightBurstRadius, false));

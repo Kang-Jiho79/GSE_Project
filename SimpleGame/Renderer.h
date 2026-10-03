@@ -35,6 +35,13 @@ public:
 	// made entirely of right angles.
 	void DrawSolidCorners(const float corners[8], float r, float g, float b, float a);
 
+	// How much everything queued from now on glows under bloom, 0..1. Sticks
+	// until changed; the HUD leaves it at 0.
+	void SetGlow(float glow);
+	// Whether everything queued from now on is part of a figure - someone
+	// standing in the world, to be outlined. Sticks until changed.
+	void SetFigure(bool figure);
+
 	// Confines drawing to a rectangle so a shape can be drawn partially filled.
 	// Both flush whatever is queued first, since a clip is a state change.
 	void SetClip(float left, float bottom, float width, float height);
@@ -57,6 +64,7 @@ private:
 		float cornerLo[4]; // bottom-left, bottom-right
 		float cornerHi[4]; // top-left, top-right
 		float color[4];
+		float material[2]; // glow, figure
 	};
 
 	void Initialize(int windowSizeX, int windowSizeY);
@@ -82,6 +90,10 @@ private:
 	GLint m_AttribCornerLo = -1;
 	GLint m_AttribCornerHi = -1;
 	GLint m_AttribColor = -1;
+	GLint m_AttribMaterial = -1;
+
+	float m_Glow = 0.f;
+	float m_Figure = 0.f;
 
 	std::vector<Instance> m_Pending;
 

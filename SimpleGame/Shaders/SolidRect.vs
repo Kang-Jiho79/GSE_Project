@@ -9,8 +9,11 @@ in vec3 a_Position;
 in vec4 a_CornerLo; // xy = bottom-left, zw = bottom-right
 in vec4 a_CornerHi; // xy = top-left,    zw = top-right
 in vec4 a_Color;
+// x = how much it glows, y = whether it belongs to a figure (for outlines).
+in vec2 a_Material;
 
 out vec4 v_Color;
+out vec2 v_Material;
 
 void main()
 {
@@ -21,4 +24,5 @@ void main()
 
 	gl_Position = vec4(mix(bottom, top, weight.y), 0.0, 1.0);
 	v_Color = a_Color;
+	v_Material = a_Material;
 }

@@ -20,11 +20,14 @@ but WITHOUT ANY WARRANTY.
 #include "PlayerStatus.h"
 #include "Profiler.h"
 #include "InputMap.h"
+#include "Palette.h"
+#include "PostProcess.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
 
 Renderer* g_Renderer = NULL;
+PostProcess* g_PostProcess = NULL;
 Scene g_Scene;
 Hud g_Hud;
 PlayerStatus g_Status;
@@ -53,10 +56,15 @@ void RenderScene(void)
 {
 	g_Renderer->ResetCounts();
 
-	glClearColor(0.045f, 0.043f, 0.055f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	g_PostProcess->BeginScene(Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b);
 	g_Scene.Render(g_Renderer, g_Status);
+
+	// The world has to reach the GPU before it can be post-processed.
+	g_Renderer->EndFrame();
+	{
+		ProfileScope scope("post");
+		g_PostProcess->EndScene();
+	}
 
 	{
 		ProfileScope scope("hud");
@@ -64,8 +72,8 @@ void RenderScene(void)
 		g_Scene.RenderMinimap(g_Renderer);
 	}
 
-	// present: the final flush (upload + instanced draw of the queued world)
-	// plus the buffer swap. With vsync on, the swap will dominate this number.
+	// present: the final flush (upload + instanced draw of the HUD) plus the
+	// buffer swap. With vsync on, the swap will dominate this number.
 	{
 		ProfileScope scope("present");
 		g_Renderer->EndFrame();
@@ -235,6 +243,24 @@ void SpecialKeyInput(int key, int x, int y)
 {
 	switch (key)
 	{
+	case InputMap::kTogglePostProcess:
+	{
+		g_PostProcess->SetEnabled(!g_PostProcess->IsEnabled());
+		std::cout << "Post-processing " << (g_PostProcess->IsEnabled() ? "on" : "off") << "\n";
+		break;
+	}
+	case InputMap::kToggleOutline:
+	{
+		g_PostProcess->SetOutlineEnabled(!g_PostProcess->IsOutlineEnabled());
+		std::cout << "Outlines " << (g_PostProcess->IsOutlineEnabled() ? "on" : "off") << "\n";
+		break;
+	}
+	case InputMap::kToggleEffects:
+	{
+		g_Scene.SetEffectsEnabled(!g_Scene.AreEffectsEnabled());
+		std::cout << "Sprays, hit stop and shake " << (g_Scene.AreEffectsEnabled() ? "on" : "off") << "\n";
+		break;
+	}
 	case InputMap::kRunKeyLeft:
 	case InputMap::kRunKeyRight:
 	{
@@ -284,9 +310,12 @@ int main(int argc, char **argv)
 		std::cout << "Renderer could not be initialized..\n";
 	}
 
+	g_PostProcess = new PostProcess();
+	g_PostProcess->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
+
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   Esc: quit\n";
+	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";
 
 	glutDisplayFunc(RenderScene);
 	glutIdleFunc(Idle);
@@ -303,6 +332,7 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
+	delete g_PostProcess;
 	delete g_Renderer;
 
 	return 0;

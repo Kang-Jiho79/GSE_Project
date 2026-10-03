@@ -15,14 +15,16 @@
 SimpleGame/
 ├─ SimpleGame.cpp          GLUT 진입점, 입력 처리, 메인 루프(Idle → Update → Render)
 ├─ 엔진/렌더링
-│  ├─ Renderer             인스턴싱 배치 렌더러 (프레임당 드로우콜 4~6회)
+│  ├─ Renderer             인스턴싱 배치 렌더러 (프레임당 드로우콜 4~6회), 쿼드마다 빛남·캐릭터 표시
+│  ├─ PostProcess          화면 밖 버퍼 → 블룸(빛 표시된 픽셀만) → 캐릭터 외곽선·림라이트 → 색보정
 │  ├─ Shader, MeshCache    셰이더 로드, VBO 캐시
-│  ├─ Shaders/SolidRect.*  꼭짓점 4개 기반 인스턴스 셰이더
+│  ├─ Shaders/             SolidRect(색 + 보조 버퍼), Fullscreen, BloomExtract, Blur, Composite
 │  └─ Profiler             단계별 ms, 드로우콜·쿼드 수 1초마다 로그
 ├─ 월드/씬
 │  ├─ Actor, SceneGraph    부모-자식 트리, 지연 생성/삭제, ForEach<T>
 │  ├─ Scene                레벨 구성, 안개 설정, 미니맵
-│  ├─ DrawList             깊이 정렬 큐 + 박스·테이퍼 박스·그림자·발광 도형, 안개
+│  ├─ DrawList             깊이 정렬 큐 + 박스·테이퍼 박스·바닥 고리/띠·그림자·발광 도형, 안개, 재질 상태(SetGlow/SetFigure/SetFlash)
+│  ├─ Impact               히트 스톱, 화면 흔들림
 │  └─ WorldGrid            아이소 좌표 변환, 노이즈 지형(4단 계단), 높이
 ├─ 액터
 │  ├─ PlayerActor          이동, 달리기, 구르기, 돌진(Lunge), 걷기 애니메이션, 폼 객체에 입력 전달
@@ -35,6 +37,7 @@ SimpleGame/
 │  ├─ BurstActor           교대 스킬 폭발 고리
 │  ├─ BeamActor            관통 광선 / 돌진 베기 궤적
 │  ├─ LightningActor       낙뢰 (범위 표시 후 피해, 대상: 몬스터 또는 플레이어)
+│  ├─ SparkActor           타격 불꽃, 폼 전환 불꽃, 구르기 먼지
 │  ├─ TerrainActor         보이는 범위의 지형만 그림
 │  └─ PropsActor           나무, 바위, 기둥, 벽, 탑, 집
 ├─ 전투
@@ -47,6 +50,7 @@ SimpleGame/
 │  ├─ Cooldown.h           남은 시간 + 전체 시간 (HUD 진행도 표시용)
 │  └─ Hud                  다이아몬드 게이지 + 균형 바늘, 체력바, 강화 표시, 폼·E·Q 쿨타임
 ├─ Tuning.h                게임 수치 전부
+├─ Palette.h               공용 색 (빛·어둠·잿빛, 경고색, HUD, 외곽선)
 ├─ InputMap.h              키 배치
 ├─ Form.h                  Form::Light / Form::Dark
 └─ Alignment.h, Random.h   소속 색상, 난수 유틸
@@ -230,7 +234,8 @@ SimpleGame/
 - 2단계: 교대 스킬(어둠 폭발 당김 / 빛 폭발 밀침+무적), 빛폼 E 관통 광선·Q 광역 낙뢰, 어둠폼 E 돌진 베기·Q 회전 베기, 어둠폼 피흡 9%(회전 베기 18%), HUD E·Q 쿨타임
 - 3단계: 누적치(`lightTotal`/`darkTotal`)와 균형도, HUD 균형 바늘, 경고(회색 연출)·잿빛 침식(체력 감소)·부활 시 균형 되돌리기, 스킬 위력 비례
 - 4단계: 적 4종(빛/어둠 기사·마법사) 모델과 패턴, 공격 준비 동작과 바닥 범위 표시, 빛의 기사 방패, 적 투사체·적 낙뢰·저주 장판, 몬스터 이동 타일/초로 통일
-- 디버그 키: C 피해 12, 1 빛 +5, 2 어둠 +5
+- 5단계: 색 팔레트, 블룸, 캐릭터 외곽선·림라이트, 색보정 기능(기본값은 중립, 지역별 값은 7단계), 타격 번쩍임·불꽃, 히트 스톱, 화면 흔들림. 효과음은 10단계로 미룸
+- 디버그 키: C 피해 12, 1 빛 +5, 2 어둠 +5, F1 후처리, F2 외곽선, F3 타격 효과
 
 **권장 구현 순서 (GDD 기준)**
 1. 폼 시스템 (빛폼/어둠폼, Space 전환, 전환 쿨타임) + 근접 공격 판정 + 구르기·달리기 + **플레이어 사망 처리**

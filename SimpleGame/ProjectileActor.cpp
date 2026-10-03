@@ -86,5 +86,6 @@ void ProjectileActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 	float coreR, coreG, coreB;
 	AlignmentColor::Core(m_Alignment, coreR, coreG, coreB);
+	out.SetGlow(1.f);
 	out.AddDiamond(depth, x, baseY, kMarkWidth, kMarkHeight, coreR, coreG, coreB, 1.f);
 }

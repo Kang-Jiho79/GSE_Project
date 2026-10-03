@@ -85,5 +85,7 @@ void ParticleActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float r, g, b;
 	AlignmentColor::Core(m_Alignment, r, g, b);
 
+	// Motes of light shine; motes of dark do not - dark gives off no light.
+	out.SetGlow(m_Alignment == Alignment::Light ? 1.f : 0.f);
 	out.AddDiamond(depth, x, baseY, kMarkWidth, kMarkHeight, r, g, b, 1.f);
 }

@@ -102,6 +102,11 @@ private:
 
 	float m_StrikeFlash = 0.f; // 1 as a blow lands, fading
 
+	// Struck: a white flash fading over a moment, and sparks thrown off on
+	// the next update, where it can reach the scene to spawn them.
+	float m_HitFlash = 0.f;
+	bool m_SparksPending = false;
+
 	float m_Health;
 
 	// Where it lives and wanders, in tiles.

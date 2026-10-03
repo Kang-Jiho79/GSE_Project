@@ -63,6 +63,7 @@ void Renderer::CacheShaderLocations()
 	m_AttribCornerLo = m_Shader.GetAttribLocation("a_CornerLo");
 	m_AttribCornerHi = m_Shader.GetAttribLocation("a_CornerHi");
 	m_AttribColor = m_Shader.GetAttribLocation("a_Color");
+	m_AttribMaterial = m_Shader.GetAttribLocation("a_Material");
 }
 
 void Renderer::CreateVertexArray()
@@ -95,6 +96,11 @@ void Renderer::CreateVertexArray()
 	glVertexAttribPointer(m_AttribColor, 4, GL_FLOAT, GL_FALSE, sizeof(Instance),
 		(const void*)offsetof(Instance, color));
 	glVertexAttribDivisor(m_AttribColor, 1);
+
+	glEnableVertexAttribArray(m_AttribMaterial);
+	glVertexAttribPointer(m_AttribMaterial, 2, GL_FLOAT, GL_FALSE, sizeof(Instance),
+		(const void*)offsetof(Instance, material));
+	glVertexAttribDivisor(m_AttribMaterial, 1);
 
 	glBindVertexArray(0);
 }
@@ -134,6 +140,16 @@ void Renderer::DrawSolidCorners(const float corners[8], float r, float g, float 
 	QueueCorners(corners, r, g, b, a);
 }
 
+void Renderer::SetGlow(float glow)
+{
+	m_Glow = glow;
+}
+
+void Renderer::SetFigure(bool figure)
+{
+	m_Figure = figure ? 1.f : 0.f;
+}
+
 void Renderer::QueueCorners(const float corners[8], float r, float g, float b, float a)
 {
 	float scaleX = 2.f / m_WindowSizeX;
@@ -152,6 +168,8 @@ void Renderer::QueueCorners(const float corners[8], float r, float g, float b, f
 	instance.color[1] = g;
 	instance.color[2] = b;
 	instance.color[3] = a;
+	instance.material[0] = m_Glow;
+	instance.material[1] = m_Figure;
 
 	m_Pending.push_back(instance);
 	m_QuadCount++;

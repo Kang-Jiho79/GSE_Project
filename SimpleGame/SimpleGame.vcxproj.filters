@@ -96,6 +96,18 @@
     <ClInclude Include="Tuning.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Palette.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PostProcess.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Impact.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SparkActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Form.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -135,6 +147,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Combat.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="PostProcess.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Impact.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SparkActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="LightFormMoves.cpp">
@@ -218,6 +239,18 @@
       <Filter>소스 파일\Shaders</Filter>
     </None>
     <None Include="Shaders\SolidRect.vs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Fullscreen.vs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\BloomExtract.fs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Blur.fs">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\Composite.fs">
       <Filter>소스 파일\Shaders</Filter>
     </None>
   </ItemGroup>

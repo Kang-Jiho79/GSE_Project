@@ -6,6 +6,7 @@
 #include "WorldGrid.h"
 #include "Random.h"
 #include "Tuning.h"
+#include "Palette.h"
 #include <cmath>
 
 #include "TerrainActor.h"
@@ -14,6 +15,7 @@
 #include "MonsterActor.h"
 #include "ProjectileActor.h"
 #include "ParticleActor.h"
+#include "SparkActor.h"
 
 namespace
 {
@@ -29,15 +31,9 @@ namespace
 	const float kLightRadius = 150.f;
 	const float kFogStart = 210.f;
 	const float kFogEnd = 620.f;
-	const float kFogR = 0.045f;
-	const float kFogG = 0.043f;
-	const float kFogB = 0.055f;
 
 	// A gray veil over the world: faint while he is warned, heavier and
 	// breathing once the gray is eating him.
-	const float kAshTintR = 0.42f;
-	const float kAshTintG = 0.42f;
-	const float kAshTintB = 0.44f;
 	const float kAshTintWarning = 0.07f;
 	const float kAshTintEroding = 0.10f;
 	const float kAshTintPulseRate = 6.f;
@@ -105,13 +101,14 @@ ActorContext Scene::MakeContext(float deltaTime, PlayerStatus& status)
 	// origin and a screen offset is already a world offset.
 	ctx.playerX = m_Player->WorldX();
 	ctx.playerY = m_Player->WorldY();
-	ctx.camX = ctx.playerX;
-	ctx.camY = ctx.playerY;
+	ctx.camX = ctx.playerX + m_Impact.OffsetX();
+	ctx.camY = ctx.playerY + m_Impact.OffsetY();
 
 	ctx.windowSizeX = m_WindowSizeX;
 	ctx.windowSizeY = m_WindowSizeY;
 	ctx.status = &status;
 	ctx.graph = &m_Graph;
+	ctx.impact = &m_Impact;
 
 	return ctx;
 }
@@ -120,7 +117,10 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 {
 	UpdateDeath(deltaTime, status);
 
-	ActorContext ctx = MakeContext(deltaTime, status);
+	// A hit stop holds the world still while real time - the death fade, the
+	// shake dying away - carries on.
+	float worldTime = m_Impact.Advance(deltaTime);
+	ActorContext ctx = MakeContext(worldTime, status);
 
 	// A fallen player gets no say until he is back on his feet; the rest of
 	// the world carries on around him.
@@ -135,6 +135,17 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	}
 
 	RecordPopulation();
+}
+
+void Scene::SetEffectsEnabled(bool enabled)
+{
+	m_Impact.SetEnabled(enabled);
+	SparkActor::SetEnabled(enabled);
+}
+
+bool Scene::AreEffectsEnabled() const
+{
+	return m_Impact.IsEnabled();
 }
 
 void Scene::UpdateDeath(float deltaTime, PlayerStatus& status)
@@ -189,7 +200,7 @@ void Scene::DrawDeathFade(Renderer* renderer) const
 	// The same near-black the world already dissolves into at its edges, so
 	// dying reads as the dark closing in rather than a screen going black.
 	renderer->DrawSolidRect(0.f, 0.f, (float)m_WindowSizeX, (float)m_WindowSizeY,
-		kFogR, kFogG, kFogB, alpha);
+		Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b, alpha);
 }
 
 void Scene::DrawErosionTint(Renderer* renderer, const PlayerStatus& status) const
@@ -206,7 +217,7 @@ void Scene::DrawErosionTint(Renderer* renderer, const PlayerStatus& status) cons
 	}
 
 	renderer->DrawSolidRect(0.f, 0.f, (float)m_WindowSizeX, (float)m_WindowSizeY,
-		kAshTintR, kAshTintG, kAshTintB, alpha);
+		Palette::kAshVeil.r, Palette::kAshVeil.g, Palette::kAshVeil.b, alpha);
 }
 
 void Scene::RecordPopulation()
@@ -243,7 +254,7 @@ void Scene::Render(Renderer* renderer, PlayerStatus& status)
 	{
 		ProfileScope scope("collect");
 		m_DrawList.Clear();
-		m_DrawList.SetAtmosphere(kLightRadius, kFogStart, kFogEnd, kFogR, kFogG, kFogB);
+		m_DrawList.SetAtmosphere(kLightRadius, kFogStart, kFogEnd, Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b);
 		m_Graph.Draw(m_DrawList, ctx);
 	}
 
@@ -276,8 +287,8 @@ void Scene::RenderMinimap(Renderer* renderer)
 
 	renderer->DrawSolidRect(centerX, centerY,
 		kMinimapSize + kMinimapBorder * 2.f, kMinimapSize + kMinimapBorder * 2.f,
-		0.32f, 0.31f, 0.34f, 1.f);
-	renderer->DrawSolidRect(centerX, centerY, kMinimapSize, kMinimapSize, 0.08f, 0.075f, 0.095f, 1.f);
+		Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, kMinimapSize, kMinimapSize, Palette::kMapWell.r, Palette::kMapWell.g, Palette::kMapWell.b, 1.f);
 
 	renderer->SetClip(centerX - kMinimapSize / 2.f, centerY - kMinimapSize / 2.f, kMinimapSize, kMinimapSize);
 
@@ -296,12 +307,12 @@ void Scene::RenderMinimap(Renderer* renderer)
 		float dotX = centerX + (col - playerCol) * pixelsPerTile;
 		float dotY = centerY - (row - playerRow) * pixelsPerTile;
 
-		renderer->DrawSolidRect(dotX, dotY, 5.f, 5.f, 0.74f, 0.22f, 0.20f, 1.f);
+		renderer->DrawSolidRect(dotX, dotY, 5.f, 5.f, Palette::kMapEnemy.r, Palette::kMapEnemy.g, Palette::kMapEnemy.b, 1.f);
 	});
 
 	renderer->ClearClip();
 
 	// The player is always exactly at the center and always on top.
-	renderer->DrawSolidRect(centerX, centerY, 8.f, 8.f, 0.30f, 0.30f, 0.34f, 1.f);
-	renderer->DrawSolidRect(centerX, centerY, 6.f, 6.f, 0.94f, 0.92f, 0.88f, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, 8.f, 8.f, Palette::kMapPlayerRim.r, Palette::kMapPlayerRim.g, Palette::kMapPlayerRim.b, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, 6.f, 6.f, Palette::kMapPlayer.r, Palette::kMapPlayer.g, Palette::kMapPlayer.b, 1.f);
 }

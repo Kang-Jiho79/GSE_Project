@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Hud.h"
 #include "Tuning.h"
+#include "Palette.h"
 #include <cmath>
 
 namespace
@@ -19,10 +20,8 @@ namespace
 	const float kNotchWidth = 2.f;
 	const float kNotchHeight = 6.f;
 
-	// The gray that creeps into the HUD as the balance goes.
-	const float kAshR = 0.62f;
-	const float kAshG = 0.62f;
-	const float kAshB = 0.64f;
+	// The gray that creeps into the HUD as the balance goes pulses at this rate
+	// once it is eating him.
 	const float kAshPulseRate = 6.f;
 
 	const float kPipWidth = 9.f;
@@ -43,9 +42,9 @@ namespace
 	// Mixes a colour toward the ash gray by amount (0..1).
 	void Ash(float amount, float& r, float& g, float& b)
 	{
-		r += (kAshR - r) * amount;
-		g += (kAshG - g) * amount;
-		b += (kAshB - b) * amount;
+		r += (Palette::kAsh.r - r) * amount;
+		g += (Palette::kAsh.g - g) * amount;
+		b += (Palette::kAsh.b - b) * amount;
 	}
 
 	float Clamp01(float value)
@@ -88,9 +87,9 @@ void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float cente
 
 	// The rim greys over with the warning, and pulses once the gray is
 	// actually eating him.
-	float rimR = 0.32f;
-	float rimG = 0.31f;
-	float rimB = 0.34f;
+	float rimR = Palette::kUiFrame.r;
+	float rimG = Palette::kUiFrame.g;
+	float rimB = Palette::kUiFrame.b;
 	float ash = status.WarningLevel();
 	if (status.IsEroding())
 	{
@@ -100,28 +99,26 @@ void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float cente
 
 	renderer->DrawSolidDiamond(centerX, centerY,
 		kVesselWidth + kVesselBorder * 2.f, kVesselHeight + kVesselBorder * 2.f, rimR, rimG, rimB, 1.f);
-	renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, 0.10f, 0.10f, 0.12f, 1.f);
+	renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 
 	// Each half is the whole diamond clipped to its side and to how far it has filled.
 	if (darkFraction > 0.f)
 	{
-		bool full = darkFraction >= 1.f;
+		const Palette::Color& fill = (darkFraction >= 1.f) ? Palette::kVesselDarkFull : Palette::kVesselDark;
 		renderer->SetClip(centerX - halfWidth, bottom, halfWidth, kVesselHeight * darkFraction);
-		renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight,
-			full ? 0.58f : 0.42f, full ? 0.40f : 0.28f, full ? 0.88f : 0.68f, 1.f);
+		renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, fill.r, fill.g, fill.b, 1.f);
 	}
 
 	if (lightFraction > 0.f)
 	{
-		bool full = lightFraction >= 1.f;
+		const Palette::Color& fill = (lightFraction >= 1.f) ? Palette::kVesselLightFull : Palette::kVesselLight;
 		renderer->SetClip(centerX, bottom, halfWidth, kVesselHeight * lightFraction);
-		renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight,
-			full ? 0.98f : 0.82f, full ? 0.80f : 0.62f, full ? 0.38f : 0.24f, 1.f);
+		renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, fill.r, fill.g, fill.b, 1.f);
 	}
 
 	renderer->ClearClip();
 
-	renderer->DrawSolidRect(centerX, centerY, 1.5f, kVesselHeight, 0.32f, 0.31f, 0.34f, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, 1.5f, kVesselHeight, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
 }
 
 void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
@@ -134,9 +131,9 @@ void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float cent
 	for (int side = -1; side <= 1; side += 2)
 	{
 		renderer->DrawSolidRect(centerX + side * notchX, centerY + notchY, kNotchWidth, kNotchHeight,
-			0.55f, 0.54f, 0.56f, 1.f);
+			Palette::kUiNotch.r, Palette::kUiNotch.g, Palette::kUiNotch.b, 1.f);
 		renderer->DrawSolidRect(centerX + side * notchX, centerY - notchY, kNotchWidth, kNotchHeight,
-			0.55f, 0.54f, 0.56f, 1.f);
+			Palette::kUiNotch.r, Palette::kUiNotch.g, Palette::kUiNotch.b, 1.f);
 	}
 
 	// Pinned to the tip once past the allowance, so it never leaves the vessel.
@@ -152,12 +149,12 @@ void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float cent
 	float needleX = centerX + ratio * halfWidth;
 
 	// White while he is safe, ash once he is warned.
-	float r = 0.92f;
-	float g = 0.90f;
-	float b = 0.86f;
+	float r = Palette::kUiBone.r;
+	float g = Palette::kUiBone.g;
+	float b = Palette::kUiBone.b;
 	Ash(status.WarningLevel(), r, g, b);
 
-	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth + 2.f, kNeedleHeight + 2.f, 0.06f, 0.06f, 0.07f, 1.f);
+	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth + 2.f, kNeedleHeight + 2.f, Palette::kUiInk.r, Palette::kUiInk.g, Palette::kUiInk.b, 1.f);
 	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth, kNeedleHeight, r, g, b, 1.f);
 }
 
@@ -167,13 +164,13 @@ void Hud::DrawHealth(Renderer* renderer, const PlayerStatus& status, float left,
 	float fraction = Clamp01(status.health / status.maxHealth);
 	float fillWidth = kHealthWidth * fraction;
 
-	renderer->DrawSolidRect(centerX, centerY, kHealthWidth + 6.f, kHealthHeight + 6.f, 0.32f, 0.31f, 0.34f, 1.f);
-	renderer->DrawSolidRect(centerX, centerY, kHealthWidth, kHealthHeight, 0.10f, 0.10f, 0.12f, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, kHealthWidth + 6.f, kHealthHeight + 6.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+	renderer->DrawSolidRect(centerX, centerY, kHealthWidth, kHealthHeight, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 
 	// Gray while erosion is what is draining it, so the cause is plain.
-	float r = 0.62f;
-	float g = 0.16f;
-	float b = 0.18f;
+	float r = Palette::kHealth.r;
+	float g = Palette::kHealth.g;
+	float b = Palette::kHealth.b;
 	if (status.IsEroding())
 	{
 		Ash(0.75f, r, g, b);
@@ -192,8 +189,8 @@ void Hud::DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float 
 		bool earned = i < status.upgrades;
 		float x = left + kPipWidth / 2.f + i * kPipSpacing;
 
-		renderer->DrawSolidDiamond(x, centerY, kPipWidth, kPipHeight,
-			earned ? 0.72f : 0.20f, earned ? 0.70f : 0.20f, earned ? 0.64f : 0.22f, 1.f);
+		const Palette::Color& pip = earned ? Palette::kPipEarned : Palette::kPipEmpty;
+		renderer->DrawSolidDiamond(x, centerY, kPipWidth, kPipHeight, pip.r, pip.g, pip.b, 1.f);
 	}
 }
 
@@ -203,7 +200,7 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 	AlignmentColor::Core(FormAlignment(status.form), r, g, b);
 
 	float markX = left + kFormMarkWidth / 2.f;
-	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth + 4.f, kFormMarkHeight + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
+	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth + 4.f, kFormMarkHeight + 4.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
 	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth, kFormMarkHeight, r, g, b, 1.f);
 
 	// Refills while the switch cools down; full means Space will work.
@@ -213,9 +210,9 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 	float shade = (ready >= 1.f) ? 1.f : 0.45f;
 
 	renderer->DrawSolidRect(barLeft + kFormBarWidth / 2.f, centerY,
-		kFormBarWidth + 4.f, kFormBarHeight + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
+		kFormBarWidth + 4.f, kFormBarHeight + 4.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
 	renderer->DrawSolidRect(barLeft + kFormBarWidth / 2.f, centerY,
-		kFormBarWidth, kFormBarHeight, 0.10f, 0.10f, 0.12f, 1.f);
+		kFormBarWidth, kFormBarHeight, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 
 	if (fillWidth > 0.f)
 	{
@@ -242,13 +239,13 @@ void Hud::DrawSkillSlot(Renderer* renderer, const Cooldown& cooldown, bool diamo
 
 	if (diamond)
 	{
-		renderer->DrawSolidDiamond(centerX, centerY, size + 6.f, size + 6.f, 0.32f, 0.31f, 0.34f, 1.f);
-		renderer->DrawSolidDiamond(centerX, centerY, size, size, 0.10f, 0.10f, 0.12f, 1.f);
+		renderer->DrawSolidDiamond(centerX, centerY, size + 6.f, size + 6.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+		renderer->DrawSolidDiamond(centerX, centerY, size, size, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 	}
 	else
 	{
-		renderer->DrawSolidRect(centerX, centerY, size + 4.f, size + 4.f, 0.32f, 0.31f, 0.34f, 1.f);
-		renderer->DrawSolidRect(centerX, centerY, size, size, 0.10f, 0.10f, 0.12f, 1.f);
+		renderer->DrawSolidRect(centerX, centerY, size + 4.f, size + 4.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+		renderer->DrawSolidRect(centerX, centerY, size, size, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 	}
 
 	// Refills from the bottom while it recharges; full and bright once ready.

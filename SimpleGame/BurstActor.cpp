@@ -69,6 +69,7 @@ void BurstActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float r, g, b;
 	AlignmentColor::Core(m_Alignment, r, g, b);
 
+	out.SetGlow(m_Alignment == Alignment::Light ? 0.8f : 0.f);
 	out.AddGroundArc(WorldX(), WorldY(), x, baseY, inner, outer, 0.f, 6.2831853f, kSegments,
 		r, g, b, 0.8f * fade);
 }

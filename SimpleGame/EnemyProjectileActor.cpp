@@ -120,12 +120,11 @@ void EnemyProjectileActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	{
 		// The player's own light, gone ashen: paler, with a dark rim, so it is
 		// never mistaken for one of his bolts.
-		r += (0.72f - r) * 0.35f;
-		g += (0.70f - g) * 0.35f;
-		b += (0.68f - b) * 0.35f;
+		AlignmentColor::Warning(m_Alignment, Palette::kHostileSpellWash, r, g, b);
 
 		out.AddGlow(depth - 0.01f, x, baseY, 22.f, glowR, glowG, glowB, 0.8f * fade);
-		out.AddDiamond(depth, x, baseY, 16.f, 11.f, 0.18f, 0.17f, 0.19f, fade);
+		out.AddDiamond(depth, x, baseY, 16.f, 11.f, Palette::kHostileRim.r, Palette::kHostileRim.g, Palette::kHostileRim.b, fade);
+		out.SetGlow(0.7f);
 		out.AddDiamond(depth + 0.001f, x, baseY, 12.f, 8.f, r, g, b, fade);
 		return;
 	}

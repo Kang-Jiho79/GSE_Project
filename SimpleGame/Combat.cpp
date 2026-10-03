@@ -6,6 +6,7 @@
 #include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
+#include "Impact.h"
 #include <cmath>
 
 namespace
@@ -20,6 +21,20 @@ namespace
 	float DarkPower(const PlayerStatus& status)
 	{
 		return 1.f + status.darkTotal * Tuning::Power::kScalePerAbsorbed;
+	}
+
+	// A blow that gets through to him is felt: the world catches and the
+	// screen jolts.
+	bool HurtPlayer(const ActorContext& ctx, float damage)
+	{
+		if (!ctx.status->TryDamage(damage))
+		{
+			return false;
+		}
+
+		ctx.impact->HitStop(Tuning::Feel::kHurtStop);
+		ctx.impact->Shake(Tuning::Feel::kHurtShake);
+		return true;
 	}
 }
 
@@ -215,7 +230,7 @@ bool Combat::StrikePlayerArc(const ActorContext& ctx, float originX, float origi
 		}
 	}
 
-	return ctx.status->TryDamage(damage);
+	return HurtPlayer(ctx, damage);
 }
 
 bool Combat::StrikePlayerRadius(const ActorContext& ctx, float centerX, float centerY,
@@ -232,5 +247,5 @@ bool Combat::StrikePlayerRadius(const ActorContext& ctx, float centerX, float ce
 		return false;
 	}
 
-	return ctx.status->TryDamage(damage);
+	return HurtPlayer(ctx, damage);
 }

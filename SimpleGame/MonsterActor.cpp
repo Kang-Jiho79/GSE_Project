@@ -5,6 +5,7 @@
 #include "EnemyProjectileActor.h"
 #include "LightningActor.h"
 #include "CurseFieldActor.h"
+#include "SparkActor.h"
 #include "SceneGraph.h"
 #include "DrawList.h"
 #include "PlayerStatus.h"
@@ -12,6 +13,7 @@
 #include "Random.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
+#include "Palette.h"
 #include <cmath>
 
 namespace
@@ -27,6 +29,14 @@ namespace
 	const float kRoamArrive = 0.1f; // tiles
 
 	const float kStrikeShowTime = 0.2f;
+
+	// Struck: how long the white flash takes to fade, how white it starts,
+	// and the sparks thrown off.
+	const float kHitFlashTime = 0.12f;
+	const float kHitFlashStrength = 0.75f;
+	const int kHitSparks = 6;
+	const float kHitSparkSpeed = 140.f;
+	const float kHitSparkLift = 18.f;
 
 	const int kBurstCount = 5;
 	const float kBurstSpeed = 90.f;
@@ -89,14 +99,6 @@ namespace
 		return IsLight(alignment) ? Tuning::LightKnight::kRecover : Tuning::DarkKnight::kRecover;
 	}
 
-	// The warning colour: the side's own colour, mostly washed to ash.
-	void TelegraphColor(Alignment alignment, float& r, float& g, float& b)
-	{
-		AlignmentColor::Core(alignment, r, g, b);
-		r += (0.75f - r) * 0.6f;
-		g += (0.73f - g) * 0.6f;
-		b += (0.72f - b) * 0.6f;
-	}
 }
 
 MonsterActor::MonsterActor(Kind kind, Alignment alignment)
@@ -118,6 +120,12 @@ float MonsterActor::TakeHit(float damage)
 
 	float landed = (damage < m_Health) ? damage : m_Health;
 	m_Health -= damage;
+
+	if (landed > 0.f)
+	{
+		m_HitFlash = 1.f;
+		m_SparksPending = true;
+	}
 	return landed;
 }
 
@@ -175,6 +183,14 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 		m_Anchored = true;
 	}
 
+	// Sparks in the colour of whatever form he struck with.
+	if (m_SparksPending)
+	{
+		SparkActor::Style style = (ctx.status->form == Form::Light) ? SparkActor::Style::Light : SparkActor::Style::Dark;
+		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), style, kHitSparks, kHitSparkSpeed, kHitSparkLift);
+		m_SparksPending = false;
+	}
+
 	if (m_Health <= 0.f)
 	{
 		SpawnDeathBurst(ctx);
@@ -195,6 +211,10 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 	if (m_StrikeFlash > 0.f)
 	{
 		m_StrikeFlash -= ctx.deltaTime / kStrikeShowTime;
+	}
+	if (m_HitFlash > 0.f)
+	{
+		m_HitFlash -= ctx.deltaTime / kHitFlashTime;
 	}
 
 	m_GroundHeight = WorldGrid::SmoothApproach(m_GroundHeight,
@@ -740,6 +760,11 @@ void MonsterActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		}
 	}
 
+	if (m_HitFlash > 0.f)
+	{
+		out.SetFlash(m_HitFlash * kHitFlashStrength);
+	}
+
 	bool light = IsLight(m_Alignment);
 	if (IsMage(m_Kind))
 	{
@@ -771,7 +796,7 @@ void MonsterActor::DrawTelegraph(DrawList& out, float x, float groundY) const
 	}
 
 	float r, g, b;
-	TelegraphColor(m_Alignment, r, g, b);
+	AlignmentColor::Warning(m_Alignment, Palette::kWarningWash, r, g, b);
 	float baseY = groundY + kTelegraphLift;
 
 	if (m_Blow == Blow::Charge)

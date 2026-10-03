@@ -5,6 +5,7 @@
 
 class DrawList;
 class SceneGraph;
+class Impact;
 struct PlayerStatus;
 
 // What the player is asking for this frame, in screen terms. The camera only
@@ -47,6 +48,7 @@ struct ActorContext
 	InputState input;
 	PlayerStatus* status = nullptr;
 	SceneGraph* graph = nullptr;
+	Impact* impact = nullptr;
 
 	void ToScreen(float worldX, float worldY, float& outX, float& outY) const;
 	bool IsOnScreen(float screenX, float screenY, float padX, float padY) const;
