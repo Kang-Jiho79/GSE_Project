@@ -9,6 +9,8 @@
 namespace
 {
 	const float kGlowRadius = 46.f;
+	// How much of his glow is gone by the time the gray reaches the allowance.
+	const float kAshGlowLoss = 0.7f;
 
 	// The roll: he folds down to this fraction of his height at its middle and
 	// pitches his upper body this many pixels toward where he is going.
@@ -58,6 +60,16 @@ namespace
 			return high;
 		}
 		return value;
+	}
+
+	// Drains a colour toward a flat gray of the same brightness - how the
+	// gray shows on him as his balance goes.
+	void Ashen(float amount, float& r, float& g, float& b)
+	{
+		float gray = (r + g + b) / 3.f;
+		r += (gray - r) * amount;
+		g += (gray - g) * amount;
+		b += (gray - b) * amount;
 	}
 
 	// Screen directions converted onto the grid axes, so one key walks straight
@@ -302,13 +314,17 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	// how full each side is can be read without looking at the HUD.
 	float lightGlowR, lightGlowG, lightGlowB;
 	AlignmentColor::Glow(Alignment::Light, lightGlowR, lightGlowG, lightGlowB);
+	// As the gray creeps in, the powers he carries gutter out.
+	float ash = ctx.status->WarningLevel();
+	float glowStrength = 1.f - ash * kAshGlowLoss;
+
 	out.AddGlow(depth - 0.02f, x, groundY, kGlowRadius, lightGlowR, lightGlowG, lightGlowB,
-		ctx.status->light / ctx.status->capacity);
+		ctx.status->light / ctx.status->capacity * glowStrength);
 
 	float darkGlowR, darkGlowG, darkGlowB;
 	AlignmentColor::Glow(Alignment::Dark, darkGlowR, darkGlowG, darkGlowB);
 	out.AddGlow(depth - 0.02f, x, groundY, kGlowRadius, darkGlowR, darkGlowG, darkGlowB,
-		ctx.status->dark / ctx.status->capacity);
+		ctx.status->dark / ctx.status->capacity * glowStrength);
 
 	out.AddShadow(depth - 0.01f, x, groundY, 26.f, 13.f);
 
@@ -400,17 +416,26 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 	float torsoBase = groundY + legsHeight + bob;
 
-	// The torso carries both powers, one on each face. Tilting toward a side
+	// The torso carries both powers, one on each face. Leaning toward a side
 	// brightens that face and drains the other toward gray. Flared upward, so
 	// the shoulders are wider than the waist.
-	float lightStrength = Clamp(0.5f + ctx.status->tilt * 0.5f, 0.f, 1.f);
+	float lightStrength = Clamp(0.5f + ctx.status->BalanceRatio() * 0.5f, 0.f, 1.f);
 	float darkStrength = 1.f - lightStrength;
+
+	float darkFaceR = 0.26f + 0.20f * darkStrength;
+	float darkFaceG = 0.24f + 0.10f * darkStrength;
+	float darkFaceB = 0.28f + 0.42f * darkStrength;
+	float lightFaceR = 0.30f + 0.62f * lightStrength;
+	float lightFaceG = 0.26f + 0.44f * lightStrength;
+	float lightFaceB = 0.24f + 0.10f * lightStrength;
+	Ashen(ash, darkFaceR, darkFaceG, darkFaceB);
+	Ashen(ash, lightFaceR, lightFaceG, lightFaceB);
 
 	out.AddTaperedBoxFaces(depth + 0.01f, upperX, torsoBase, 0.26f, 0.24f, torsoHeight,
 		1.32f, lean * 0.6f, 0.f,
 		0.60f, 0.58f, 0.60f,
-		0.26f + 0.20f * darkStrength, 0.24f + 0.10f * darkStrength, 0.28f + 0.42f * darkStrength,
-		0.30f + 0.62f * lightStrength, 0.26f + 0.44f * lightStrength, 0.24f + 0.10f * lightStrength);
+		darkFaceR, darkFaceG, darkFaceB,
+		lightFaceR, lightFaceG, lightFaceB);
 
 	// Arms swing opposite to the legs, hanging from the shoulder and thinning
 	// toward the hand.

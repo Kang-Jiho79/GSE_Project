@@ -155,8 +155,28 @@ namespace Tuning
 		const float kStartCapacity = 12.f;
 		const float kCapacityPerUpgrade = 4.f;
 		const float kHealthPerUpgrade = 10.f;
+	}
 
-		// How far surplus poured into a full half tilts the player, per unit.
-		const float kTiltPerOverflow = 0.05f;
+	namespace Power
+	{
+		// Every attack of a power grows with the lifetime total of that power:
+		// this much stronger per unit absorbed, so 100 absorbed doubles it.
+		const float kScalePerAbsorbed = 0.01f;
+	}
+
+	namespace Balance
+	{
+		// How far the lifetime totals may drift apart before the gray takes
+		// him, as a multiple of the vessel's capacity - so it widens as the
+		// vessel grows.
+		const float kAllowancePerCapacity = 2.5f;
+		// Past this share of the allowance he is warned.
+		const float kWarningShare = 0.5f;
+
+		// Past the allowance the gray eats his health: this much per second
+		// the moment he crosses, and this much more for every further
+		// allowance-width he leans. It stops as soon as he is back inside.
+		const float kErosionBaseRate = 4.f;
+		const float kErosionPerExcess = 20.f;
 	}
 }

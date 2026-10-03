@@ -5,6 +5,7 @@
 #include "WorldGrid.h"
 #include "Alignment.h"
 #include "Combat.h"
+#include "PlayerStatus.h"
 #include "Random.h"
 #include "Tuning.h"
 #include <cmath>
@@ -36,7 +37,7 @@ void LightningActor::OnUpdate(const ActorContext& ctx)
 	if (!m_Struck && m_Age >= Tuning::LightForm::kStrikeDelay)
 	{
 		Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), Tuning::LightForm::kStrikeRadius,
-			Combat::StrikeDamage(), 0.f);
+			Combat::StrikeDamage(*ctx.status), 0.f);
 		m_Struck = true;
 	}
 

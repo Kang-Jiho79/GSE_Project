@@ -2,6 +2,7 @@
 #include "Combat.h"
 #include "SceneGraph.h"
 #include "MonsterActor.h"
+#include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
 #include <cmath>
@@ -9,41 +10,51 @@
 namespace
 {
 	const float kDegToRad = 3.14159265f / 180.f;
+
+	float LightPower(const PlayerStatus& status)
+	{
+		return 1.f + status.lightTotal * Tuning::Power::kScalePerAbsorbed;
+	}
+
+	float DarkPower(const PlayerStatus& status)
+	{
+		return 1.f + status.darkTotal * Tuning::Power::kScalePerAbsorbed;
+	}
 }
 
-float Combat::BoltDamage()
+float Combat::BoltDamage(const PlayerStatus& status)
 {
-	return Tuning::LightForm::kBoltDamage;
+	return Tuning::LightForm::kBoltDamage * LightPower(status);
 }
 
-float Combat::SlashDamage(int comboStep)
+float Combat::BeamDamage(const PlayerStatus& status)
 {
-	return Tuning::DarkForm::kSlashDamage[comboStep];
+	return Tuning::LightForm::kBeamDamage * LightPower(status);
 }
 
-float Combat::DarkBurstDamage()
+float Combat::StrikeDamage(const PlayerStatus& status)
 {
-	return Tuning::SwapSkill::kDarkBurstDamage;
+	return Tuning::LightForm::kStrikeDamage * LightPower(status);
 }
 
-float Combat::BeamDamage()
+float Combat::SlashDamage(const PlayerStatus& status, int comboStep)
 {
-	return Tuning::LightForm::kBeamDamage;
+	return Tuning::DarkForm::kSlashDamage[comboStep] * DarkPower(status);
 }
 
-float Combat::StrikeDamage()
+float Combat::DashDamage(const PlayerStatus& status)
 {
-	return Tuning::LightForm::kStrikeDamage;
+	return Tuning::DarkForm::kDashDamage * DarkPower(status);
 }
 
-float Combat::DashDamage()
+float Combat::SpinDamage(const PlayerStatus& status)
 {
-	return Tuning::DarkForm::kDashDamage;
+	return Tuning::DarkForm::kSpinDamage * DarkPower(status);
 }
 
-float Combat::SpinDamage()
+float Combat::DarkBurstDamage(const PlayerStatus& status)
 {
-	return Tuning::DarkForm::kSpinDamage;
+	return Tuning::SwapSkill::kDarkBurstDamage * DarkPower(status);
 }
 
 float Combat::Lifesteal(float damageLanded, float scale)

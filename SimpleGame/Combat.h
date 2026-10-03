@@ -1,19 +1,24 @@
 #pragma once
 
 class SceneGraph;
+struct PlayerStatus;
 
 // Where an attack becomes damage. Every damage number is worked out here, so
 // changing how hard something hits never means hunting through the actors.
+//
+// Each is its base value scaled by everything he has absorbed of that power:
+// light attacks by his lifetime light, dark attacks by his lifetime dark.
+// Feeding only one side leaves the other form's attacks behind.
 namespace Combat
 {
-	float BoltDamage();
-	float SlashDamage(int comboStep);
+	float BoltDamage(const PlayerStatus& status);
+	float BeamDamage(const PlayerStatus& status);
+	float StrikeDamage(const PlayerStatus& status);
 
-	float DarkBurstDamage();
-	float BeamDamage();
-	float StrikeDamage();
-	float DashDamage();
-	float SpinDamage();
+	float SlashDamage(const PlayerStatus& status, int comboStep);
+	float DashDamage(const PlayerStatus& status);
+	float SpinDamage(const PlayerStatus& status);
+	float DarkBurstDamage(const PlayerStatus& status);
 
 	// Health returned for melee damage that landed. scale raises the usual
 	// share for moves that feed it harder.

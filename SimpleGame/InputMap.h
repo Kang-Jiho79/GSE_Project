@@ -15,7 +15,10 @@ namespace InputMap
 	const unsigned char kSkill = 'e';
 	const unsigned char kSpecial = 'q';
 
+	// Debug: take a hit, or absorb one kill's worth of light or dark.
 	const unsigned char kDebugDamage = 'c';
+	const unsigned char kDebugAddLight = '1';
+	const unsigned char kDebugAddDark = '2';
 	const unsigned char kQuit = 27; // Esc
 
 	// Either Shift; freeglut reports them through the special-key callbacks.

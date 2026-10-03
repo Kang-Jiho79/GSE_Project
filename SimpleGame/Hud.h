@@ -14,6 +14,7 @@ public:
 
 private:
 	void DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY);
+	void DrawBalance(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY);
 	void DrawHealth(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 	void DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 	void DrawForm(Renderer* renderer, const PlayerStatus& status, float left, float centerY);

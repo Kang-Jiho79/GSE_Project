@@ -56,7 +56,7 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	}
 
 	Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage());
+		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage(*ctx.status));
 
 	std::unique_ptr<BeamActor> beam(new BeamActor(Alignment::Light, dirCol, dirRow, Tuning::LightForm::kBeamLength));
 	beam->SetLocalPosition(player.WorldX(), player.WorldY());

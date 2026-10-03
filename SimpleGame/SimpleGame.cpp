@@ -180,10 +180,20 @@ void KeyInput(unsigned char key, int x, int y)
 		g_SpecialPressed = true;
 		break;
 	}
-	// Stand-in until combat can actually hurt the player some other way.
 	case InputMap::kDebugDamage:
 	{
 		g_Status.TryDamage(12.f);
+		break;
+	}
+	// One kill's worth - a dying monster scatters five motes of one each.
+	case InputMap::kDebugAddLight:
+	{
+		g_Status.AddLight(5.f);
+		break;
+	}
+	case InputMap::kDebugAddDark:
+	{
+		g_Status.AddDark(5.f);
 		break;
 	}
 	case InputMap::kQuit:
@@ -276,7 +286,7 @@ int main(int argc, char **argv)
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   Esc: quit\n";
+	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   Esc: quit\n";
 
 	glutDisplayFunc(RenderScene);
 	glutIdleFunc(Idle);

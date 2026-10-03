@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "PlayerStatus.h"
+#include <cmath>
 
 namespace
 {
@@ -37,6 +38,19 @@ void PlayerStatus::Tick(float deltaTime)
 	lightSpecial.Tick(deltaTime);
 	darkSkill.Tick(deltaTime);
 	darkSpecial.Tick(deltaTime);
+
+	if (!IsEroding())
+	{
+		erosionTime = 0.f;
+		return;
+	}
+
+	erosionTime += deltaTime;
+
+	// Not a blow, so invulnerability does not hold it off.
+	float excess = fabsf(BalanceRatio()) - 1.f;
+	float rate = Tuning::Balance::kErosionBaseRate + Tuning::Balance::kErosionPerExcess * excess;
+	health = Clamp(health - rate * deltaTime, 0.f, maxHealth);
 }
 
 const Cooldown& PlayerStatus::SkillCooldown(Form which) const
@@ -51,24 +65,43 @@ const Cooldown& PlayerStatus::SpecialCooldown(Form which) const
 
 void PlayerStatus::AddLight(float amount)
 {
-	light += amount;
-	if (light > capacity)
-	{
-		tilt = Clamp(tilt + (light - capacity) * Tuning::Vessel::kTiltPerOverflow, -1.f, 1.f);
-		light = capacity;
-	}
+	lightTotal += amount;
+	light = Clamp(light + amount, 0.f, capacity);
 	SpendIfBothFull();
 }
 
 void PlayerStatus::AddDark(float amount)
 {
-	dark += amount;
-	if (dark > capacity)
-	{
-		tilt = Clamp(tilt - (dark - capacity) * Tuning::Vessel::kTiltPerOverflow, -1.f, 1.f);
-		dark = capacity;
-	}
+	darkTotal += amount;
+	dark = Clamp(dark + amount, 0.f, capacity);
 	SpendIfBothFull();
+}
+
+float PlayerStatus::Balance() const
+{
+	return lightTotal - darkTotal;
+}
+
+float PlayerStatus::BalanceAllowance() const
+{
+	return capacity * Tuning::Balance::kAllowancePerCapacity;
+}
+
+float PlayerStatus::BalanceRatio() const
+{
+	return Balance() / BalanceAllowance();
+}
+
+float PlayerStatus::WarningLevel() const
+{
+	float lean = fabsf(BalanceRatio());
+	float share = Tuning::Balance::kWarningShare;
+	return Clamp((lean - share) / (1.f - share), 0.f, 1.f);
+}
+
+bool PlayerStatus::IsEroding() const
+{
+	return health > 0.f && fabsf(BalanceRatio()) > 1.f;
 }
 
 void PlayerStatus::SpendIfBothFull()
@@ -118,6 +151,21 @@ void PlayerStatus::Heal(float amount)
 
 void PlayerStatus::Revive()
 {
+	if (fabsf(BalanceRatio()) > 1.f)
+	{
+		float kept = BalanceAllowance() * Tuning::Balance::kWarningShare;
+		float balance = Balance();
+		if (balance > 0.f)
+		{
+			lightTotal -= balance - kept;
+		}
+		else
+		{
+			darkTotal -= -balance - kept;
+		}
+	}
+
+	erosionTime = 0.f;
 	health = maxHealth;
 	formCooldown = 0.f;
 	lightSkill = Cooldown();

@@ -6,6 +6,7 @@
 #include "WorldGrid.h"
 #include "Random.h"
 #include "Tuning.h"
+#include <cmath>
 
 #include "TerrainActor.h"
 #include "PropsActor.h"
@@ -31,6 +32,15 @@ namespace
 	const float kFogR = 0.045f;
 	const float kFogG = 0.043f;
 	const float kFogB = 0.055f;
+
+	// A gray veil over the world: faint while he is warned, heavier and
+	// breathing once the gray is eating him.
+	const float kAshTintR = 0.42f;
+	const float kAshTintG = 0.42f;
+	const float kAshTintB = 0.44f;
+	const float kAshTintWarning = 0.07f;
+	const float kAshTintEroding = 0.10f;
+	const float kAshTintPulseRate = 6.f;
 
 	const float kMinimapSize = 150.f;
 	const float kMinimapBorder = 4.f;
@@ -191,6 +201,23 @@ void Scene::DrawDeathFade(Renderer* renderer) const
 		kFogR, kFogG, kFogB, alpha);
 }
 
+void Scene::DrawErosionTint(Renderer* renderer, const PlayerStatus& status) const
+{
+	float alpha = status.WarningLevel() * kAshTintWarning;
+	if (status.IsEroding())
+	{
+		alpha += kAshTintEroding * (0.75f + 0.25f * sinf(status.erosionTime * kAshTintPulseRate));
+	}
+
+	if (alpha <= 0.f)
+	{
+		return;
+	}
+
+	renderer->DrawSolidRect(0.f, 0.f, (float)m_WindowSizeX, (float)m_WindowSizeY,
+		kAshTintR, kAshTintG, kAshTintB, alpha);
+}
+
 void Scene::RecordPopulation()
 {
 	int monsters = 0;
@@ -241,6 +268,7 @@ void Scene::Render(Renderer* renderer, PlayerStatus& status)
 
 	// Over the world only; the HUD drawn after it stays readable, so the
 	// health bar can be seen refilling.
+	DrawErosionTint(renderer, status);
 	DrawDeathFade(renderer);
 
 	Profiler::Get().SetGauge("world_quads", (int)m_DrawList.Count());

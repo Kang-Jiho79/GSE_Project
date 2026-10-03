@@ -6,8 +6,12 @@
 
 // The vessel (그릇) and its consequences, shared between the world and the HUD.
 // Power banks into two halves; only when both fill do they spend together and
-// upgrade the player. Surplus poured into an already-full half leaks out and
-// tilts the player away from the midpoint.
+// upgrade the player. Surplus poured into an already-full half is lost to the
+// vessel.
+//
+// Everything absorbed is also counted for good in the lifetime totals, which
+// the vessel emptying never touches. They are what his power and his balance
+// are measured by.
 //
 // The brief window of invulnerability after a hit lives here too, so several
 // monsters landing on the same frame cannot all bill the player for it.
@@ -16,15 +20,17 @@
 // show it and how long until it can change again.
 struct PlayerStatus
 {
+	// The vessel: progress toward the next upgrade, emptied by it.
 	float light = 0.f;
 	float dark = 0.f;
 	float capacity = Tuning::Vessel::kStartCapacity;
 
+	// Everything ever absorbed.
+	float lightTotal = 0.f;
+	float darkTotal = 0.f;
+
 	float health = Tuning::Player::kStartHealth;
 	float maxHealth = Tuning::Player::kStartHealth;
-
-	// -1 is fully dark, 0 is still the midpoint, +1 is fully light
-	float tilt = 0.f;
 
 	int upgrades = 0;
 
@@ -46,6 +52,20 @@ struct PlayerStatus
 	void AddLight(float amount);
 	void AddDark(float amount);
 
+	// How far the totals lean: positive toward light, negative toward dark.
+	float Balance() const;
+	// How far they may lean before the gray takes him.
+	float BalanceAllowance() const;
+	// Balance as a share of the allowance: -1 and +1 are its edges.
+	float BalanceRatio() const;
+	// 0 until the warning starts, rising to 1 at the edge of the allowance.
+	float WarningLevel() const;
+	// Leaning past the allowance, and being eaten by the gray for it.
+	bool IsEroding() const;
+
+	// Seconds spent eroding without a break, for anything that pulses with it.
+	float erosionTime = 0.f;
+
 	// Returns whether the hit actually landed.
 	bool TryDamage(float amount);
 
@@ -60,7 +80,9 @@ struct PlayerStatus
 	bool TrySwitchForm();
 
 	// Back to full health after a death, with every skill ready. Absorbed
-	// power is kept.
+	// power is kept - unless he fell leaning past the allowance, in which case
+	// the heavier side is drained back to where the warning starts, so he
+	// does not wake straight into the gray again.
 	void Revive();
 
 private:

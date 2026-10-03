@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Hud.h"
 #include "Tuning.h"
+#include <cmath>
 
 namespace
 {
@@ -10,6 +11,19 @@ namespace
 
 	const float kHealthWidth = 250.f;
 	const float kHealthHeight = 16.f;
+
+	// The balance needle across the middle of the vessel: centred is even,
+	// the vessel's left and right tips are the allowance.
+	const float kNeedleWidth = 3.f;
+	const float kNeedleHeight = 34.f;
+	const float kNotchWidth = 2.f;
+	const float kNotchHeight = 6.f;
+
+	// The gray that creeps into the HUD as the balance goes.
+	const float kAshR = 0.62f;
+	const float kAshG = 0.62f;
+	const float kAshB = 0.64f;
+	const float kAshPulseRate = 6.f;
 
 	const float kPipWidth = 9.f;
 	const float kPipHeight = 12.f;
@@ -25,6 +39,14 @@ namespace
 	// lettering yet.
 	const float kSkillSize = 18.f;
 	const float kSkillSpacing = 28.f;
+
+	// Mixes a colour toward the ash gray by amount (0..1).
+	void Ash(float amount, float& r, float& g, float& b)
+	{
+		r += (kAshR - r) * amount;
+		g += (kAshG - g) * amount;
+		b += (kAshB - b) * amount;
+	}
 
 	float Clamp01(float value)
 	{
@@ -49,6 +71,7 @@ void Hud::Render(Renderer* renderer, const PlayerStatus& status, int windowSizeX
 	float vesselCenterY = top - 78.f;
 
 	DrawVessel(renderer, status, vesselCenterX, vesselCenterY);
+	DrawBalance(renderer, status, vesselCenterX, vesselCenterY);
 	DrawHealth(renderer, status, left + 132.f, vesselCenterY + 20.f);
 	DrawUpgradePips(renderer, status, left + 132.f, vesselCenterY - 12.f);
 	DrawForm(renderer, status, left + 132.f, vesselCenterY - 38.f);
@@ -63,8 +86,20 @@ void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float cente
 	float darkFraction = Clamp01(status.dark / status.capacity);
 	float lightFraction = Clamp01(status.light / status.capacity);
 
+	// The rim greys over with the warning, and pulses once the gray is
+	// actually eating him.
+	float rimR = 0.32f;
+	float rimG = 0.31f;
+	float rimB = 0.34f;
+	float ash = status.WarningLevel();
+	if (status.IsEroding())
+	{
+		ash = 0.6f + 0.4f * sinf(status.erosionTime * kAshPulseRate);
+	}
+	Ash(ash, rimR, rimG, rimB);
+
 	renderer->DrawSolidDiamond(centerX, centerY,
-		kVesselWidth + kVesselBorder * 2.f, kVesselHeight + kVesselBorder * 2.f, 0.32f, 0.31f, 0.34f, 1.f);
+		kVesselWidth + kVesselBorder * 2.f, kVesselHeight + kVesselBorder * 2.f, rimR, rimG, rimB, 1.f);
 	renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, 0.10f, 0.10f, 0.12f, 1.f);
 
 	// Each half is the whole diamond clipped to its side and to how far it has filled.
@@ -89,6 +124,43 @@ void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float cente
 	renderer->DrawSolidRect(centerX, centerY, 1.5f, kVesselHeight, 0.32f, 0.31f, 0.34f, 1.f);
 }
 
+void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
+{
+	float halfWidth = kVesselWidth / 2.f;
+
+	// Notches where the warning starts, on the vessel's outline at that width.
+	float notchX = halfWidth * Tuning::Balance::kWarningShare;
+	float notchY = (kVesselHeight / 2.f) * (1.f - Tuning::Balance::kWarningShare);
+	for (int side = -1; side <= 1; side += 2)
+	{
+		renderer->DrawSolidRect(centerX + side * notchX, centerY + notchY, kNotchWidth, kNotchHeight,
+			0.55f, 0.54f, 0.56f, 1.f);
+		renderer->DrawSolidRect(centerX + side * notchX, centerY - notchY, kNotchWidth, kNotchHeight,
+			0.55f, 0.54f, 0.56f, 1.f);
+	}
+
+	// Pinned to the tip once past the allowance, so it never leaves the vessel.
+	float ratio = status.BalanceRatio();
+	if (ratio > 1.f)
+	{
+		ratio = 1.f;
+	}
+	else if (ratio < -1.f)
+	{
+		ratio = -1.f;
+	}
+	float needleX = centerX + ratio * halfWidth;
+
+	// White while he is safe, ash once he is warned.
+	float r = 0.92f;
+	float g = 0.90f;
+	float b = 0.86f;
+	Ash(status.WarningLevel(), r, g, b);
+
+	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth + 2.f, kNeedleHeight + 2.f, 0.06f, 0.06f, 0.07f, 1.f);
+	renderer->DrawSolidRect(needleX, centerY, kNeedleWidth, kNeedleHeight, r, g, b, 1.f);
+}
+
 void Hud::DrawHealth(Renderer* renderer, const PlayerStatus& status, float left, float centerY)
 {
 	float centerX = left + kHealthWidth / 2.f;
@@ -98,9 +170,18 @@ void Hud::DrawHealth(Renderer* renderer, const PlayerStatus& status, float left,
 	renderer->DrawSolidRect(centerX, centerY, kHealthWidth + 6.f, kHealthHeight + 6.f, 0.32f, 0.31f, 0.34f, 1.f);
 	renderer->DrawSolidRect(centerX, centerY, kHealthWidth, kHealthHeight, 0.10f, 0.10f, 0.12f, 1.f);
 
+	// Gray while erosion is what is draining it, so the cause is plain.
+	float r = 0.62f;
+	float g = 0.16f;
+	float b = 0.18f;
+	if (status.IsEroding())
+	{
+		Ash(0.75f, r, g, b);
+	}
+
 	if (fillWidth > 0.f)
 	{
-		renderer->DrawSolidRect(left + fillWidth / 2.f, centerY, fillWidth, kHealthHeight, 0.62f, 0.16f, 0.18f, 1.f);
+		renderer->DrawSolidRect(left + fillWidth / 2.f, centerY, fillWidth, kHealthHeight, r, g, b, 1.f);
 	}
 }
 

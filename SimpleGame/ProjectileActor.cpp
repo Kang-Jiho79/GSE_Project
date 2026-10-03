@@ -5,6 +5,7 @@
 #include "DrawList.h"
 #include "WorldGrid.h"
 #include "Combat.h"
+#include "PlayerStatus.h"
 #include "Tuning.h"
 #include <cmath>
 
@@ -55,7 +56,7 @@ void ProjectileActor::OnUpdate(const ActorContext& ctx)
 
 		// Both colours hurt a gray thing equally - gray is opposed to colour
 		// itself, not to one side of it.
-		monster.TakeHit(Combat::BoltDamage());
+		monster.TakeHit(Combat::BoltDamage(*ctx.status));
 		spent = true;
 	});
 

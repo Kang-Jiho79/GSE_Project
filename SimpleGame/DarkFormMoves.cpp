@@ -71,7 +71,7 @@ void DarkFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 	if (m_SpinTickTimer <= 0.f)
 	{
 		float landed = Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
-			Tuning::DarkForm::kSpinRadius, Combat::SpinDamage(), 0.f);
+			Tuning::DarkForm::kSpinRadius, Combat::SpinDamage(*ctx.status), 0.f);
 		ctx.status->Heal(Combat::Lifesteal(landed, Tuning::DarkForm::kSpinLifestealScale));
 		m_SpinTickTimer += Tuning::DarkForm::kSpinInterval;
 	}
@@ -104,7 +104,7 @@ void DarkFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 
 	float landed = Combat::HitArc(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
 		Tuning::DarkForm::kSlashRange, Tuning::DarkForm::kSlashArcDegrees,
-		Combat::SlashDamage(m_ComboStep));
+		Combat::SlashDamage(*ctx.status, m_ComboStep));
 	ctx.status->Heal(Combat::Lifesteal(landed));
 
 	m_SlashStep = m_ComboStep;
@@ -135,7 +135,7 @@ void DarkFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	// then carries him through where they stand. A blow in reach, so it feeds
 	// lifesteal like any other cut.
 	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage());
+		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage(*ctx.status));
 	ctx.status->Heal(Combat::Lifesteal(landed));
 
 	std::unique_ptr<BeamActor> streak(new BeamActor(Alignment::Dark, dirCol, dirRow, Tuning::DarkForm::kDashDistance));
@@ -165,7 +165,7 @@ void DarkFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
 	// Not a blow in reach, so it feeds no lifesteal.
 	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
-		Tuning::SwapSkill::kDarkBurstRadius, Combat::DarkBurstDamage(), -Tuning::SwapSkill::kDarkBurstPull);
+		Tuning::SwapSkill::kDarkBurstRadius, Combat::DarkBurstDamage(*ctx.status), -Tuning::SwapSkill::kDarkBurstPull);
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Dark, Tuning::SwapSkill::kDarkBurstRadius, true));
 	burst->SetLocalPosition(player.WorldX(), player.WorldY());

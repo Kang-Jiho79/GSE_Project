@@ -30,6 +30,8 @@ private:
 	// fully dark, and it fades back in.
 	void UpdateDeath(float deltaTime, PlayerStatus& status);
 	void DrawDeathFade(Renderer* renderer) const;
+	// The world washing toward gray as his balance goes.
+	void DrawErosionTint(Renderer* renderer, const PlayerStatus& status) const;
 
 	SceneGraph m_Graph;
 	DrawList m_DrawList;
