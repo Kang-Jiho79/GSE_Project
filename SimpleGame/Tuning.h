@@ -99,8 +99,8 @@ namespace Tuning
 		// land in reach count - never anything thrown or lingering.
 		const float kLifesteal = 0.09f;
 
-		// Kept clear of Monster::kAttackRange, so a cut can land before the
-		// monster is close enough to strike back.
+		// Longer than the knights' start ranges, so a cut can land before one
+		// of them begins winding up a blow of its own.
 		const float kSlashRange = 1.5f;
 		const float kSlashArcDegrees = 120.f;
 		// Anything this close counts as in front, whichever way he is facing.
@@ -135,26 +135,129 @@ namespace Tuning
 		// Wider than detect, so one on the boundary does not flicker between
 		// wandering and chasing.
 		const float kGiveUpRange = 8.5f;
-		const float kAttackRange = 0.9f;
 
-		const float kAttackCooldown = 1.2f;
-		const float kAttackDamage = 8.f;
+		// Tiles per second, before each kind's own scale.
+		const float kChaseSpeed = 2.5f;
+		const float kRoamSpeed = 1.f;
+		const float kRoamRadius = 2.f;
 
-		const float kBruteHealth = 50.f;
-		const float kStalkerHealth = 20.f;
-		const float kCrawlerHealth = 30.f;
+		// A light knight's shield: light blows from in front of it, within
+		// this arc, land at this share.
+		const float kShieldArcDegrees = 120.f;
+		const float kShieldFactor = 0.5f;
 
-		// Still in screen pixels until monster movement moves onto the grid.
-		const float kChaseSpeedPx = 90.f;
-		const float kRoamSpeedPx = 36.f;
-		const float kRoamRadiusPx = 70.f;
+		// Mages back off once the player is this far inside the distance they
+		// like to keep, and will cast from up to this far beyond it.
+		const float kMageBackOff = 1.5f;
+		const float kMageCastSlack = 1.5f;
+
+		// How close a thrown spell has to pass to hit the player.
+		const float kProjectileHitRadius = 0.35f;
 	}
 
-	namespace Vessel
+	// Eroded mage of the light: keeps its distance and chants standing still.
+	namespace LightMage
 	{
-		const float kStartCapacity = 12.f;
-		const float kCapacityPerUpgrade = 4.f;
-		const float kHealthPerUpgrade = 10.f;
+		const float kHealth = 25.f;
+		const float kSpeedScale = 0.9f;
+		const float kPreferredRange = 5.f;
+
+		// A straight bolt, aimed where the player is when it lets go.
+		const float kBoltWindup = 0.6f;
+		const float kBoltSpeed = 6.f;
+		const float kBoltLifetime = 2.f;
+		const float kBoltDamage = 10.f;
+		const float kBoltCooldown = 2.f;
+
+		// Lightning marked on the ground where the player stood, landing later.
+		const float kSmiteWindup = 0.4f;
+		const float kSmiteDelay = 1.f;
+		const float kSmiteRadius = 1.2f;
+		const float kSmiteDamage = 18.f;
+		const float kSmiteCooldown = 6.f;
+
+		const float kRecover = 0.3f;
+	}
+
+	// Eroded mage of the dark: keeps its distance, drifting sideways as it casts.
+	namespace DarkMage
+	{
+		const float kHealth = 25.f;
+		const float kSpeedScale = 0.9f;
+		const float kPreferredRange = 4.f;
+
+		// Sidesteps around the player at this share of its chase speed,
+		// turning back the other way every so often.
+		const float kStrafeScale = 0.6f;
+		const float kStrafeSwitchMin = 1.5f;
+		const float kStrafeSwitchMax = 3.f;
+
+		// A slow orb that bends after the player.
+		const float kOrbWindup = 0.5f;
+		const float kOrbSpeed = 4.5f;
+		const float kOrbTurnRate = 1.8f; // radians per second
+		const float kOrbLifetime = 4.f;
+		const float kOrbDamage = 10.f;
+		const float kOrbCooldown = 2.5f;
+
+		// A cursed patch under the player: it takes shape first, then bites
+		// every tick for as long as it lasts. Ticks are spaced past the
+		// player's invulnerability after a hit, so each one can land.
+		const float kCurseWindup = 0.5f;
+		const float kCurseRadius = 1.3f;
+		const float kCurseArmTime = 0.5f;
+		const float kCurseDuration = 3.f;
+		const float kCurseTickDamage = 4.f;
+		const float kCurseTickInterval = 0.5f;
+		const float kCurseCooldown = 7.f;
+
+		const float kRecover = 0.3f;
+	}
+
+	// Eroded knight of the light: upright, slow, shielded, one honest cut.
+	namespace LightKnight
+	{
+		const float kHealth = 50.f;
+		const float kSpeedScale = 0.8f;
+
+		// Starts winding up a cut once the player is this close.
+		const float kStartRange = 1.f;
+		const float kCleaveWindup = 0.5f;
+		const float kCleaveRange = 1.2f;
+		const float kCleaveArcDegrees = 100.f;
+		const float kCleaveDamage = 14.f;
+		const float kCleaveCooldown = 1.6f;
+		const float kRecover = 0.6f;
+	}
+
+	// Eroded knight of the dark: low, quick, two blades, and a charge.
+	namespace DarkKnight
+	{
+		const float kHealth = 35.f;
+		const float kSpeedScale = 1.25f;
+
+		const float kStartRange = 0.9f;
+		const float kCutWindup = 0.3f;
+		const float kCutRange = 1.1f;
+		const float kCutArcDegrees = 120.f;
+		const float kCutDamage = 7.f;
+		// The second cut follows the first after this long - just past the
+		// player's invulnerability after a hit, so both can land.
+		const float kSecondCutGap = 0.45f;
+		const float kCutCooldown = 1.2f;
+		const float kRecover = 0.35f;
+
+		// From this band of distance it may charge instead, the path marked
+		// on the ground while it gathers itself.
+		const float kChargeMinRange = 3.f;
+		const float kChargeMaxRange = 5.f;
+		const float kChargeWindup = 0.5f;
+		const float kChargeDistance = 4.f;
+		const float kChargeDuration = 0.3f;
+		const float kChargeWidth = 0.8f;
+		const float kChargeHitRadius = 0.7f;
+		const float kChargeDamage = 12.f;
+		const float kChargeCooldown = 5.f;
 	}
 
 	namespace Power

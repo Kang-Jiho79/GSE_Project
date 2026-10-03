@@ -1,9 +1,14 @@
 #include "stdafx.h"
 #include "MonsterActor.h"
+#include "MonsterModels.h"
 #include "ParticleActor.h"
+#include "EnemyProjectileActor.h"
+#include "LightningActor.h"
+#include "CurseFieldActor.h"
 #include "SceneGraph.h"
 #include "DrawList.h"
 #include "PlayerStatus.h"
+#include "Combat.h"
 #include "Random.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
@@ -11,62 +16,93 @@
 
 namespace
 {
-	// How long after landing a hit the body is still thrown forward.
-	const float kLungeDuration = 0.18f;
-	const float kLungeDistance = 9.f;
+	const float kDegToRad = 3.14159265f / 180.f;
 
-	const float kGaitRate = 0.09f; // radians of gait per pixel moved
+	const float kGaitPerTile = 3.2f; // radians of walk cycle per tile covered
 	const float kClimbRate = 14.f;
+
+	// Stops pressing in at this share of its reach while its next blow is
+	// not ready, so it circles at arm's length instead of standing on him.
+	const float kHoldShare = 0.8f;
+	const float kRoamArrive = 0.1f; // tiles
+
+	const float kStrikeShowTime = 0.2f;
 
 	const int kBurstCount = 5;
 	const float kBurstSpeed = 90.f;
 
-	const float kBody = 0.235f;
-	const float kEye = 0.07f;
+	// The marked ground: a faint fill of the whole reach, a stronger one
+	// growing out to it as the blow gathers, and a bright edge.
+	const float kTelegraphLift = 2.f;
+	const float kTelegraphBase = 0.14f;
+	const float kTelegraphFill = 0.26f;
+	const float kTelegraphEdge = 0.5f;
+	const float kTelegraphEdgeWidth = 0.06f;
+	const int kTelegraphSegments = 10;
 
-	float SpeedScale(MonsterActor::Kind kind)
+	bool IsLight(Alignment alignment)
 	{
-		switch (kind)
-		{
-		case MonsterActor::Kind::Brute:
-		{
-			return 0.72f;
-		}
-		case MonsterActor::Kind::Stalker:
-		{
-			return 1.3f;
-		}
-		default:
-		{
-			return 1.f;
-		}
-		}
+		return alignment == Alignment::Light;
 	}
 
-	float MaxHealth(MonsterActor::Kind kind)
+	bool IsMage(MonsterActor::Kind kind)
 	{
-		switch (kind)
+		return kind == MonsterActor::Kind::Mage;
+	}
+
+	float MaxHealth(MonsterActor::Kind kind, Alignment alignment)
+	{
+		if (IsMage(kind))
 		{
-		case MonsterActor::Kind::Brute:
+			return IsLight(alignment) ? Tuning::LightMage::kHealth : Tuning::DarkMage::kHealth;
+		}
+		return IsLight(alignment) ? Tuning::LightKnight::kHealth : Tuning::DarkKnight::kHealth;
+	}
+
+	float SpeedScale(MonsterActor::Kind kind, Alignment alignment)
+	{
+		if (IsMage(kind))
 		{
-			return Tuning::Monster::kBruteHealth;
+			return IsLight(alignment) ? Tuning::LightMage::kSpeedScale : Tuning::DarkMage::kSpeedScale;
 		}
-		case MonsterActor::Kind::Stalker:
+		return IsLight(alignment) ? Tuning::LightKnight::kSpeedScale : Tuning::DarkKnight::kSpeedScale;
+	}
+
+	// A knight's reach before it starts a blow.
+	float StartRange(Alignment alignment)
+	{
+		return IsLight(alignment) ? Tuning::LightKnight::kStartRange : Tuning::DarkKnight::kStartRange;
+	}
+
+	// The distance a mage likes to keep.
+	float PreferredRange(Alignment alignment)
+	{
+		return IsLight(alignment) ? Tuning::LightMage::kPreferredRange : Tuning::DarkMage::kPreferredRange;
+	}
+
+	float RecoverTime(MonsterActor::Kind kind, Alignment alignment)
+	{
+		if (IsMage(kind))
 		{
-			return Tuning::Monster::kStalkerHealth;
+			return IsLight(alignment) ? Tuning::LightMage::kRecover : Tuning::DarkMage::kRecover;
 		}
-		default:
-		{
-			return Tuning::Monster::kCrawlerHealth;
-		}
-		}
+		return IsLight(alignment) ? Tuning::LightKnight::kRecover : Tuning::DarkKnight::kRecover;
+	}
+
+	// The warning colour: the side's own colour, mostly washed to ash.
+	void TelegraphColor(Alignment alignment, float& r, float& g, float& b)
+	{
+		AlignmentColor::Core(alignment, r, g, b);
+		r += (0.75f - r) * 0.6f;
+		g += (0.73f - g) * 0.6f;
+		b += (0.72f - b) * 0.6f;
 	}
 }
 
-MonsterActor::MonsterActor(Alignment alignment, Kind kind)
-	: m_Alignment(alignment)
-	, m_Kind(kind)
-	, m_Health(MaxHealth(kind))
+MonsterActor::MonsterActor(Kind kind, Alignment alignment)
+	: m_Kind(kind)
+	, m_Alignment(alignment)
+	, m_Health(MaxHealth(kind, alignment))
 {
 	m_RoamWaitTimer = Random::Unit() * 2.f;
 	// Desynchronised, so a group does not sway in lockstep.
@@ -85,6 +121,30 @@ float MonsterActor::TakeHit(float damage)
 	return landed;
 }
 
+float MonsterActor::TakeHit(float damage, float fromX, float fromY)
+{
+	if (m_Kind == Kind::Knight && IsLight(m_Alignment))
+	{
+		float col, row, fromCol, fromRow;
+		WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+		WorldGrid::InverseIso(fromX, fromY, fromCol, fromRow);
+
+		float toCol = fromCol - col;
+		float toRow = fromRow - row;
+		float length = sqrtf(toCol * toCol + toRow * toRow);
+		if (length > 0.001f)
+		{
+			float dot = (toCol * m_FaceCol + toRow * m_FaceRow) / length;
+			if (dot >= cosf(Tuning::Monster::kShieldArcDegrees * 0.5f * kDegToRad))
+			{
+				damage *= Tuning::Monster::kShieldFactor;
+			}
+		}
+	}
+
+	return TakeHit(damage);
+}
+
 void MonsterActor::Shove(float offsetCol, float offsetRow)
 {
 	float offsetX, offsetY;
@@ -93,6 +153,13 @@ void MonsterActor::Shove(float offsetCol, float offsetRow)
 	m_ShoveVelX = offsetX / Tuning::Shove::kDuration;
 	m_ShoveVelY = offsetY / Tuning::Shove::kDuration;
 	m_ShoveTimer = Tuning::Shove::kDuration;
+
+	if (m_State == State::Windup || m_State == State::Charge || m_State == State::Recover)
+	{
+		m_State = State::Chase;
+		m_StateTime = 0.f;
+		m_SecondCutPending = false;
+	}
 }
 
 void MonsterActor::OnUpdate(const ActorContext& ctx)
@@ -101,10 +168,9 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 	// wanders is anchored on the first frame rather than in the constructor.
 	if (!m_Anchored)
 	{
-		m_OriginX = WorldX();
-		m_OriginY = WorldY();
-		m_RoamTargetX = m_OriginX;
-		m_RoamTargetY = m_OriginY;
+		WorldGrid::InverseIso(WorldX(), WorldY(), m_OriginCol, m_OriginRow);
+		m_RoamTargetCol = m_OriginCol;
+		m_RoamTargetRow = m_OriginRow;
 		m_GroundHeight = WorldGrid::GroundHeightAt(WorldX(), WorldY());
 		m_Anchored = true;
 	}
@@ -117,9 +183,18 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 	}
 
 	m_Time += ctx.deltaTime;
+	m_Moving = false;
 	if (m_AttackCooldown > 0.f)
 	{
 		m_AttackCooldown -= ctx.deltaTime;
+	}
+	if (m_SpecialCooldown > 0.f)
+	{
+		m_SpecialCooldown -= ctx.deltaTime;
+	}
+	if (m_StrikeFlash > 0.f)
+	{
+		m_StrikeFlash -= ctx.deltaTime / kStrikeShowTime;
 	}
 
 	m_GroundHeight = WorldGrid::SmoothApproach(m_GroundHeight,
@@ -143,79 +218,427 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 		return;
 	}
 
-	float toPlayerX = ctx.playerX - WorldX();
-
 	// Ranges are judged on the ground, in tiles, so its reach is the same
 	// whether the player stands beside it on screen or above it.
 	float col, row, playerCol, playerRow;
 	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
 	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
-	float toPlayerCol = playerCol - col;
-	float toPlayerRow = playerRow - row;
-	float distance = sqrtf(toPlayerCol * toPlayerCol + toPlayerRow * toPlayerRow);
+	float toCol = playerCol - col;
+	float toRow = playerRow - row;
+	float distance = sqrtf(toCol * toCol + toRow * toRow);
+	float dirCol = (distance > 0.001f) ? toCol / distance : m_FaceCol;
+	float dirRow = (distance > 0.001f) ? toRow / distance : m_FaceRow;
 
-	UpdateState(distance);
+	m_StateTime += ctx.deltaTime;
 
-	if (m_State != State::Roam)
+	switch (m_State)
 	{
-		m_Facing = (toPlayerX < 0.f) ? -1.f : 1.f;
-	}
-
-	if (m_State == State::Attack)
+	case State::Roam:
 	{
-		if (m_AttackCooldown <= 0.f && ctx.status->TryDamage(Tuning::Monster::kAttackDamage))
-		{
-			m_AttackCooldown = Tuning::Monster::kAttackCooldown;
-		}
-		return;
-	}
-
-	if (m_State == State::Chase)
-	{
-		MoveToward(ctx.playerX, ctx.playerY, Tuning::Monster::kChaseSpeedPx * SpeedScale(m_Kind), ctx.deltaTime);
-		return;
-	}
-
-	Roam(ctx);
-}
-
-void MonsterActor::UpdateState(float distanceToPlayer)
-{
-	if (m_State == State::Attack)
-	{
-		if (distanceToPlayer > Tuning::Monster::kAttackRange)
+		if (distance <= Tuning::Monster::kDetectRange)
 		{
 			m_State = State::Chase;
+			m_StateTime = 0.f;
 		}
-		return;
-	}
-
-	if (m_State == State::Chase)
-	{
-		if (distanceToPlayer > Tuning::Monster::kGiveUpRange)
+		else
 		{
-			m_State = State::Roam;
-			m_RoamTargetX = m_OriginX;
-			m_RoamTargetY = m_OriginY;
+			Roam(ctx);
 		}
-		else if (distanceToPlayer <= Tuning::Monster::kAttackRange)
-		{
-			m_State = State::Attack;
-		}
-		return;
+		break;
 	}
-
-	if (distanceToPlayer <= Tuning::Monster::kDetectRange)
+	case State::Chase:
 	{
-		m_State = State::Chase;
+		UpdateChase(ctx, distance, dirCol, dirRow);
+		break;
+	}
+	case State::Windup:
+	{
+		// A dark mage keeps drifting while it casts; everything else stands
+		// to gather a blow.
+		if (IsMage(m_Kind) && !IsLight(m_Alignment))
+		{
+			Strafe(ctx, dirCol, dirRow);
+		}
+
+		if (m_StateTime >= m_BlowWindup)
+		{
+			Release(ctx);
+		}
+		break;
+	}
+	case State::Charge:
+	{
+		UpdateCharge(ctx);
+		break;
+	}
+	case State::Recover:
+	{
+		UpdateRecover(ctx);
+		break;
+	}
 	}
 }
 
-void MonsterActor::MoveToward(float targetX, float targetY, float speed, float deltaTime)
+void MonsterActor::UpdateChase(const ActorContext& ctx, float distance, float dirCol, float dirRow)
 {
-	float dx = targetX - WorldX();
-	float dy = targetY - WorldY();
-	float distance = sqrtf(dx * dx + dy * dy);
+	if (distance > Tuning::Monster::kGiveUpRange)
+	{
+		m_State = State::Roam;
+		m_StateTime = 0.f;
+		m_RoamTargetCol = m_OriginCol;
+		m_RoamTargetRow = m_OriginRow;
+		return;
+	}
+
+	FaceAlong(dirCol, dirRow);
+
+	if (TryStartBlow(distance, dirCol, dirRow))
+	{
+		return;
+	}
+
+	if (IsMage(m_Kind))
+	{
+		KeepDistance(ctx, distance, dirCol, dirRow);
+		return;
+	}
+
+	float hold = StartRange(m_Alignment) * kHoldShare;
+	if (distance <= hold)
+	{
+		return;
+	}
+
+	float step = Tuning::Monster::kChaseSpeed * SpeedScale(m_Kind, m_Alignment) * ctx.deltaTime;
+	if (step > distance - hold)
+	{
+		step = distance - hold;
+	}
+	StepAlong(dirCol, dirRow, step);
+}
+
+void MonsterActor::KeepDistance(const ActorContext& ctx, float distance, float dirCol, float dirRow)
+{
+	float preferred = PreferredRange(m_Alignment);
+	float speed = Tuning::Monster::kChaseSpeed * SpeedScale(m_Kind, m_Alignment);
+
+	// Too close: back away, still facing him.
+	if (distance < preferred - Tuning::Monster::kMageBackOff)
+	{
+		StepAlong(-dirCol, -dirRow, speed * ctx.deltaTime);
+		return;
+	}
+
+	// Too far: close in, but only to the distance it likes.
+	if (distance > preferred)
+	{
+		float step = speed * ctx.deltaTime;
+		if (step > distance - preferred)
+		{
+			step = distance - preferred;
+		}
+		StepAlong(dirCol, dirRow, step);
+		return;
+	}
+
+	if (!IsLight(m_Alignment))
+	{
+		Strafe(ctx, dirCol, dirRow);
+	}
+}
+
+void MonsterActor::Strafe(const ActorContext& ctx, float dirCol, float dirRow)
+{
+	m_StrafeTimer -= ctx.deltaTime;
+	if (m_StrafeTimer <= 0.f)
+	{
+		m_StrafeSign = -m_StrafeSign;
+		m_StrafeTimer = Tuning::DarkMage::kStrafeSwitchMin
+			+ Random::Unit() * (Tuning::DarkMage::kStrafeSwitchMax - Tuning::DarkMage::kStrafeSwitchMin);
+	}
+
+	float speed = Tuning::Monster::kChaseSpeed * SpeedScale(m_Kind, m_Alignment) * Tuning::DarkMage::kStrafeScale;
+	StepAlong(-dirRow * m_StrafeSign, dirCol * m_StrafeSign, speed * ctx.deltaTime);
+}
+
+bool MonsterActor::TryStartBlow(float distance, float dirCol, float dirRow)
+{
+	if (IsMage(m_Kind))
+	{
+		return TryStartMageBlow(distance, dirCol, dirRow);
+	}
+	return TryStartKnightBlow(distance, dirCol, dirRow);
+}
+
+bool MonsterActor::TryStartMageBlow(float distance, float dirCol, float dirRow)
+{
+	if (distance > PreferredRange(m_Alignment) + Tuning::Monster::kMageCastSlack)
+	{
+		return false;
+	}
+
+	bool light = IsLight(m_Alignment);
+	if (m_SpecialCooldown <= 0.f)
+	{
+		if (light)
+		{
+			StartWindup(Blow::Smite, Tuning::LightMage::kSmiteWindup, dirCol, dirRow);
+			m_SpecialCooldown = Tuning::LightMage::kSmiteCooldown;
+		}
+		else
+		{
+			StartWindup(Blow::Curse, Tuning::DarkMage::kCurseWindup, dirCol, dirRow);
+			m_SpecialCooldown = Tuning::DarkMage::kCurseCooldown;
+		}
+		return true;
+	}
+
+	if (m_AttackCooldown > 0.f)
+	{
+		return false;
+	}
+
+	if (light)
+	{
+		StartWindup(Blow::Bolt, Tuning::LightMage::kBoltWindup, dirCol, dirRow);
+	}
+	else
+	{
+		StartWindup(Blow::Orb, Tuning::DarkMage::kOrbWindup, dirCol, dirRow);
+	}
+	return true;
+}
+
+bool MonsterActor::TryStartKnightBlow(float distance, float dirCol, float dirRow)
+{
+	if (!IsLight(m_Alignment) && m_SpecialCooldown <= 0.f
+		&& distance >= Tuning::DarkKnight::kChargeMinRange && distance <= Tuning::DarkKnight::kChargeMaxRange)
+	{
+		StartWindup(Blow::Charge, Tuning::DarkKnight::kChargeWindup, dirCol, dirRow);
+		m_SpecialCooldown = Tuning::DarkKnight::kChargeCooldown;
+		return true;
+	}
+
+	if (m_AttackCooldown > 0.f || distance > StartRange(m_Alignment))
+	{
+		return false;
+	}
+
+	if (IsLight(m_Alignment))
+	{
+		StartWindup(Blow::Cleave, Tuning::LightKnight::kCleaveWindup, dirCol, dirRow);
+	}
+	else
+	{
+		StartWindup(Blow::TwinCut, Tuning::DarkKnight::kCutWindup, dirCol, dirRow);
+	}
+	return true;
+}
+
+void MonsterActor::StartWindup(Blow blow, float windup, float dirCol, float dirRow)
+{
+	m_Blow = blow;
+	m_BlowWindup = windup;
+	m_BlowDirCol = dirCol;
+	m_BlowDirRow = dirRow;
+	m_State = State::Windup;
+	m_StateTime = 0.f;
+	FaceAlong(dirCol, dirRow);
+}
+
+void MonsterActor::Release(const ActorContext& ctx)
+{
+	switch (m_Blow)
+	{
+	case Blow::Cleave:
+	{
+		Combat::StrikePlayerArc(ctx, WorldX(), WorldY(), m_BlowDirCol, m_BlowDirRow,
+			Tuning::LightKnight::kCleaveRange, Tuning::LightKnight::kCleaveArcDegrees,
+			Tuning::LightKnight::kCleaveDamage);
+		m_StrikeFlash = 1.f;
+		m_AttackCooldown = Tuning::LightKnight::kCleaveCooldown;
+		m_State = State::Recover;
+		break;
+	}
+	case Blow::TwinCut:
+	{
+		Cut(ctx);
+		m_SecondCutPending = true;
+		m_AttackCooldown = Tuning::DarkKnight::kCutCooldown;
+		m_State = State::Recover;
+		break;
+	}
+	case Blow::Charge:
+	{
+		m_ChargeLanded = false;
+		m_State = State::Charge;
+		break;
+	}
+	case Blow::Bolt:
+	case Blow::Smite:
+	case Blow::Orb:
+	case Blow::Curse:
+	{
+		Cast(ctx);
+		m_State = State::Recover;
+		break;
+	}
+	}
+
+	m_StateTime = 0.f;
+}
+
+void MonsterActor::Cast(const ActorContext& ctx)
+{
+	// Thrown spells are aimed where he is now, not where he was when the
+	// casting began - the casting itself is the warning.
+	float col, row, playerCol, playerRow;
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+	float toCol = playerCol - col;
+	float toRow = playerRow - row;
+	float length = sqrtf(toCol * toCol + toRow * toRow);
+	float dirCol = (length > 0.001f) ? toCol / length : m_BlowDirCol;
+	float dirRow = (length > 0.001f) ? toRow / length : m_BlowDirRow;
+	FaceAlong(dirCol, dirRow);
+
+	std::unique_ptr<Actor> spell;
+	float spawnX = WorldX();
+	float spawnY = WorldY();
+
+	switch (m_Blow)
+	{
+	case Blow::Bolt:
+	{
+		spell.reset(new EnemyProjectileActor(Alignment::Light, dirCol, dirRow,
+			Tuning::LightMage::kBoltSpeed, 0.f, Tuning::LightMage::kBoltLifetime, Tuning::LightMage::kBoltDamage));
+		m_AttackCooldown = Tuning::LightMage::kBoltCooldown;
+		break;
+	}
+	case Blow::Orb:
+	{
+		spell.reset(new EnemyProjectileActor(Alignment::Dark, dirCol, dirRow,
+			Tuning::DarkMage::kOrbSpeed, Tuning::DarkMage::kOrbTurnRate, Tuning::DarkMage::kOrbLifetime,
+			Tuning::DarkMage::kOrbDamage));
+		m_AttackCooldown = Tuning::DarkMage::kOrbCooldown;
+		break;
+	}
+	case Blow::Smite:
+	{
+		spell.reset(new LightningActor(LightningActor::Target::Player,
+			Tuning::LightMage::kSmiteRadius, Tuning::LightMage::kSmiteDelay, Tuning::LightMage::kSmiteDamage));
+		spawnX = ctx.playerX;
+		spawnY = ctx.playerY;
+		break;
+	}
+	default:
+	{
+		spell.reset(new CurseFieldActor());
+		spawnX = ctx.playerX;
+		spawnY = ctx.playerY;
+		break;
+	}
+	}
+
+	spell->SetLocalPosition(spawnX, spawnY);
+	ctx.graph->Spawn(std::move(spell));
+	m_StrikeFlash = 1.f;
+}
+
+void MonsterActor::Cut(const ActorContext& ctx)
+{
+	Combat::StrikePlayerArc(ctx, WorldX(), WorldY(), m_BlowDirCol, m_BlowDirRow,
+		Tuning::DarkKnight::kCutRange, Tuning::DarkKnight::kCutArcDegrees,
+		Tuning::DarkKnight::kCutDamage);
+	m_StrikeFlash = 1.f;
+}
+
+void MonsterActor::UpdateCharge(const ActorContext& ctx)
+{
+	// Only the part of this frame that falls inside the charge moves it, so
+	// it always covers exactly the marked line.
+	float before = m_StateTime - ctx.deltaTime;
+	if (before < 0.f)
+	{
+		before = 0.f;
+	}
+	float until = (m_StateTime < Tuning::DarkKnight::kChargeDuration) ? m_StateTime : Tuning::DarkKnight::kChargeDuration;
+	float speed = Tuning::DarkKnight::kChargeDistance / Tuning::DarkKnight::kChargeDuration;
+	if (until > before)
+	{
+		StepAlong(m_BlowDirCol, m_BlowDirRow, speed * (until - before));
+	}
+
+	if (!m_ChargeLanded && Combat::StrikePlayerRadius(ctx, WorldX(), WorldY(),
+		Tuning::DarkKnight::kChargeHitRadius, Tuning::DarkKnight::kChargeDamage))
+	{
+		m_ChargeLanded = true;
+		m_StrikeFlash = 1.f;
+	}
+
+	if (m_StateTime >= Tuning::DarkKnight::kChargeDuration)
+	{
+		m_State = State::Recover;
+		m_StateTime = 0.f;
+	}
+}
+
+void MonsterActor::UpdateRecover(const ActorContext& ctx)
+{
+	if (m_SecondCutPending)
+	{
+		if (m_StateTime >= Tuning::DarkKnight::kSecondCutGap)
+		{
+			Cut(ctx);
+			m_SecondCutPending = false;
+			m_StateTime = 0.f;
+		}
+		return;
+	}
+
+	if (m_StateTime >= RecoverTime(m_Kind, m_Alignment))
+	{
+		m_State = State::Chase;
+		m_StateTime = 0.f;
+	}
+}
+
+void MonsterActor::Roam(const ActorContext& ctx)
+{
+	float col, row;
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+
+	float toCol = m_RoamTargetCol - col;
+	float toRow = m_RoamTargetRow - row;
+	if (toCol * toCol + toRow * toRow > kRoamArrive * kRoamArrive)
+	{
+		StepToward(m_RoamTargetCol, m_RoamTargetRow,
+			Tuning::Monster::kRoamSpeed * SpeedScale(m_Kind, m_Alignment), ctx.deltaTime);
+		return;
+	}
+
+	if (m_RoamWaitTimer > 0.f)
+	{
+		m_RoamWaitTimer -= ctx.deltaTime;
+		return;
+	}
+
+	float angle = Random::Angle();
+	float radius = Random::Unit() * Tuning::Monster::kRoamRadius;
+	m_RoamTargetCol = m_OriginCol + cosf(angle) * radius;
+	m_RoamTargetRow = m_OriginRow + sinf(angle) * radius;
+	WorldGrid::ClampToMap(m_RoamTargetCol, m_RoamTargetRow);
+	m_RoamWaitTimer = 1.5f + Random::Unit() * 2.f;
+}
+
+void MonsterActor::StepToward(float targetCol, float targetRow, float speed, float deltaTime)
+{
+	float col, row;
+	WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
+
+	float toCol = targetCol - col;
+	float toRow = targetRow - row;
+	float distance = sqrtf(toCol * toCol + toRow * toRow);
 	if (distance <= 0.001f)
 	{
 		return;
@@ -227,38 +650,38 @@ void MonsterActor::MoveToward(float targetX, float targetY, float speed, float d
 		step = distance;
 	}
 
-	SetLocalPosition(LocalX() + (dx / distance) * step, LocalY() + (dy / distance) * step);
-	m_GaitPhase += step * kGaitRate;
-
-	if (fabsf(dx) > 0.5f)
-	{
-		m_Facing = (dx < 0.f) ? -1.f : 1.f;
-	}
+	FaceAlong(toCol / distance, toRow / distance);
+	StepAlong(toCol / distance, toRow / distance, step);
 }
 
-void MonsterActor::Roam(const ActorContext& ctx)
+void MonsterActor::StepAlong(float dirCol, float dirRow, float tiles)
 {
-	float toTargetX = m_RoamTargetX - WorldX();
-	float toTargetY = m_RoamTargetY - WorldY();
-	float distance = sqrtf(toTargetX * toTargetX + toTargetY * toTargetY);
+	float col, row;
+	WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
 
-	if (distance >= 4.f)
+	col += dirCol * tiles;
+	row += dirRow * tiles;
+	WorldGrid::ClampToMap(col, row);
+
+	float x, y;
+	WorldGrid::IsoPosition(col, row, x, y);
+	SetLocalPosition(x, y);
+
+	m_GaitPhase += tiles * kGaitPerTile;
+	m_Moving = true;
+}
+
+void MonsterActor::FaceAlong(float dirCol, float dirRow)
+{
+	m_FaceCol = dirCol;
+	m_FaceRow = dirRow;
+
+	float screenX, screenY;
+	WorldGrid::IsoPosition(dirCol, dirRow, screenX, screenY);
+	if (fabsf(screenX) > 0.01f)
 	{
-		MoveToward(m_RoamTargetX, m_RoamTargetY, Tuning::Monster::kRoamSpeedPx * SpeedScale(m_Kind), ctx.deltaTime);
-		return;
+		m_Facing = (screenX < 0.f) ? -1.f : 1.f;
 	}
-
-	if (m_RoamWaitTimer > 0.f)
-	{
-		m_RoamWaitTimer -= ctx.deltaTime;
-		return;
-	}
-
-	float angle = Random::Angle();
-	float radius = Random::Unit() * Tuning::Monster::kRoamRadiusPx;
-	m_RoamTargetX = m_OriginX + cosf(angle) * radius;
-	m_RoamTargetY = m_OriginY + sinf(angle) * radius;
-	m_RoamWaitTimer = 1.5f + Random::Unit() * 2.f;
 }
 
 void MonsterActor::SpawnDeathBurst(const ActorContext& ctx) const
@@ -281,156 +704,99 @@ void MonsterActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float x, y;
 	ctx.ToScreen(WorldX(), WorldY(), x, y);
 
-	if (!ctx.IsOnScreen(x, y, WorldGrid::kTileWidth, WorldGrid::kTileHeight * 4.f))
+	// Wide enough to keep a charge's marked path from popping at the edges.
+	if (!ctx.IsOnScreen(x, y, WorldGrid::kTileWidth * 3.f, WorldGrid::kTileHeight * 4.f))
 	{
 		return;
 	}
 
 	float groundY = y + m_GroundHeight;
-	float depth = WorldGrid::TileDepth(WorldX(), WorldY());
 
-	// Right after landing a hit the whole body is thrown toward the player and
-	// eases back - the only tell the player gets that they were just struck.
-	float lunge = 0.f;
-	float sinceHit = Tuning::Monster::kAttackCooldown - m_AttackCooldown;
-	if (m_State == State::Attack && sinceHit < kLungeDuration)
+	// Only knights mark the ground; a mage's casting is its own warning, and
+	// its spells mark their own ground where they need to.
+	if (m_State == State::Windup && m_Kind == Kind::Knight)
 	{
-		lunge = (1.f - sinceHit / kLungeDuration) * kLungeDistance * m_Facing;
+		DrawTelegraph(out, x, groundY);
 	}
 
-	switch (m_Kind)
+	MonsterModels::Pose pose;
+	pose.x = x;
+	pose.groundY = groundY;
+	pose.depth = WorldGrid::TileDepth(WorldX(), WorldY());
+	pose.worldX = WorldX();
+	pose.worldY = WorldY();
+	pose.facing = m_Facing;
+	pose.gait = m_GaitPhase;
+	pose.moving = m_Moving;
+	pose.time = m_Time;
+	pose.strike = (m_StrikeFlash > 0.f) ? m_StrikeFlash : 0.f;
+	pose.charging = (m_State == State::Charge);
+	if (m_State == State::Windup)
 	{
-	case Kind::Brute:
-	{
-		DrawBrute(out, depth, x, groundY, lunge);
-		break;
+		pose.windup = m_StateTime / m_BlowWindup;
+		if (pose.windup > 1.f)
+		{
+			pose.windup = 1.f;
+		}
 	}
-	case Kind::Stalker:
+
+	bool light = IsLight(m_Alignment);
+	if (IsMage(m_Kind))
 	{
-		DrawStalker(out, depth, x, groundY, lunge);
-		break;
+		if (light)
+		{
+			MonsterModels::DrawLightMage(out, pose);
+		}
+		else
+		{
+			MonsterModels::DrawDarkMage(out, pose);
+		}
 	}
-	default:
+	else if (light)
 	{
-		DrawCrawler(out, depth, x, groundY, lunge);
-		break;
+		MonsterModels::DrawLightKnight(out, pose);
 	}
+	else
+	{
+		MonsterModels::DrawDarkKnight(out, pose);
 	}
 }
 
-void MonsterActor::DrawBrute(DrawList& out, float depth, float x, float groundY, float lunge) const
+void MonsterActor::DrawTelegraph(DrawList& out, float x, float groundY) const
 {
-	// Heavy: squat legs, a torso that swells enormously toward the shoulders,
-	// and a head sunk down between them. Slow, deep bob.
-	float bob = fabsf(sinf(m_GaitPhase * 0.7f)) * 2.2f;
-	float bodyX = x + lunge;
-	float stride = sinf(m_GaitPhase * 0.7f) * 2.5f;
-
-	out.AddShadow(depth, x, groundY, 40.f, 20.f);
-
-	// Stubby legs, thicker at the foot than the hip - it stands like a pillar.
-	out.AddTaperedBox(depth, bodyX - 7.f + stride, groundY, 0.2f, 0.2f, 6.f,
-		0.85f, 0.f, 0.f, kBody * 0.88f, kBody * 0.88f, kBody * 0.88f);
-	out.AddTaperedBox(depth, bodyX + 7.f - stride, groundY, 0.2f, 0.2f, 6.f,
-		0.85f, 0.f, 0.f, kBody * 0.88f, kBody * 0.88f, kBody * 0.88f);
-
-	float torsoBase = groundY + 6.f + bob;
-	out.AddTaperedBox(depth + 0.01f, bodyX, torsoBase, 0.34f, 0.34f, 16.f,
-		1.55f, m_Facing * 1.f, 0.f, kBody, kBody, kBody);
-
-	// Arms hang from the wide shoulders and swell into fists at the ground.
-	float armSwing = stride * 0.8f;
-	float armTop = torsoBase + 15.f;
-	out.AddTaperedBox(depth + 0.02f, bodyX - 19.f - armSwing, armTop - 14.f, 0.13f, 0.13f, 14.f,
-		1.5f, armSwing * 0.6f, 0.f, kBody * 0.94f, kBody * 0.94f, kBody * 0.94f);
-	out.AddTaperedBox(depth + 0.02f, bodyX + 19.f + armSwing, armTop - 14.f, 0.13f, 0.13f, 14.f,
-		1.5f, -armSwing * 0.6f, 0.f, kBody * 0.94f, kBody * 0.94f, kBody * 0.94f);
-
-	// Almost no neck: the skull sits straight on the shoulder line.
-	float headBase = torsoBase + 14.f;
-	out.AddTaperedBox(depth + 0.03f, bodyX + m_Facing * 3.f, headBase, 0.26f, 0.26f, 8.f,
-		0.72f, m_Facing * 1.5f, 0.f, kBody * 1.08f, kBody * 1.08f, kBody * 1.08f);
-
-	DrawEyes(out, depth + 0.04f, bodyX + m_Facing * 7.f, headBase + 3.5f, 3.f);
-}
-
-void MonsterActor::DrawStalker(DrawList& out, float depth, float x, float groundY, float lunge) const
-{
-	// Tall and unsteady: spindly legs, a narrow body that tapers as it rises,
-	// and long arms that trail behind the sway.
-	float sway = sinf(m_Time * 2.6f) * 1.6f;
-	float bob = fabsf(sinf(m_GaitPhase * 1.3f)) * 1.2f;
-	float bodyX = x + lunge + sway;
-	float stride = sinf(m_GaitPhase * 1.3f) * 3.f;
-
-	out.AddShadow(depth, x, groundY, 20.f, 10.f);
-
-	// Legs thin to almost nothing at the ground - it walks on points.
-	out.AddTaperedBox(depth, x - 3.5f + stride, groundY, 0.09f, 0.09f, 14.f,
-		1.5f, sway * 0.3f, 0.f, kBody * 0.85f, kBody * 0.85f, kBody * 0.85f);
-	out.AddTaperedBox(depth, x + 3.5f - stride, groundY, 0.09f, 0.09f, 14.f,
-		1.5f, sway * 0.3f, 0.f, kBody * 0.85f, kBody * 0.85f, kBody * 0.85f);
-
-	float torsoBase = groundY + 14.f + bob;
-	out.AddTaperedBox(depth + 0.01f, bodyX, torsoBase, 0.19f, 0.19f, 17.f,
-		0.72f, sway * 0.5f, 0.f, kBody, kBody, kBody);
-
-	// Arms longer than the body, dragging a beat behind the sway.
-	float armDrag = sway * 0.9f;
-	float armTop = torsoBase + 15.f;
-	out.AddTaperedBox(depth + 0.02f, bodyX - 8.f - armDrag, armTop - 23.f, 0.055f, 0.055f, 23.f,
-		1.8f, armDrag * 0.8f, 0.f, kBody * 0.9f, kBody * 0.9f, kBody * 0.9f);
-	out.AddTaperedBox(depth + 0.02f, bodyX + 8.f - armDrag, armTop - 23.f, 0.055f, 0.055f, 23.f,
-		1.8f, armDrag * 0.8f, 0.f, kBody * 0.9f, kBody * 0.9f, kBody * 0.9f);
-
-	// A long neck carries a small head well above the shoulders.
-	float neckBase = torsoBase + 17.f;
-	out.AddTaperedBox(depth + 0.025f, bodyX + sway * 0.4f, neckBase, 0.07f, 0.07f, 5.f,
-		1.f, m_Facing * 0.8f, 0.f, kBody * 0.92f, kBody * 0.92f, kBody * 0.92f);
-
-	float headBase = neckBase + 5.f;
-	out.AddTaperedBox(depth + 0.03f, bodyX + m_Facing * 2.f + sway * 0.4f, headBase, 0.15f, 0.15f, 7.f,
-		0.6f, m_Facing * 1.2f, 0.f, kBody * 1.08f, kBody * 1.08f, kBody * 1.08f);
-
-	DrawEyes(out, depth + 0.04f, bodyX + m_Facing * 4.5f + sway * 0.4f, headBase + 3.f, 2.f);
-}
-
-void MonsterActor::DrawCrawler(DrawList& out, float depth, float x, float groundY, float lunge) const
-{
-	// Low and wide, stretched along the col axis, on six legs that skitter on a
-	// fast clock even when it is still.
-	float bodyX = x + lunge;
-
-	out.AddShadow(depth, x, groundY, 42.f, 21.f);
-
-	// Legs splay outward as they go down, so it squats over its own footprint.
-	const float kLegSpacing[6] = { -15.f, -9.f, -3.f, 3.f, 9.f, 15.f };
-	for (int i = 0; i < 6; i++)
+	float progress = m_StateTime / m_BlowWindup;
+	if (progress > 1.f)
 	{
-		float lift = fabsf(sinf(m_Time * 14.f + i * 1.3f)) * 1.6f;
-		float splay = (kLegSpacing[i] < 0.f) ? -1.2f : 1.2f;
-		out.AddTaperedBox(depth, bodyX + kLegSpacing[i], groundY + lift, 0.06f, 0.06f, 5.f,
-			1.6f, -splay, 0.f, kBody * 0.82f, kBody * 0.82f, kBody * 0.82f);
+		progress = 1.f;
 	}
 
-	// A domed carapace: two slabs, the upper one drawn well in, so the back
-	// curves rather than sitting flat.
-	float bodyBase = groundY + 4.f + fabsf(sinf(m_GaitPhase * 2.f)) * 0.8f;
-	out.AddTaperedBox(depth + 0.01f, bodyX, bodyBase, 0.66f, 0.38f, 5.f,
-		0.88f, 0.f, 0.f, kBody, kBody, kBody);
-	out.AddTaperedBox(depth + 0.02f, bodyX, bodyBase + 5.f, 0.58f, 0.33f, 4.f,
-		0.55f, m_Facing * -1.5f, 0.f, kBody * 1.06f, kBody * 1.06f, kBody * 1.06f);
+	float r, g, b;
+	TelegraphColor(m_Alignment, r, g, b);
+	float baseY = groundY + kTelegraphLift;
 
-	// No head: a blunt snout juts from the front of the shell, eyes on it.
-	float snoutX = bodyX + m_Facing * 15.f;
-	out.AddTaperedBox(depth + 0.03f, snoutX, bodyBase + 1.f, 0.16f, 0.16f, 4.f,
-		0.6f, m_Facing * 2.f, 0.f, kBody * 1.02f, kBody * 1.02f, kBody * 1.02f);
+	if (m_Blow == Blow::Charge)
+	{
+		float length = Tuning::DarkKnight::kChargeDistance;
+		float width = Tuning::DarkKnight::kChargeWidth;
+		out.AddGroundStrip(WorldX(), WorldY(), x, baseY, m_BlowDirCol, m_BlowDirRow,
+			0.f, length, width, r, g, b, kTelegraphBase);
+		out.AddGroundStrip(WorldX(), WorldY(), x, baseY, m_BlowDirCol, m_BlowDirRow,
+			0.f, length * progress, width, r, g, b, kTelegraphFill);
+		return;
+	}
 
-	DrawEyes(out, depth + 0.04f, snoutX + m_Facing * 2.f, bodyBase + 3.5f, 2.5f);
-}
+	float range = (m_Blow == Blow::Cleave) ? Tuning::LightKnight::kCleaveRange : Tuning::DarkKnight::kCutRange;
+	float arc = (m_Blow == Blow::Cleave) ? Tuning::LightKnight::kCleaveArcDegrees : Tuning::DarkKnight::kCutArcDegrees;
+	float center = atan2f(m_BlowDirRow, m_BlowDirCol);
+	float half = arc * 0.5f * kDegToRad;
 
-void MonsterActor::DrawEyes(DrawList& out, float depth, float x, float y, float spacing) const
-{
-	out.AddRect(depth, x - spacing, y, 1.8f, 1.8f, kEye, kEye * 0.9f, kEye * 1.1f, 1.f);
-	out.AddRect(depth, x + spacing, y, 1.8f, 1.8f, kEye, kEye * 0.9f, kEye * 1.1f, 1.f);
+	out.AddGroundArc(WorldX(), WorldY(), x, baseY, 0.f, range, center - half, center + half,
+		kTelegraphSegments, r, g, b, kTelegraphBase);
+	if (progress > 0.f)
+	{
+		out.AddGroundArc(WorldX(), WorldY(), x, baseY, 0.f, range * progress, center - half, center + half,
+			kTelegraphSegments, r, g, b, kTelegraphFill);
+	}
+	out.AddGroundArc(WorldX(), WorldY(), x, baseY, range - kTelegraphEdgeWidth, range, center - half, center + half,
+		kTelegraphSegments, r, g, b, kTelegraphEdge);
 }

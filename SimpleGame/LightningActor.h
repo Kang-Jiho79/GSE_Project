@@ -2,12 +2,21 @@
 
 #include "Actor.h"
 
-// The light form's called lightning. Marks the ground first, so anything that
-// sees it coming can step out, then strikes everything still inside.
+// Called lightning. Marks the ground first, so anything that sees it coming
+// can step out, then strikes everything still inside. The player calls it
+// down on monsters; an eroded light mage calls it down on the player, its
+// mark washed toward ash.
 class LightningActor : public Actor
 {
 public:
-	LightningActor();
+	enum class Target
+	{
+		Monsters,
+		Player,
+	};
+
+	// Radius in tiles; delay is how long the mark shows before it lands.
+	LightningActor(Target target, float radiusTiles, float delay, float damage);
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;
@@ -16,6 +25,11 @@ protected:
 private:
 	void DrawWarning(DrawList& out, float x, float groundY) const;
 	void DrawStrike(DrawList& out, float x, float groundY) const;
+
+	Target m_Target;
+	float m_Radius;
+	float m_Delay;
+	float m_Damage;
 
 	float m_Age = 0.f;
 	bool m_Struck = false;

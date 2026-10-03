@@ -81,21 +81,12 @@ void Scene::BuildLevel()
 		int col = Random::Range(kSpawnMargin, WorldGrid::kMapCols - kSpawnMargin);
 		int row = Random::Range(kSpawnMargin, WorldGrid::kMapRows - kSpawnMargin);
 
-		Alignment alignment = (Random::Range(0, 2) == 0) ? Alignment::Light : Alignment::Dark;
+		// An even mix of all four - knight and mage, of either side - so the
+		// level as a whole can be kept in balance.
+		Alignment alignment = (i % 2 == 0) ? Alignment::Light : Alignment::Dark;
+		MonsterActor::Kind kind = ((i / 2) % 2 == 0) ? MonsterActor::Kind::Knight : MonsterActor::Kind::Mage;
 
-		// Rolled separately from alignment, so the build never hints at the side.
-		MonsterActor::Kind kind = MonsterActor::Kind::Crawler;
-		int kindRoll = Random::Range(0, 3);
-		if (kindRoll == 0)
-		{
-			kind = MonsterActor::Kind::Brute;
-		}
-		else if (kindRoll == 1)
-		{
-			kind = MonsterActor::Kind::Stalker;
-		}
-
-		std::unique_ptr<MonsterActor> monster(new MonsterActor(alignment, kind));
+		std::unique_ptr<MonsterActor> monster(new MonsterActor(kind, alignment));
 
 		float x, y;
 		WorldGrid::IsoPosition((float)col, (float)row, x, y);

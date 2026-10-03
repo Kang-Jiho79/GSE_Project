@@ -161,6 +161,9 @@
     <ClInclude Include="Hud.h" />
     <ClInclude Include="MeshCache.h" />
     <ClInclude Include="MonsterActor.h" />
+    <ClInclude Include="MonsterModels.h" />
+    <ClInclude Include="EnemyProjectileActor.h" />
+    <ClInclude Include="CurseFieldActor.h" />
     <ClInclude Include="ParticleActor.h" />
     <ClInclude Include="PlayerActor.h" />
     <ClInclude Include="PlayerStatus.h" />
@@ -194,6 +197,9 @@
     <ClCompile Include="Hud.cpp" />
     <ClCompile Include="MeshCache.cpp" />
     <ClCompile Include="MonsterActor.cpp" />
+    <ClCompile Include="MonsterModels.cpp" />
+    <ClCompile Include="EnemyProjectileActor.cpp" />
+    <ClCompile Include="CurseFieldActor.cpp" />
     <ClCompile Include="ParticleActor.cpp" />
     <ClCompile Include="PlayerActor.cpp" />
     <ClCompile Include="PlayerStatus.cpp" />

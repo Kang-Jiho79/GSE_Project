@@ -81,6 +81,13 @@ public:
 		float innerTiles, float outerTiles, float fromAngle, float toAngle, int segments,
 		float r, float g, float b, float a);
 
+	// A straight band lying flat on the ground from a world point along a unit
+	// direction, between two distances along it - a charge's path, say.
+	// Sorted in pieces like AddGroundArc. Lengths and width in tiles.
+	void AddGroundStrip(float worldX, float worldY, float screenX, float screenY,
+		float dirCol, float dirRow, float fromTiles, float toTiles, float widthTiles,
+		float r, float g, float b, float a);
+
 	// A dark patch on the ground, so a standing thing does not look pasted on.
 	void AddShadow(float depth, float x, float baseY, float width, float height);
 

@@ -56,7 +56,7 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	}
 
 	Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage(*ctx.status));
+		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage(*ctx.status), true);
 
 	std::unique_ptr<BeamActor> beam(new BeamActor(Alignment::Light, dirCol, dirRow, Tuning::LightForm::kBeamLength));
 	beam->SetLocalPosition(player.WorldX(), player.WorldY());
@@ -92,7 +92,8 @@ void LightFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);
 
-	std::unique_ptr<LightningActor> strike(new LightningActor());
+	std::unique_ptr<LightningActor> strike(new LightningActor(LightningActor::Target::Monsters,
+		Tuning::LightForm::kStrikeRadius, Tuning::LightForm::kStrikeDelay, Combat::StrikeDamage(*ctx.status)));
 	strike->SetLocalPosition(x, y);
 	ctx.graph->Spawn(std::move(strike));
 

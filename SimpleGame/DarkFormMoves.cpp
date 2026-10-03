@@ -135,7 +135,7 @@ void DarkFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	// then carries him through where they stand. A blow in reach, so it feeds
 	// lifesteal like any other cut.
 	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage(*ctx.status));
+		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage(*ctx.status), false);
 	ctx.status->Heal(Combat::Lifesteal(landed));
 
 	std::unique_ptr<BeamActor> streak(new BeamActor(Alignment::Dark, dirCol, dirRow, Tuning::DarkForm::kDashDistance));

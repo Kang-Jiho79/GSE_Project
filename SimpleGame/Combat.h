@@ -2,6 +2,7 @@
 
 class SceneGraph;
 struct PlayerStatus;
+struct ActorContext;
 
 // Where an attack becomes damage. Every damage number is worked out here, so
 // changing how hard something hits never means hunting through the actors.
@@ -33,9 +34,18 @@ namespace Combat
 
 	// Damages every monster within widthTiles of a straight line on the ground,
 	// from the origin out to lengthTiles along a unit direction. Returns the
-	// damage that landed.
+	// damage that landed. blockable: a light blow that a shield turned toward
+	// the origin can catch.
 	float HitLine(SceneGraph& graph, float originX, float originY, float dirCol, float dirRow,
-		float lengthTiles, float widthTiles, float damage);
+		float lengthTiles, float widthTiles, float damage, bool blockable);
+
+	// A monster's blow at the player: lands if the player stands inside the
+	// wedge or circle on the ground. Returns whether it hit - a roll or the
+	// moment after another hit can still turn it aside.
+	bool StrikePlayerArc(const ActorContext& ctx, float originX, float originY, float dirCol, float dirRow,
+		float rangeTiles, float arcDegrees, float damage);
+	bool StrikePlayerRadius(const ActorContext& ctx, float centerX, float centerY,
+		float radiusTiles, float damage);
 
 	// Damages, then shoves, every monster within a circle on the ground. A
 	// positive shove pushes away from the centre; a negative one pulls toward

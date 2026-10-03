@@ -5,9 +5,7 @@
 #include "WorldGrid.h"
 #include "Alignment.h"
 #include "Combat.h"
-#include "PlayerStatus.h"
 #include "Random.h"
-#include "Tuning.h"
 #include <cmath>
 
 namespace
@@ -22,7 +20,11 @@ namespace
 	const float kPixelsPerTile = 32.f;  // rough screen size of a tile, for the glow
 }
 
-LightningActor::LightningActor()
+LightningActor::LightningActor(Target target, float radiusTiles, float delay, float damage)
+	: m_Target(target)
+	, m_Radius(radiusTiles)
+	, m_Delay(delay)
+	, m_Damage(damage)
 {
 	for (int i = 0; i < kKinks; i++)
 	{
@@ -34,14 +36,20 @@ void LightningActor::OnUpdate(const ActorContext& ctx)
 {
 	m_Age += ctx.deltaTime;
 
-	if (!m_Struck && m_Age >= Tuning::LightForm::kStrikeDelay)
+	if (!m_Struck && m_Age >= m_Delay)
 	{
-		Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), Tuning::LightForm::kStrikeRadius,
-			Combat::StrikeDamage(*ctx.status), 0.f);
+		if (m_Target == Target::Monsters)
+		{
+			Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), m_Radius, m_Damage, 0.f);
+		}
+		else
+		{
+			Combat::StrikePlayerRadius(ctx, WorldX(), WorldY(), m_Radius, m_Damage);
+		}
 		m_Struck = true;
 	}
 
-	if (m_Age >= Tuning::LightForm::kStrikeDelay + kStrikeShowTime)
+	if (m_Age >= m_Delay + kStrikeShowTime)
 	{
 		Destroy();
 	}
@@ -52,7 +60,7 @@ void LightningActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float x, y;
 	ctx.ToScreen(WorldX(), WorldY(), x, y);
 
-	float reach = Tuning::LightForm::kStrikeRadius * kPixelsPerTile * 2.f;
+	float reach = m_Radius * kPixelsPerTile * 2.f;
 	if (!ctx.IsOnScreen(x, y, reach, kBoltHeight))
 	{
 		return;
@@ -72,11 +80,19 @@ void LightningActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 void LightningActor::DrawWarning(DrawList& out, float x, float groundY) const
 {
-	float radius = Tuning::LightForm::kStrikeRadius;
-	float progress = m_Age / Tuning::LightForm::kStrikeDelay;
+	float radius = m_Radius;
+	float progress = m_Age / m_Delay;
 
+	// Called on the player, the mark is washed toward ash, so it reads as a
+	// threat rather than his own.
 	float r, g, b;
 	AlignmentColor::Core(Alignment::Light, r, g, b);
+	if (m_Target == Target::Player)
+	{
+		r += (0.75f - r) * 0.6f;
+		g += (0.73f - g) * 0.6f;
+		b += (0.72f - b) * 0.6f;
+	}
 
 	// The edge of where it will land, pulsing faster as it nears.
 	float pulse = 0.45f + 0.25f * sinf(progress * progress * 40.f);
@@ -94,17 +110,17 @@ void LightningActor::DrawWarning(DrawList& out, float x, float groundY) const
 
 void LightningActor::DrawStrike(DrawList& out, float x, float groundY) const
 {
-	float t = (m_Age - Tuning::LightForm::kStrikeDelay) / kStrikeShowTime;
+	float t = (m_Age - m_Delay) / kStrikeShowTime;
 	float fade = 1.f - t;
 	float depth = WorldGrid::TileDepth(WorldX(), WorldY()) + 0.8f;
 
 	float r, g, b;
 	AlignmentColor::Glow(Alignment::Light, r, g, b);
-	out.AddGlow(depth - 0.3f, x, groundY, Tuning::LightForm::kStrikeRadius * kPixelsPerTile * 1.6f,
+	out.AddGlow(depth - 0.3f, x, groundY, m_Radius * kPixelsPerTile * 1.6f,
 		r, g, b, fade);
 
 	AlignmentColor::Core(Alignment::Light, r, g, b);
-	out.AddGroundArc(WorldX(), WorldY(), x, groundY + kLift, 0.f, Tuning::LightForm::kStrikeRadius,
+	out.AddGroundArc(WorldX(), WorldY(), x, groundY + kLift, 0.f, m_Radius,
 		0.f, 6.2831853f, kRingSegments, r, g, b, 0.35f * fade);
 
 	// The bolt: a jagged column from above the screen down to the ground,

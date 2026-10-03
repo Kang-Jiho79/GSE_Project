@@ -312,6 +312,45 @@ void DrawList::AddGroundArc(float worldX, float worldY, float screenX, float scr
 	}
 }
 
+void DrawList::AddGroundStrip(float worldX, float worldY, float screenX, float screenY,
+	float dirCol, float dirRow, float fromTiles, float toTiles, float widthTiles,
+	float r, float g, float b, float a)
+{
+	const float kPieceLength = 0.5f;
+
+	float sideCol = -dirRow * widthTiles * 0.5f;
+	float sideRow = dirCol * widthTiles * 0.5f;
+
+	int pieces = (int)ceilf((toTiles - fromTiles) / kPieceLength);
+	for (int i = 0; i < pieces; i++)
+	{
+		float from = fromTiles + i * kPieceLength;
+		float to = from + kPieceLength;
+		if (to > toTiles)
+		{
+			to = toTiles;
+		}
+
+		float midX, midY;
+		float mid = (from + to) * 0.5f;
+		WorldGrid::IsoPosition(dirCol * mid, dirRow * mid, midX, midY);
+		float depth = WorldGrid::TileDepth(worldX + midX, worldY + midY) + 0.7f;
+
+		float corners[8];
+		WorldGrid::IsoPosition(dirCol * from - sideCol, dirRow * from - sideRow, corners[0], corners[1]);
+		WorldGrid::IsoPosition(dirCol * to - sideCol, dirRow * to - sideRow, corners[2], corners[3]);
+		WorldGrid::IsoPosition(dirCol * to + sideCol, dirRow * to + sideRow, corners[4], corners[5]);
+		WorldGrid::IsoPosition(dirCol * from + sideCol, dirRow * from + sideRow, corners[6], corners[7]);
+		for (int c = 0; c < 4; c++)
+		{
+			corners[c * 2] += screenX;
+			corners[c * 2 + 1] += screenY;
+		}
+
+		AddCorners(depth, corners, r, g, b, a);
+	}
+}
+
 void DrawList::AddShadow(float depth, float x, float baseY, float width, float height)
 {
 	AddDiamond(depth, x, baseY, width, height, 0.085f, 0.08f, 0.10f, 1.f);

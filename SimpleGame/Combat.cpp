@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Combat.h"
+#include "Actor.h"
 #include "SceneGraph.h"
 #include "MonsterActor.h"
 #include "PlayerStatus.h"
@@ -149,7 +150,7 @@ float Combat::HitRadius(SceneGraph& graph, float centerX, float centerY,
 }
 
 float Combat::HitLine(SceneGraph& graph, float originX, float originY, float dirCol, float dirRow,
-	float lengthTiles, float widthTiles, float damage)
+	float lengthTiles, float widthTiles, float damage, bool blockable)
 {
 	float originCol, originRow;
 	WorldGrid::InverseIso(originX, originY, originCol, originRow);
@@ -177,8 +178,59 @@ float Combat::HitLine(SceneGraph& graph, float originX, float originY, float dir
 			return;
 		}
 
-		landed += monster.TakeHit(damage);
+		if (blockable)
+		{
+			landed += monster.TakeHit(damage, originX, originY);
+		}
+		else
+		{
+			landed += monster.TakeHit(damage);
+		}
 	});
 
 	return landed;
+}
+
+bool Combat::StrikePlayerArc(const ActorContext& ctx, float originX, float originY, float dirCol, float dirRow,
+	float rangeTiles, float arcDegrees, float damage)
+{
+	float originCol, originRow, playerCol, playerRow;
+	WorldGrid::InverseIso(originX, originY, originCol, originRow);
+	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+
+	float toCol = playerCol - originCol;
+	float toRow = playerRow - originRow;
+	float distance = sqrtf(toCol * toCol + toRow * toRow);
+	if (distance > rangeTiles)
+	{
+		return false;
+	}
+
+	if (distance > Tuning::DarkForm::kPointBlank)
+	{
+		float dot = (toCol * dirCol + toRow * dirRow) / distance;
+		if (dot < cosf(arcDegrees * 0.5f * kDegToRad))
+		{
+			return false;
+		}
+	}
+
+	return ctx.status->TryDamage(damage);
+}
+
+bool Combat::StrikePlayerRadius(const ActorContext& ctx, float centerX, float centerY,
+	float radiusTiles, float damage)
+{
+	float centerCol, centerRow, playerCol, playerRow;
+	WorldGrid::InverseIso(centerX, centerY, centerCol, centerRow);
+	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+
+	float toCol = playerCol - centerCol;
+	float toRow = playerRow - centerRow;
+	if (toCol * toCol + toRow * toRow > radiusTiles * radiusTiles)
+	{
+		return false;
+	}
+
+	return ctx.status->TryDamage(damage);
 }
