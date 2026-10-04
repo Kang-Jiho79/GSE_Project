@@ -65,10 +65,12 @@ namespace
 	const float kMinimapRange = 42.f; // tiles from center to edge
 }
 
+// Nothing is built here: the scene is a global, made before main, when
+// other files' globals it would touch (the grid's blockers) may not exist
+// yet. NewGame or Continue builds the first region.
 Scene::Scene(Progress& progress)
 	: m_Progress(progress)
 {
-	EnterRegion(Regions::Limina);
 }
 
 void Scene::SetViewport(int windowSizeX, int windowSizeY)

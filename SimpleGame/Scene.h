@@ -24,6 +24,7 @@ struct Progress;
 class Scene
 {
 public:
+	// Builds nothing yet; call NewGame or Continue before the first frame.
 	explicit Scene(Progress& progress);
 
 	void SetViewport(int windowSizeX, int windowSizeY);

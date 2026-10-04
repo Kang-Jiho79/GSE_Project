@@ -840,6 +840,8 @@ int main(int argc, char **argv)
 	g_Text->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
+	// The hidden village, behind the title.
+	g_Scene.NewGame();
 	g_Title.Open(SaveGame::Exists(), SaveGame::EndingsSeen());
 
 	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";

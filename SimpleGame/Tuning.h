@@ -706,6 +706,15 @@ namespace Tuning
 		const float kStrikeShake = 7.f;
 	}
 
+	// The vessel: how much of each power it holds at first, and how much more
+	// - and how much more health - each upgrade brings.
+	namespace Vessel
+	{
+		const float kStartCapacity = 12.f;
+		const float kCapacityPerUpgrade = 4.f;
+		const float kHealthPerUpgrade = 10.f;
+	}
+
 	namespace Power
 	{
 		// Every attack of a power grows with the lifetime total of that power:
