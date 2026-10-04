@@ -62,6 +62,18 @@ namespace Palette
 	const float kRemnantWash = 0.45f;
 	const float kRemnantDim = 0.75f;
 
+	// A boss past its time, burning with fury.
+	const Color kFury = { 0.85f, 0.22f, 0.12f };
+
+	// The kings, untouched by the gray: the light's in white steel and a
+	// pale mantle, the dark's in black plate and a mantle the colour of night.
+	const Color kLuciusArmor = { 0.78f, 0.76f, 0.70f };
+	const Color kLuciusMantle = { 0.88f, 0.86f, 0.80f };
+	const Color kNoctisArmor = { 0.13f, 0.12f, 0.16f };
+	const Color kNoctisMantle = { 0.20f, 0.13f, 0.30f };
+	// His shades: shadow with nothing of him in it but the eyes.
+	const Color kShade = { 0.05f, 0.045f, 0.07f };
+
 	// ---- Figures ----
 	// The ink line round anyone standing in the world, and the cold light
 	// catching the edge of them that faces the sky.

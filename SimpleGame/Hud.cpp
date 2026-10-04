@@ -244,8 +244,13 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth + 4.f, kFormMarkHeight + 4.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
 	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth, kFormMarkHeight, r, g, b, 1.f);
 
-	// Refills while the switch cools down; full means Space will work.
+	// Refills while the switch cools down; full means Space will work. Held
+	// to one form, it stays empty.
 	float ready = 1.f - Clamp01(status.formCooldown / Tuning::FormSwitch::kSwitchCooldown);
+	if (status.formLocked)
+	{
+		ready = 0.f;
+	}
 	float barLeft = left + kFormMarkWidth + 8.f;
 	float fillWidth = kFormBarWidth * ready;
 	float shade = (ready >= 1.f) ? 1.f : 0.45f;

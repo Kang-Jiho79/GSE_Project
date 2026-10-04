@@ -20,6 +20,9 @@ namespace InputMap
 	const unsigned char kDebugDamage = 'c';
 	const unsigned char kDebugAddLight = '1';
 	const unsigned char kDebugAddDark = '2';
+	// Debug: straight to a capital and its king, without walking the road.
+	const unsigned char kDebugToLumen = '3';
+	const unsigned char kDebugToTenebrae = '4';
 	const unsigned char kQuit = 27; // Esc
 
 	// Either Shift; freeglut reports them through the special-key callbacks.

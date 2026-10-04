@@ -112,6 +112,16 @@ void PlayerActor::Respawn(float x, float y)
 	m_DarkMoves = DarkFormMoves();
 }
 
+void PlayerActor::SettleForm(PlayerStatus& status, Form form)
+{
+	if (status.form == form)
+	{
+		return;
+	}
+	MovesFor(status.form).Interrupt();
+	status.form = form;
+}
+
 void PlayerActor::Lunge(float dirCol, float dirRow, float tiles, float seconds)
 {
 	m_LungeDirCol = dirCol;

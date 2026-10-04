@@ -169,6 +169,265 @@ namespace Tuning
 		const float kProjectileHitRadius = 0.35f;
 	}
 
+	namespace Boss
+	{
+		// Waking and falling are felt through the screen.
+		const float kWakeShake = 6.f;
+		const float kDefeatStop = 0.15f;
+		const float kDefeatShake = 10.f;
+
+		// Fury: once a boss has been awake past its own time limit, it grows
+		// stronger every interval - faster and harder-hitting a step at a
+		// time - until it can hardly be survived. Stalling on lifesteal is no
+		// way to win. Running far enough away resets it with the rest.
+		const float kFuryInterval = 30.f;
+		const float kFurySpeedPerLevel = 0.15f;
+		const float kFuryDamagePerLevel = 0.25f;
+		const int kFuryMaxLevel = 8;
+		const float kFuryShake = 4.f;
+	}
+
+	// A body the gray swallowed whole: huge, many-armed, slow, and every blow
+	// shown on the ground before it falls.
+	namespace Mutant
+	{
+		const float kWakeRange = 7.f;
+		const float kLeashRange = 16.f;
+		const float kBodyRadius = 1.1f;
+		const float kFuryTime = 180.f;
+
+		const float kSpeed = 1.6f;          // tiles per second
+		const float kKeepRange = 1.8f;      // stops closing in this near
+		const float kCooldown = 1.4f;       // between blows
+		const float kRecover = 0.6f;
+
+		// Below this share of its health it rages: faster, quicker blows, and
+		// it calls eroded soldiers to it once.
+		const float kRageShare = 0.5f;
+		const float kRageSpeedScale = 1.3f;
+		const float kRageWindupScale = 0.75f;
+		const float kRageCooldownScale = 0.7f;
+		const int kGuards = 2;
+
+		// Slam: a circle marked under him, then struck.
+		const float kSlamWindup = 1.f;
+		const float kSlamRadius = 1.6f;
+		const float kSlamDamage = 22.f;
+		const float kSlamShake = 5.f;
+
+		// Sweep: everything in a half circle in front of it, when he is close.
+		const float kSweepRange = 3.2f;
+		const float kSweepWindup = 0.7f;
+		const float kSweepDamage = 16.f;
+
+		// Burst: a ring of gray spat out in every direction, every third blow.
+		const float kBurstWindup = 0.8f;
+		const int kBurstCount = 8;
+		const int kRageBurstCount = 12;
+		const float kBurstSpeed = 4.5f;
+		const float kBurstLifetime = 2.6f;
+		const float kBurstDamage = 10.f;
+
+		// What it leaves: this many motes of what it was - split evenly if it
+		// was of both.
+		const int kRewardMotes = 20;
+	}
+
+	// A piece the god set on its board to guard the way to each king. It moves
+	// only as a piece may - the light's along straight lines, the dark's in
+	// leaps - and tests his balance: while its ward burns gold only the dark
+	// hurts it, while violet only the light.
+	namespace GodPiece
+	{
+		const float kWakeRange = 7.f;
+		const float kLeashRange = 16.f;
+		const float kBodyRadius = 0.9f;
+		const float kFuryTime = 150.f;
+
+		const float kWardTime = 6.f;     // between its ward turning over
+		const float kWardWarning = 1.f;  // it flickers this long before it does
+
+		const float kCooldown = 1.2f;
+		const float kRecover = 0.7f;
+
+		// The light's piece: slides along a line through him - a straight one
+		// or a diagonal, nothing in between.
+		const float kSlideWindup = 0.7f;
+		const float kSlideMax = 7.f;
+		const float kSlideWidth = 1.f;
+		const float kSlideTime = 0.3f;
+		const float kSlideDamage = 18.f;
+
+		// The dark's piece: leaps two-and-one like a knight, landing hard, two
+		// leaps in a row.
+		const float kLeapWindup = 0.6f;
+		const float kChainWindup = 0.4f;
+		const float kLeapScale = 1.6f;   // tiles per square of its move
+		const float kLeapTime = 0.45f;
+		const float kLandRadius = 1.6f;
+		const float kLeapDamage = 20.f;
+		const int kLeapChain = 2;
+
+		// Both, every third move: every other square around it struck at once,
+		// like the dark squares of a board. Stand on a light one.
+		const float kBoardWindup = 1.2f;
+		const int kBoardRadius = 4;
+		const float kBoardDamage = 20.f;
+
+		// What it leaves: the same of each power, so his balance is untouched.
+		const int kRewardMotes = 15;
+	}
+
+	// The kings' duels. Neither fights unless he asks; each fights with one
+	// power only and holds him to the same, so he must beat its master at it.
+	namespace Duel
+	{
+		const float kReach = 2.2f;         // how near the king he must stand to ask
+		const float kLeashRange = 18.f;    // walk this far off and the duel is over
+		const float kSpareHealth = 0.3f;   // beaten, he is left this share of his health
+		const float kSpareInvuln = 2.f;
+		const float kSendOffDelay = 3.f;   // after a king yields, until he is sent to Bellum
+		const float kRemarkTime = 3.5f;    // how long a king's words stay on screen
+
+		// The blessings: worth the fight, never enough to make it necessary.
+		const float kLightBlessing = 0.15f;     // Lucius: light attacks this much harder
+		const float kLifestealBlessing = 0.03f; // Noctis: added to the lifesteal share
+	}
+
+	// The light's king. He keeps his distance and fights as the light does -
+	// spears thrown from afar, judgment along the ground - and between the
+	// blows he shields and heals himself, which is the twist in his goodness.
+	namespace Lucius
+	{
+		const float kMaxHealth = 1100.f;
+		const float kBodyRadius = 0.6f;
+		const float kFuryTime = 150.f;
+
+		const float kSpeed = 2.2f;
+		const float kKeepNear = 3.5f;    // closer than this he steps back
+		const float kKeepFar = 7.f;      // further than this he comes on
+		const float kStrafeTime = 2.5f;  // between changing which way he circles
+		const float kCooldown = 1.3f;
+		const float kRecover = 0.5f;
+		const float kPhaseShare = 0.5f;  // below this share his judgment falls on both diagonals too
+
+		// Spears: fans of light thrown at him, wave after wave.
+		const float kVolleyWindup = 0.6f;
+		const int kVolleyWaves = 3;
+		const float kVolleyGap = 0.3f;
+		const int kVolleySpears = 5;
+		const float kVolleySpread = 56.f; // degrees across the fan
+		const float kSpearSpeed = 7.f;
+		const float kSpearLifetime = 1.8f;
+		const float kSpearDamage = 9.f;
+
+		// Judgment: pillars of light along the ground through where he stood.
+		const float kJudgmentWindup = 1.1f;
+		const float kJudgmentReach = 9.f;  // tiles out to either side
+		const float kJudgmentWidth = 1.2f;
+		const float kJudgmentDamage = 22.f;
+		const float kJudgmentShake = 5.f;
+
+		// Radiance: when he presses close, a ring of light, then a step away.
+		const float kRadianceWindup = 0.55f;
+		const float kRadianceRadius = 2.6f;
+		const float kRadianceDamage = 14.f;
+		const float kRadianceStep = 3.f;
+
+		// Sanctuary: a dome that turns every blow aside and closes his wounds,
+		// until a beam goes straight through it and leaves him reeling.
+		const float kSanctuaryShare = 0.75f; // never before he is down to this
+		const float kSanctuaryCooldown = 16.f;
+		const float kSanctuaryTime = 6.f;
+		const float kSanctuaryHeal = 18.f;   // health per second
+		const float kStaggerTime = 2.2f;
+		const float kStaggerDamageScale = 1.5f;
+		const float kBreakShake = 8.f;
+
+	}
+
+	// The dark's king. A schemer: he does not come to him but makes him come,
+	// and punishes him for it - the closer he stays to feed on him, the readier
+	// the counter, and the ground round him is sown with snares. Keep away
+	// instead and his shades and shot come for him.
+	namespace Noctis
+	{
+		const float kMaxHealth = 1000.f;
+		const float kBodyRadius = 0.55f;
+		const float kFuryTime = 120.f;
+
+		const float kSpeed = 2.4f;
+		const float kHoldRange = 3.2f;   // the distance he likes to keep
+		const float kStrafeTime = 2.f;
+		const float kCooldown = 0.9f;
+		const float kRecover = 0.45f;
+		const float kCloseRange = 2.5f;  // this near is close
+		const float kFarRange = 5.5f;    // this far is keeping away
+
+		// How long he has been kept close, slowly forgotten once he backs off.
+		// Past the mark, the next blow at close range is a counter.
+		const float kPressureDecay = 0.5f;   // per second spent away
+		const float kPressureForCounter = 1.6f;
+
+		// Below this share of health he thinks faster: shorter windups and
+		// snares every third move instead of every fourth.
+		const float kPhaseShare = 0.5f;
+		const float kPhaseWindupScale = 0.8f;
+
+		// Cut: a quick half circle when he is close.
+		const float kCutWindup = 0.4f;
+		const float kCutRange = 2.f;
+		const float kCutDamage = 14.f;
+
+		// Lunge: across the ground at him along a marked line.
+		const float kLungeWindup = 0.55f;
+		const float kLungeLength = 5.f;
+		const float kLungeWidth = 1.f;
+		const float kLungeTime = 0.22f;
+		const float kLungeDamage = 18.f;
+
+		// Counter: a stance. Strike him in it and the blow is turned aside -
+		// nothing landed, nothing drunk - and answered far harder.
+		const float kCounterTime = 1.3f;
+		const float kCounterDelay = 0.15f;
+		const float kCounterRange = 2.8f;
+		const float kCounterDamage = 30.f;
+		const float kCounterShake = 7.f;
+
+		// Snares: hidden in a ring round him, to punish coming near.
+		const float kSnareWindup = 0.6f;
+		const int kSnares = 4;
+		const int kMaxSnares = 8;
+		const float kSnareRing = 2.4f;     // tiles from him
+		const float kSnareArming = 0.8f;   // harmless, and plain to see, this long
+		const float kSnareLifetime = 16.f;
+		const float kSnareTrigger = 0.55f; // stepping this near springs it
+		const float kSnareDelay = 0.3f;
+		const float kSnareRadius = 1.1f;
+		const float kSnareDamage = 16.f;
+
+		// Shades: his shadows, sent at him when he keeps away. Struck, they
+		// come apart and give nothing back.
+		const float kShadeWindup = 0.5f;
+		const int kShades = 2;
+		const float kShadeSpread = 2.8f;   // tiles to either side of him they rise
+		const float kShadeSpeed = 3.2f;
+		const float kShadeReach = 1.4f;
+		const float kShadeStrikeWindup = 0.45f;
+		const float kShadeDamage = 12.f;
+		const float kShadeLifetime = 5.f;
+		const float kShadeCooldown = 9.f;
+
+		// Orbs: dark shot that bends after him, when he keeps away.
+		const float kOrbWindup = 0.6f;
+		const int kOrbs = 3;
+		const float kOrbSpread = 50.f;
+		const float kOrbSpeed = 4.5f;
+		const float kOrbTurn = 1.6f;
+		const float kOrbLifetime = 3.f;
+		const float kOrbDamage = 10.f;
+	}
+
 	// Eroded mage of the light: keeps its distance and chants standing still.
 	namespace LightMage
 	{

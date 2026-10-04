@@ -15,6 +15,13 @@ namespace
 	// How far in front of the temple's near corner its altar stands.
 	const float kAltarStandOff = 0.9f;
 
+	// The palace stands to the right of the square on screen; the king, this
+	// far out from its near-left face. Nothing is built within kCourt of him,
+	// so a duel has room.
+	const float kPalaceSize = 5.f;
+	const float kThroneStandOff = 2.f;
+	const float kCourt = 5.f;
+
 	const int kVillageHouses = 9;
 	const int kBorderbornHouses = 7;
 	const int kCapitalHouses = 16;
@@ -102,6 +109,19 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 		layout.altarRow = temple.row + size * 0.5f + kAltarStandOff;
 	}
 
+	if (capital)
+	{
+		float back = layout.squareRadius * 0.75f + kPalaceSize * 0.5f + 1.f;
+		Building palace = { BuildingType::Palace, centerCol + back, centerRow - back, kPalaceSize, 0 };
+		layout.buildings.push_back(palace);
+
+		layout.hasThrone = true;
+		layout.carpetCol = palace.col;
+		layout.carpetRow = palace.row + kPalaceSize * 0.5f;
+		layout.throneCol = palace.col;
+		layout.throneRow = layout.carpetRow + kThroneStandOff;
+	}
+
 	Building board = { BuildingType::NoticeBoard, centerCol + 2.5f, centerRow - 2.5f, 1.f, 0 };
 	layout.buildings.push_back(board);
 
@@ -135,6 +155,10 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 		if (clear && layout.hasTemple)
 		{
 			clear = Distance(house.col, house.row, layout.altarCol, layout.altarRow) >= size * 0.5f + kOpenGround;
+		}
+		if (clear && layout.hasThrone)
+		{
+			clear = Distance(house.col, house.row, layout.throneCol, layout.throneRow) >= size * 0.5f + kCourt;
 		}
 		if (!clear)
 		{

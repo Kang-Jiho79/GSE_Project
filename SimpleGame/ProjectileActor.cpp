@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "ProjectileActor.h"
-#include "MonsterActor.h"
+#include "EnemyActor.h"
 #include "SceneGraph.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
@@ -12,6 +12,7 @@
 namespace
 {
 	const float kGlowRadius = 26.f;
+	const float kPixelsPerTile = 36.f;
 	const float kMarkWidth = 12.f;
 	const float kMarkHeight = 8.f;
 	const float kFlightHeight = 14.f;
@@ -40,16 +41,17 @@ void ProjectileActor::OnUpdate(const ActorContext& ctx)
 	float y = WorldY();
 	bool spent = false;
 
-	ctx.graph->ForEach<MonsterActor>([&](MonsterActor& monster)
+	ctx.graph->ForEach<EnemyActor>([&](EnemyActor& enemy)
 	{
 		if (spent)
 		{
 			return;
 		}
 
-		float dx = monster.WorldX() - x;
-		float dy = monster.WorldY() - y;
-		if (sqrtf(dx * dx + dy * dy) > Tuning::LightForm::kBoltHitRadiusPx)
+		float dx = enemy.WorldX() - x;
+		float dy = enemy.WorldY() - y;
+		// A body a tile across is roughly this many pixels on screen.
+		if (sqrtf(dx * dx + dy * dy) > Tuning::LightForm::kBoltHitRadiusPx + enemy.BodyRadius() * kPixelsPerTile)
 		{
 			return;
 		}
@@ -57,7 +59,7 @@ void ProjectileActor::OnUpdate(const ActorContext& ctx)
 		// Both colours hurt a gray thing equally - gray is opposed to colour
 		// itself, not to one side of it. A shield can still catch it, judged
 		// from the side the bolt came in on.
-		monster.TakeHit(Combat::BoltDamage(*ctx.status), x - m_VelX, y - m_VelY);
+		enemy.TakeHit(Combat::BoltDamage(*ctx.status), x - m_VelX, y - m_VelY);
 		spent = true;
 	});
 

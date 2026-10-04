@@ -9,16 +9,19 @@
 class Renderer;
 class TextRenderer;
 class PlayerActor;
+class KingActor;
 struct PlayerStatus;
+struct Progress;
 
 // The region he is in. Builds its actor tree from the region's entry in the
 // table, hands it the frame, and turns what it collected into draw calls.
 // All the world's behaviour lives in the actors; this owns only the layout,
-// the camera, travel between regions, and the fades that cover it and death.
+// the camera, travel between regions, the fades that cover it and death, and
+// the asking for a king's duel.
 class Scene
 {
 public:
-	Scene();
+	explicit Scene(Progress& progress);
 
 	void SetViewport(int windowSizeX, int windowSizeY);
 
@@ -29,6 +32,8 @@ public:
 	// arrives, what to press at a waystone, the line over the dark when he
 	// falls.
 	void RenderText(TextRenderer* text) const;
+	// The name and health of a boss he is fighting, low in the middle.
+	void RenderBossBar(Renderer* renderer, TextRenderer* text);
 
 	// Sprays, hit stops and screen shake, together.
 	void SetEffectsEnabled(bool enabled);
@@ -39,6 +44,7 @@ public:
 	// One flag per region: whether he has been there.
 	const bool* VisitedRegions() const;
 	// Fades out, builds the region, and fades back in with him at its waystone.
+	// Ignored during a fade or a duel.
 	void BeginTravel(int region);
 
 	// What F would do where he stands - on his feet, with no fade under way.
@@ -47,12 +53,18 @@ public:
 		None,
 		WorldMap, // at the waystone
 		Temple,   // at an altar
+		Duel,     // before a king who will still fight him
 	};
+	// Nothing at all while a duel is under way.
 	Interaction AvailableInteraction() const;
 
 	// Rests at this region's altar: his wounds close, and if he falls he will
 	// rise here, wherever he is when it happens.
 	void UseTemple(PlayerStatus& status);
+
+	// Asks the king before him for a duel: he is put in the king's form and
+	// held there, made whole, and it begins. Falling in it does not kill him.
+	void BeginDuel(PlayerStatus& status);
 
 private:
 	enum class Fade
@@ -94,16 +106,20 @@ private:
 	int m_WindowSizeX = 0;
 	int m_WindowSizeY = 0;
 
+	// Where he has been, where he rises, what he has beaten - kept outside
+	// so it outlives the regions and can be saved.
+	Progress& m_Progress;
+
 	int m_Region = Regions::Limina;
-	bool m_Visited[Regions::Count] = {};
 	bool m_AtWaystone = false;
 	bool m_AtAltar = false;
+	bool m_AtKing = false;
+
+	// The capital's king, if this is a capital. Owned by the graph; a king is
+	// never destroyed, so this stays good until the region is left.
+	KingActor* m_King = nullptr;
 
 	Settlement::Layout m_Settlement;
-
-	// The last temple he rested at; until he finds one, the hidden village.
-	int m_RespawnRegion = Regions::Limina;
-	bool m_RespawnAtAltar = false;
 	float m_BannerTimer = 0.f; // the region's name, shown as he arrives
 
 	Fade m_Fade = Fade::None;

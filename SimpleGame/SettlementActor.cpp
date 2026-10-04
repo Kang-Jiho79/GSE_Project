@@ -107,6 +107,10 @@ void SettlementActor::OnUpdate(const ActorContext& ctx)
 void SettlementActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 {
 	DrawSquare(out, ctx);
+	if (m_Layout.hasThrone)
+	{
+		DrawCarpet(out, ctx);
+	}
 
 	for (size_t i = 0; i < m_Layout.buildings.size(); i++)
 	{
@@ -138,6 +142,11 @@ void SettlementActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		case Settlement::BuildingType::NoticeBoard:
 		{
 			DrawBoard(out, depth, x, groundY);
+			break;
+		}
+		case Settlement::BuildingType::Palace:
+		{
+			DrawPalace(out, depth, x, groundY, building);
 			break;
 		}
 		default:
@@ -338,6 +347,95 @@ void SettlementActor::DrawTemple(DrawList& out, float depth, float x, float grou
 		break;
 	}
 	}
+}
+
+void SettlementActor::DrawPalace(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const
+{
+	Look look = LookFor(m_Style);
+	float f = building.footprint;
+	const Palette::Color plinth = { look.wall.r * 0.85f, look.wall.g * 0.85f, look.wall.b * 0.85f };
+	const Palette::Color tower = { look.wall.r * 1.08f, look.wall.g * 1.08f, look.wall.b * 1.08f };
+
+	// The great door faces the carpet, on the near-left face.
+	float doorX, doorY;
+	LeftFace(x, groundY, f, doorX, doorY);
+
+	// The four corners of the footprint on screen, pulled in a little: left,
+	// right, back, front.
+	float reachX = f * kHalfW * 0.8f;
+	float reachY = f * kHalfH * 0.8f;
+	const float cornerX[4] = { x - reachX, x + reachX, x, x };
+	const float cornerY[4] = { 0.f, 0.f, reachY, -reachY };
+	const float cornerDepth[4] = { 0.02f, 0.02f, -0.02f, 0.06f };
+
+	if (m_Style == Regions::Style::Light)
+	{
+		// Tall and pale, a tower at every corner, each with a gilded spire,
+		// and a sun over the door that still shines.
+		float wall = 52.f;
+		Box(out, depth, x, groundY, f * 1.1f, 6.f, plinth);
+		Box(out, depth + 0.01f, x, groundY + 6.f, f * 0.92f, wall, look.wall);
+		out.AddTaperedBox(depth + 0.03f, x, groundY + 6.f + wall, f * 0.96f, f * 0.96f, 14.f, 0.55f, 0.f, 0.f,
+			look.roof.r, look.roof.g, look.roof.b);
+		out.AddTaperedBox(depth + 0.04f, x, groundY + 20.f + wall, 0.5f, 0.5f, 46.f, 0.1f, 0.f, 0.f,
+			look.trim.r, look.trim.g, look.trim.b);
+
+		for (int i = 0; i < 4; i++)
+		{
+			float baseY = groundY + 6.f + cornerY[i];
+			Box(out, depth + cornerDepth[i], cornerX[i], baseY, 0.9f, 72.f, tower);
+			out.AddTaperedBox(depth + cornerDepth[i] + 0.005f, cornerX[i], baseY + 72.f, 0.95f, 0.95f, 26.f, 0.1f, 0.f, 0.f,
+				look.trim.r, look.trim.g, look.trim.b);
+		}
+
+		out.AddRect(depth + 0.05f, doorX, doorY + 6.f + 17.f, 16.f, 34.f, kDoorShade, kDoorShade, kDoorShade * 1.2f, 1.f);
+		out.SetGlow(0.7f);
+		out.AddDiamond(depth + 0.055f, doorX, doorY + 6.f + 44.f, 10.f, 13.f, look.trim.r, look.trim.g, look.trim.b, 1.f);
+		out.SetGlow(0.f);
+		return;
+	}
+
+	// The dark's: low and enormous, a second slab set on the first, barbed at
+	// every corner, and one black spire rising out of the middle.
+	float wall = 30.f;
+	Box(out, depth, x, groundY, f * 1.15f, 4.f, plinth);
+	Box(out, depth + 0.01f, x, groundY + 4.f, f, wall, look.wall);
+	Box(out, depth + 0.02f, x, groundY + 4.f + wall, f * 1.12f, 5.f, look.roof);
+	Box(out, depth + 0.03f, x, groundY + 9.f + wall, f * 0.62f, 24.f, look.wall);
+	out.AddTaperedBox(depth + 0.04f, x, groundY + 33.f + wall, 0.7f, 0.7f, 90.f, 0.05f, 0.f, 0.f,
+		look.roof.r, look.roof.g, look.roof.b);
+
+	for (int i = 0; i < 4; i++)
+	{
+		float lean = (i == 0) ? -4.f : ((i == 1) ? 4.f : 0.f);
+		Spike(out, depth + 0.02f + cornerDepth[i], cornerX[i] * 1.f + (cornerX[i] - x) * 0.3f,
+			groundY + 9.f + wall + cornerY[i] * 1.3f, 22.f, lean, look.roof);
+	}
+
+	out.AddRect(depth + 0.05f, doorX, doorY + 4.f + 13.f, 20.f, 26.f, 0.f, 0.f, 0.f, 1.f);
+	out.AddRect(depth + 0.055f, doorX, doorY + 4.f + 33.f, 2.f, 10.f, look.trim.r, look.trim.g, look.trim.b, 1.f);
+}
+
+void SettlementActor::DrawCarpet(DrawList& out, const ActorContext& ctx) const
+{
+	float worldX, worldY;
+	WorldGrid::IsoPosition(m_Layout.carpetCol, m_Layout.carpetRow, worldX, worldY);
+	float x, y;
+	ctx.ToScreen(worldX, worldY, x, y);
+	if (!ctx.IsOnScreen(x, y, 200.f, 200.f))
+	{
+		return;
+	}
+
+	// Out from the door to a little past where the king stands, edged in his
+	// people's colour.
+	Look look = LookFor(m_Style);
+	float length = m_Layout.throneRow - m_Layout.carpetRow + 1.f;
+	float groundY = y + WorldGrid::GroundHeightAt(worldX, worldY) + 1.f;
+	out.AddGroundStrip(worldX, worldY, x, groundY, 0.f, 1.f, 0.f, length, 1.6f,
+		look.trim.r * 0.75f, look.trim.g * 0.75f, look.trim.b * 0.75f, 1.f);
+	out.AddGroundStrip(worldX, worldY, x, groundY + 0.5f, 0.f, 1.f, 0.f, length, 1.2f,
+		look.trim.r * 0.4f, look.trim.g * 0.4f, look.trim.b * 0.4f, 1.f);
 }
 
 void SettlementActor::DrawAltar(DrawList& out, const ActorContext& ctx) const

@@ -8,7 +8,9 @@
 #include "Tuning.h"
 #include "Palette.h"
 #include "TextRenderer.h"
+#include "Progress.h"
 #include <cmath>
+#include <string>
 
 #include "TerrainActor.h"
 #include "PropsActor.h"
@@ -19,6 +21,9 @@
 #include "SparkActor.h"
 #include "WaystoneActor.h"
 #include "SettlementActor.h"
+#include "BossActor.h"
+#include "KingActor.h"
+#include "Bosses.h"
 
 namespace
 {
@@ -42,12 +47,23 @@ namespace
 	const float kBannerFade = 0.8f;
 	const float kBannerDrop = 120.f; // below the top of the window
 
+	// A king's words, under the banner, and what is written under them.
+	const float kRemarkDrop = 175.f;
+	const float kRemarkSpacing = 30.f;
+	const char* const kTitleLine = "이명  ·  가장 어두운 빛이자 가장 밝은 어둠";
+
+	// The boss bar, low in the middle above the controls line.
+	const float kBossBarWidth = 420.f;
+	const float kBossBarHeight = 10.f;
+	const float kBossBarRise = 80.f; // above the bottom of the window
+
 	const float kMinimapSize = 150.f;
 	const float kMinimapBorder = 4.f;
 	const float kMinimapRange = 42.f; // tiles from center to edge
 }
 
-Scene::Scene()
+Scene::Scene(Progress& progress)
+	: m_Progress(progress)
 {
 	EnterRegion(Regions::Limina);
 }
@@ -70,7 +86,7 @@ const Regions::Atmosphere& Scene::CurrentAtmosphere() const
 
 const bool* Scene::VisitedRegions() const
 {
-	return m_Visited;
+	return m_Progress.visited;
 }
 
 Scene::Interaction Scene::AvailableInteraction() const
@@ -78,6 +94,16 @@ Scene::Interaction Scene::AvailableInteraction() const
 	if (m_Fade != Fade::None)
 	{
 		return Interaction::None;
+	}
+	// In a duel there is nothing to do but fight it - and no leaving it by
+	// the waystone with his form still held.
+	if (m_King != nullptr && m_King->IsDueling())
+	{
+		return Interaction::None;
+	}
+	if (m_AtKing)
+	{
+		return Interaction::Duel;
 	}
 	if (m_AtAltar)
 	{
@@ -93,8 +119,19 @@ Scene::Interaction Scene::AvailableInteraction() const
 void Scene::UseTemple(PlayerStatus& status)
 {
 	status.Heal(status.maxHealth);
-	m_RespawnRegion = m_Region;
-	m_RespawnAtAltar = true;
+	m_Progress.respawnRegion = m_Region;
+	m_Progress.respawnAtAltar = true;
+}
+
+void Scene::BeginDuel(PlayerStatus& status)
+{
+	if (m_King == nullptr || !m_King->CanChallenge())
+	{
+		return;
+	}
+
+	m_Player->SettleForm(status, m_King->Power());
+	m_King->BeginDuel(status);
 }
 
 bool Scene::IsNear(float col, float row, float reach) const
@@ -109,6 +146,11 @@ bool Scene::IsNear(float col, float row, float reach) const
 void Scene::BeginTravel(int region)
 {
 	if (m_Fade != Fade::None)
+	{
+		return;
+	}
+	// Not in the middle of a duel - he would leave with his form still held.
+	if (m_King != nullptr && m_King->IsDueling())
 	{
 		return;
 	}
@@ -134,7 +176,7 @@ void Scene::ArrivalPoint(float& x, float& y) const
 
 void Scene::RespawnPoint(float& x, float& y) const
 {
-	if (m_RespawnAtAltar && m_RespawnRegion == m_Region && m_Settlement.hasTemple)
+	if (m_Progress.respawnAtAltar && m_Progress.respawnRegion == m_Region && m_Settlement.hasTemple)
 	{
 		WorldGrid::IsoPosition(m_Settlement.altarCol + kAltarOffset, m_Settlement.altarRow + kAltarOffset, x, y);
 		return;
@@ -171,7 +213,7 @@ void Scene::BuildSettlement(const Regions::Info& info, Actor* environment)
 void Scene::EnterRegion(int region)
 {
 	m_Region = region;
-	m_Visited[region] = true;
+	m_Progress.visited[region] = true;
 
 	const Regions::Info& info = Regions::Get(region);
 	WorldGrid::SetMap(info.size, info.size, Regions::Seed(region), info.terraceLevels);
@@ -209,9 +251,11 @@ void Scene::EnterRegion(int region)
 	entities->AddChild(std::move(player));
 
 	SpawnMonsters(info);
+	m_King = dynamic_cast<KingActor*>(Bosses::Spawn(region, m_Progress, m_Settlement, m_Graph));
 
 	m_AtWaystone = false;
 	m_AtAltar = false;
+	m_AtKing = false;
 	m_BannerTimer = kBannerTime;
 }
 
@@ -276,6 +320,7 @@ ActorContext Scene::MakeContext(float deltaTime, PlayerStatus& status)
 	ctx.status = &status;
 	ctx.graph = &m_Graph;
 	ctx.impact = &m_Impact;
+	ctx.progress = &m_Progress;
 
 	return ctx;
 }
@@ -305,6 +350,20 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	m_AtWaystone = IsNear(waystoneCol, waystoneRow, Tuning::Travel::kWaystoneReach);
 	m_AtAltar = m_Settlement.hasTemple
 		&& IsNear(m_Settlement.altarCol, m_Settlement.altarRow, Tuning::Travel::kWaystoneReach);
+
+	m_AtKing = false;
+	if (m_King != nullptr && m_King->CanChallenge())
+	{
+		float kingCol, kingRow;
+		WorldGrid::InverseIso(m_King->WorldX(), m_King->WorldY(), kingCol, kingRow);
+		m_AtKing = IsNear(kingCol, kingRow, Tuning::Duel::kReach);
+	}
+
+	// A king that has yielded sends him on, to the old battlefield.
+	if (m_King != nullptr && m_King->TakeSendOff())
+	{
+		BeginTravel(Regions::Bellum);
+	}
 
 	RecordPopulation();
 }
@@ -344,7 +403,9 @@ void Scene::UpdateFade(float deltaTime, PlayerStatus& status)
 
 	if (m_Fade == Fade::None)
 	{
-		if (status.health <= 0.f)
+		// Falling in a duel is not dying; the king sees to it.
+		bool dueling = (m_King != nullptr && m_King->IsDueling());
+		if (status.health <= 0.f && !dueling)
 		{
 			m_Fade = Fade::Death;
 			m_FadeElapsed = 0.f;
@@ -367,9 +428,9 @@ void Scene::UpdateFade(float deltaTime, PlayerStatus& status)
 		{
 			// He rises at the last temple he rested at, even if that is in
 			// another region altogether.
-			if (m_RespawnRegion != m_Region)
+			if (m_Progress.respawnRegion != m_Region)
 			{
-				EnterRegion(m_RespawnRegion);
+				EnterRegion(m_Progress.respawnRegion);
 			}
 
 			float x, y;
@@ -439,9 +500,35 @@ void Scene::RenderText(TextRenderer* text) const
 	Interaction interaction = AvailableInteraction();
 	if (interaction != Interaction::None)
 	{
-		const char* prompt = (interaction == Interaction::Temple) ? "F  신전" : "F  월드맵";
+		const char* prompt = "F  월드맵";
+		if (interaction == Interaction::Temple)
+		{
+			prompt = "F  신전";
+		}
+		else if (interaction == Interaction::Duel)
+		{
+			prompt = "F  결투";
+		}
 		text->Draw(TextRenderer::Face::Body, prompt, 0.f, bottom + 44.f,
 			Palette::kUiBone, 0.9f, TextRenderer::Align::Center);
+	}
+
+	if (m_King != nullptr && m_King->Remark() != nullptr)
+	{
+		float alpha = m_King->RemarkAlpha();
+		float lineY = top - kRemarkDrop;
+		text->Draw(TextRenderer::Face::Body, m_King->Remark(), 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
+		if (m_King->Aside() != nullptr)
+		{
+			lineY -= kRemarkSpacing;
+			text->Draw(TextRenderer::Face::Body, m_King->Aside(), 0.f, lineY, Palette::kUiNotch, alpha, TextRenderer::Align::Center);
+		}
+		// Yielded to by both kings, he has a name.
+		if (m_King->HasYielded() && m_Progress.HasTitle())
+		{
+			lineY -= kRemarkSpacing;
+			text->Draw(TextRenderer::Face::Body, kTitleLine, 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
+		}
 	}
 
 	if (m_Fade == Fade::Death)
@@ -571,9 +658,57 @@ void Scene::RenderMinimap(Renderer* renderer)
 		renderer->DrawSolidRect(dotX, dotY, 5.f, 5.f, Palette::kMapEnemy.r, Palette::kMapEnemy.g, Palette::kMapEnemy.b, 1.f);
 	});
 
+	m_Graph.ForEach<BossActor>([&](BossActor& boss)
+	{
+		float col, row;
+		WorldGrid::InverseIso(boss.WorldX(), boss.WorldY(), col, row);
+		renderer->DrawSolidDiamond(centerX + (col - playerCol) * pixelsPerTile, centerY - (row - playerRow) * pixelsPerTile,
+			11.f, 11.f, Palette::kMapEnemy.r, Palette::kMapEnemy.g, Palette::kMapEnemy.b, 1.f);
+	});
+
 	renderer->ClearClip();
 
 	// The player is always exactly at the center and always on top.
 	renderer->DrawSolidRect(centerX, centerY, 8.f, 8.f, Palette::kMapPlayerRim.r, Palette::kMapPlayerRim.g, Palette::kMapPlayerRim.b, 1.f);
 	renderer->DrawSolidRect(centerX, centerY, 6.f, 6.f, Palette::kMapPlayer.r, Palette::kMapPlayer.g, Palette::kMapPlayer.b, 1.f);
+}
+
+void Scene::RenderBossBar(Renderer* renderer, TextRenderer* text)
+{
+	BossActor* awake = nullptr;
+	m_Graph.ForEach<BossActor>([&](BossActor& boss)
+	{
+		if (boss.IsAwake() && !boss.IsDestroyed() && boss.HealthFraction() > 0.f)
+		{
+			awake = &boss;
+		}
+	});
+	if (awake == nullptr || m_Fade != Fade::None)
+	{
+		return;
+	}
+
+	float barY = -m_WindowSizeY / 2.f + kBossBarRise;
+	float fill = kBossBarWidth * awake->HealthFraction();
+
+	renderer->DrawSolidRect(0.f, barY, kBossBarWidth + 6.f, kBossBarHeight + 6.f,
+		Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+	renderer->DrawSolidRect(0.f, barY, kBossBarWidth, kBossBarHeight,
+		Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
+	// Past its time, the bar burns and says so.
+	bool furious = awake->FuryLevel() > 0;
+	const Palette::Color& barColor = furious ? Palette::kFury : Palette::kHealth;
+	if (fill > 0.f)
+	{
+		renderer->DrawSolidRect(-kBossBarWidth / 2.f + fill / 2.f, barY, fill, kBossBarHeight,
+			barColor.r, barColor.g, barColor.b, 1.f);
+	}
+
+	std::string name = awake->Name();
+	if (furious)
+	{
+		name += "  ·  광폭";
+	}
+	text->Draw(TextRenderer::Face::Body, name.c_str(), 0.f, barY + 14.f,
+		furious ? Palette::kFury : Palette::kUiBone, 1.f, TextRenderer::Align::Center);
 }

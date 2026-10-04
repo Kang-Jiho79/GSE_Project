@@ -79,7 +79,7 @@ void DarkFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 	{
 		float landed = Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
 			Tuning::DarkForm::kSpinRadius, Combat::SpinDamage(*ctx.status), 0.f);
-		ctx.status->Heal(Combat::Lifesteal(landed, Tuning::DarkForm::kSpinLifestealScale));
+		ctx.status->Heal(Combat::Lifesteal(*ctx.status, landed, Tuning::DarkForm::kSpinLifestealScale));
 		if (landed > 0.f)
 		{
 			ctx.impact->Shake(Tuning::Feel::kLightShake);
@@ -116,7 +116,7 @@ void DarkFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 	float landed = Combat::HitArc(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
 		Tuning::DarkForm::kSlashRange, Tuning::DarkForm::kSlashArcDegrees,
 		Combat::SlashDamage(*ctx.status, m_ComboStep));
-	ctx.status->Heal(Combat::Lifesteal(landed));
+	ctx.status->Heal(Combat::Lifesteal(*ctx.status, landed));
 
 	if (landed > 0.f && m_ComboStep == Tuning::DarkForm::kComboLength - 1)
 	{
@@ -153,7 +153,7 @@ void DarkFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	// lifesteal like any other cut.
 	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
 		Tuning::DarkForm::kDashDistance, Tuning::DarkForm::kDashWidth, Combat::DashDamage(*ctx.status), false);
-	ctx.status->Heal(Combat::Lifesteal(landed));
+	ctx.status->Heal(Combat::Lifesteal(*ctx.status, landed));
 	if (landed > 0.f)
 	{
 		ctx.impact->HitStop(Tuning::Feel::kHeavyStop);

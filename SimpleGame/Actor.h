@@ -7,6 +7,7 @@ class DrawList;
 class SceneGraph;
 class Impact;
 struct PlayerStatus;
+struct Progress;
 
 // What the player is asking for this frame, in screen terms. The camera only
 // translates, so a screen direction is already a world direction.
@@ -49,6 +50,7 @@ struct ActorContext
 	PlayerStatus* status = nullptr;
 	SceneGraph* graph = nullptr;
 	Impact* impact = nullptr;
+	Progress* progress = nullptr;
 
 	void ToScreen(float worldX, float worldY, float& outX, float& outY) const;
 	bool IsOnScreen(float screenX, float screenY, float padX, float padY) const;

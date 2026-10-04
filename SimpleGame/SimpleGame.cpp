@@ -26,6 +26,7 @@ but WITHOUT ANY WARRANTY.
 #include "WorldMapScreen.h"
 #include "TemplePanel.h"
 #include "Regions.h"
+#include "Progress.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
@@ -33,7 +34,9 @@ const int WINDOW_SIZE_Y = 640;
 Renderer* g_Renderer = NULL;
 PostProcess* g_PostProcess = NULL;
 TextRenderer* g_Text = NULL;
-Scene g_Scene;
+PlayerStatus g_Status;
+Progress g_Progress;
+Scene g_Scene(g_Progress);
 Hud g_Hud;
 WorldMapScreen g_WorldMap;
 TemplePanel g_TemplePanel;
@@ -49,7 +52,6 @@ void CloseOverlays()
 	g_WorldMap.Close();
 	g_TemplePanel.Close();
 }
-PlayerStatus g_Status;
 
 bool g_MoveUp = false;
 bool g_MoveDown = false;
@@ -100,6 +102,7 @@ void RenderScene(void)
 		ProfileScope scope("hud");
 		g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 		g_Scene.RenderMinimap(g_Renderer);
+		g_Scene.RenderBossBar(g_Renderer, g_Text);
 		g_Scene.RenderText(g_Text);
 
 		g_Text->Draw(TextRenderer::Face::Small,
@@ -174,6 +177,11 @@ void Idle(void)
 				g_Scene.UseTemple(g_Status);
 				g_TemplePanel.Open(region.name, region.style == Regions::Style::Ashen);
 				g_AttackHeld = false;
+				break;
+			}
+			case Scene::Interaction::Duel:
+			{
+				g_Scene.BeginDuel(g_Status);
 				break;
 			}
 			default:
@@ -318,6 +326,16 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kDebugAddDark:
 	{
 		g_Status.AddDark(5.f);
+		break;
+	}
+	case InputMap::kDebugToLumen:
+	{
+		g_Scene.BeginTravel(Regions::Lumen);
+		break;
+	}
+	case InputMap::kDebugToTenebrae:
+	{
+		g_Scene.BeginTravel(Regions::Tenebrae);
 		break;
 	}
 	case InputMap::kQuit:

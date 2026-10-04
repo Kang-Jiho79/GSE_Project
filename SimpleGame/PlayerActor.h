@@ -5,6 +5,8 @@
 #include "LightFormMoves.h"
 #include "DarkFormMoves.h"
 
+struct PlayerStatus;
+
 // The one who holds both powers at once. Moves on the screen axes, fights in
 // whichever form he is in, and carries the two halves of the vessel on his own
 // two sides. What each form does with the attack buttons lives in its own
@@ -18,6 +20,10 @@ public:
 	// Puts him back on his feet at a new spot with nothing left over from
 	// before - no roll, combo or slash still in progress.
 	void Respawn(float x, float y);
+
+	// Puts him in a form without the burst a switch sets off - how a king's
+	// duel begins. Whatever the old form had under way is dropped.
+	void SettleForm(PlayerStatus& status, Form form);
 
 	// Carried along the ground on his own, whatever the keys say - a dash.
 	// Direction is a unit vector in tiles. He cannot walk, roll or attack

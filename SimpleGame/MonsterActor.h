@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Actor.h"
+#include "EnemyActor.h"
 #include "Alignment.h"
 
 // One of the eroded: a soldier of the light or the dark that the gray has
@@ -10,7 +10,7 @@
 //
 // Every blow is gathered first, with the ground it will cover marked, so the
 // player can read it and step or roll out.
-class MonsterActor : public Actor
+class MonsterActor : public EnemyActor
 {
 public:
 	enum class Kind
@@ -21,15 +21,13 @@ public:
 
 	MonsterActor(Kind kind, Alignment alignment);
 
-	// Returns how much of it actually landed - never more than it had left, so
-	// overkill does not count toward anything that feeds on damage dealt.
-	float TakeHit(float damage);
-	// A blow a shield can catch, coming from the given world point.
-	float TakeHit(float damage, float fromX, float fromY);
+	float TakeHit(float damage) override;
+	// A light knight's shield catches light blows from in front of it.
+	float TakeHit(float damage, float fromX, float fromY) override;
 
 	// Knocked along the ground by this many tiles. It is carried there over a
 	// moment rather than teleported, and any blow it was gathering is lost.
-	void Shove(float offsetCol, float offsetRow);
+	void Shove(float offsetCol, float offsetRow) override;
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;

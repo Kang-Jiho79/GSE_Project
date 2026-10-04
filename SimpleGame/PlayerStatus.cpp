@@ -168,6 +168,7 @@ void PlayerStatus::Revive()
 	erosionTime = 0.f;
 	health = maxHealth;
 	formCooldown = 0.f;
+	formLocked = false;
 	lightSkill = Cooldown();
 	lightSpecial = Cooldown();
 	darkSkill = Cooldown();
@@ -177,7 +178,7 @@ void PlayerStatus::Revive()
 
 bool PlayerStatus::TrySwitchForm()
 {
-	if (formCooldown > 0.f)
+	if (formCooldown > 0.f || formLocked)
 	{
 		return false;
 	}

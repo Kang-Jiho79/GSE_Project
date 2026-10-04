@@ -36,6 +36,14 @@ struct PlayerStatus
 
 	Form form = Form::Light;
 	float formCooldown = 0.f; // seconds until Space works again
+	// Space does nothing while this is set: a king's duel holds him to the
+	// king's own power.
+	bool formLocked = false;
+
+	// The kings' blessings, kept for good once given. Lucius's makes his
+	// light blows hit harder; Noctis's gives back more of what the dark's take.
+	bool lightBlessing = false;
+	bool darkBlessing = false;
 
 	// E and Q for each form. Kept here rather than on the forms so the HUD can
 	// show them; they run down whichever form he is in.
@@ -76,7 +84,8 @@ struct PlayerStatus
 	// Never past max health, and nothing for someone already fallen.
 	void Heal(float amount);
 
-	// Returns whether the form actually changed - false while cooling down.
+	// Returns whether the form actually changed - false while cooling down or
+	// held to one form.
 	bool TrySwitchForm();
 
 	// Back to full health after a death, with every skill ready. Absorbed
