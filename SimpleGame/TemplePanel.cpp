@@ -100,7 +100,7 @@ void TemplePanel::Render(Renderer* renderer, TextRenderer* text, const PlayerSta
 	const Palette::Color& readingColor = (lean > 1.f) ? Palette::kAsh : Palette::kUiBone;
 	text->Draw(TextRenderer::Face::Body, reading, 0.f, -56.f, readingColor, 1.f, TextRenderer::Align::Center);
 
-	text->Draw(TextRenderer::Face::Body, "상처가 아물었다. 쓰러지면 이곳에서 다시 일어선다.",
+	text->Draw(TextRenderer::Face::Body, "상처가 아물고 여정이 기록되었다. 쓰러지면 이곳에서 다시 일어선다.",
 		0.f, bottom + 52.f, Palette::kUiBone, 0.7f, TextRenderer::Align::Center);
 	text->Draw(TextRenderer::Face::Small, "F / Esc: 닫기", 0.f, bottom + 16.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 }

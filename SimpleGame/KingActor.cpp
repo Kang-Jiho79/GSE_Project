@@ -39,6 +39,16 @@ bool KingActor::CanChallenge() const
 	return !m_Recognized && !m_Yielded && !m_Dueling && IsDormant();
 }
 
+bool KingActor::CanTalk() const
+{
+	return m_Recognized;
+}
+
+int KingActor::Conversation() const
+{
+	return m_Lines.talk;
+}
+
 bool KingActor::IsDueling() const
 {
 	return m_Dueling;

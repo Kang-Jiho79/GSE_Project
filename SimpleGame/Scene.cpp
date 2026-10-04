@@ -24,6 +24,8 @@
 #include "BossActor.h"
 #include "KingActor.h"
 #include "Bosses.h"
+#include "NpcActor.h"
+#include "Npcs.h"
 
 namespace
 {
@@ -105,11 +107,16 @@ Scene::Interaction Scene::AvailableInteraction() const
 	{
 		return Interaction::Duel;
 	}
+	if (m_AtKingToTalk || m_Listener != nullptr)
+	{
+		return Interaction::Talk;
+	}
 	if (m_AtAltar)
 	{
 		return Interaction::Temple;
 	}
-	if (m_AtWaystone)
+	// Not while the hidden village still needs him.
+	if (m_AtWaystone && !m_Prologue.HoldsWaystone())
 	{
 		return Interaction::WorldMap;
 	}
@@ -121,6 +128,52 @@ void Scene::UseTemple(PlayerStatus& status)
 	status.Heal(status.maxHealth);
 	m_Progress.respawnRegion = m_Region;
 	m_Progress.respawnAtAltar = true;
+}
+
+void Scene::NewGame()
+{
+	m_Fade = Fade::None;
+	m_FadeElapsed = 0.f;
+	m_Conversation = -1;
+	EnterRegion(Regions::Limina);
+}
+
+void Scene::Continue(int region)
+{
+	m_Fade = Fade::None;
+	m_FadeElapsed = 0.f;
+	m_Conversation = -1;
+	EnterRegion(region);
+
+	float x, y;
+	RespawnPoint(x, y);
+	m_Player->Respawn(x, y);
+}
+
+int Scene::TakeConversation()
+{
+	int conversation = m_Conversation;
+	m_Conversation = -1;
+	return conversation;
+}
+
+int Scene::TakeEnding()
+{
+	return m_Events.TakeEnding();
+}
+
+bool Scene::HoldsSave() const
+{
+	return m_Events.HoldsSave();
+}
+
+int Scene::TalkScript() const
+{
+	if (m_AtKingToTalk)
+	{
+		return m_King->Conversation();
+	}
+	return (m_Listener != nullptr) ? m_Listener->Conversation() : -1;
 }
 
 void Scene::BeginDuel(PlayerStatus& status)
@@ -252,6 +305,20 @@ void Scene::EnterRegion(int region)
 
 	SpawnMonsters(info);
 	m_King = dynamic_cast<KingActor*>(Bosses::Spawn(region, m_Progress, m_Settlement, m_Graph));
+	Npcs::Spawn(region, m_Progress, m_Settlement, m_Graph);
+	m_Listener = nullptr;
+
+	m_Events.Enter(region, m_Progress, m_Settlement, m_Graph, waystoneCol, waystoneRow);
+	m_AtKingToTalk = false;
+
+	if (region == Regions::Limina && !m_Progress.Has(Story::VillageRaided))
+	{
+		m_Prologue.Begin();
+	}
+	else
+	{
+		m_Prologue.Stop();
+	}
 
 	m_AtWaystone = false;
 	m_AtAltar = false;
@@ -358,6 +425,44 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		WorldGrid::InverseIso(m_King->WorldX(), m_King->WorldY(), kingCol, kingRow);
 		m_AtKing = IsNear(kingCol, kingRow, Tuning::Duel::kReach);
 	}
+	m_AtKingToTalk = false;
+	if (m_King != nullptr && m_King->CanTalk())
+	{
+		float kingCol, kingRow;
+		WorldGrid::InverseIso(m_King->WorldX(), m_King->WorldY(), kingCol, kingRow);
+		m_AtKingToTalk = IsNear(kingCol, kingRow, Tuning::Duel::kReach);
+	}
+
+	if (m_Prologue.IsActive() && m_Fade == Fade::None)
+	{
+		int conversation = m_Prologue.Update(ctx.deltaTime, m_Graph, m_Progress, m_Impact, waystoneCol, waystoneRow);
+		if (conversation >= 0)
+		{
+			m_Conversation = conversation;
+		}
+	}
+	if (m_Fade == Fade::None && m_Conversation < 0)
+	{
+		m_Conversation = m_Events.Update(m_Graph, m_Progress, status, m_Player->WorldX(), m_Player->WorldY());
+	}
+
+	// The nearest person within reach, if any - the prologue may just have
+	// taken them.
+	m_Listener = nullptr;
+	float playerCol, playerRow;
+	WorldGrid::InverseIso(m_Player->WorldX(), m_Player->WorldY(), playerCol, playerRow);
+	float nearest = Tuning::Dialogue::kTalkReach * Tuning::Dialogue::kTalkReach;
+	m_Graph.ForEach<NpcActor>([&](NpcActor& npc)
+	{
+		float col, row;
+		WorldGrid::InverseIso(npc.WorldX(), npc.WorldY(), col, row);
+		float distance = (col - playerCol) * (col - playerCol) + (row - playerRow) * (row - playerRow);
+		if (!npc.IsDestroyed() && npc.Conversation() >= 0 && distance <= nearest)
+		{
+			nearest = distance;
+			m_Listener = &npc;
+		}
+	});
 
 	// A king that has yielded sends him on, to the old battlefield.
 	if (m_King != nullptr && m_King->TakeSendOff())
@@ -509,8 +614,23 @@ void Scene::RenderText(TextRenderer* text) const
 		{
 			prompt = "F  결투";
 		}
+		else if (interaction == Interaction::Talk)
+		{
+			prompt = "F  대화";
+		}
 		text->Draw(TextRenderer::Face::Body, prompt, 0.f, bottom + 44.f,
 			Palette::kUiBone, 0.9f, TextRenderer::Align::Center);
+	}
+
+	int raiders = m_Prologue.RaidersLeft();
+	int besiegers = m_Events.RescueLeft();
+	if (m_Fade == Fade::None && (raiders > 0 || besiegers > 0))
+	{
+		std::string goal = (raiders > 0)
+			? "잿빛의 존재들을 물리쳐라  ·  남은 수 " + std::to_string(raiders)
+			: "잿빛에 둘러싸인 이를 구하라  ·  남은 수 " + std::to_string(besiegers);
+		text->Draw(TextRenderer::Face::Body, goal.c_str(), 0.f, top - kRemarkDrop, Palette::kUiBone, 0.9f,
+			TextRenderer::Align::Center);
 	}
 
 	if (m_King != nullptr && m_King->Remark() != nullptr)

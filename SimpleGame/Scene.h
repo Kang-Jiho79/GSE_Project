@@ -5,11 +5,14 @@
 #include "Impact.h"
 #include "Regions.h"
 #include "Settlement.h"
+#include "Prologue.h"
+#include "StoryEvents.h"
 
 class Renderer;
 class TextRenderer;
 class PlayerActor;
 class KingActor;
+class NpcActor;
 struct PlayerStatus;
 struct Progress;
 
@@ -43,6 +46,21 @@ public:
 	const Regions::Atmosphere& CurrentAtmosphere() const;
 	// One flag per region: whether he has been there.
 	const bool* VisitedRegions() const;
+	// From the start: the hidden village on its last day. Progress and
+	// status must already be fresh.
+	void NewGame();
+	// Back where a saved journey left off: at the region's waystone, or its
+	// altar if he last rested there. Progress and status must already be
+	// loaded.
+	void Continue(int region);
+
+	// A conversation the story wants started now, or -1. Taken once.
+	int TakeConversation();
+	// An ending the story has reached (a Dialogue::EndingId), or -1. Taken once.
+	int TakeEnding();
+	// The last fight is under way or over: nothing should be saved.
+	bool HoldsSave() const;
+
 	// Fades out, builds the region, and fades back in with him at its waystone.
 	// Ignored during a fade or a duel.
 	void BeginTravel(int region);
@@ -54,6 +72,7 @@ public:
 		WorldMap, // at the waystone
 		Temple,   // at an altar
 		Duel,     // before a king who will still fight him
+		Talk,     // beside someone who will talk to him
 	};
 	// Nothing at all while a duel is under way.
 	Interaction AvailableInteraction() const;
@@ -65,6 +84,9 @@ public:
 	// Asks the king before him for a duel: he is put in the king's form and
 	// held there, made whole, and it begins. Falling in it does not kill him.
 	void BeginDuel(PlayerStatus& status);
+
+	// The conversation the person beside him would start, or -1.
+	int TalkScript() const;
 
 private:
 	enum class Fade
@@ -114,6 +136,16 @@ private:
 	bool m_AtWaystone = false;
 	bool m_AtAltar = false;
 	bool m_AtKing = false;
+	// Whoever he could talk to from where he stands. Owned by the graph, and
+	// found afresh every frame, after anything that could take them away.
+	NpcActor* m_Listener = nullptr;
+
+	// A king that has acknowledged him, near enough to speak to.
+	bool m_AtKingToTalk = false;
+
+	Prologue m_Prologue;
+	StoryEvents m_Events;
+	int m_Conversation = -1;
 
 	// The capital's king, if this is a capital. Owned by the graph; a king is
 	// never destroyed, so this stays good until the region is left.

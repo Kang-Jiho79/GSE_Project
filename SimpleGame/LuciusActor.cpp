@@ -11,6 +11,7 @@
 #include "Progress.h"
 #include "Palette.h"
 #include "Tuning.h"
+#include "Dialogue.h"
 #include <cmath>
 
 namespace
@@ -49,6 +50,7 @@ namespace
 		"등을 보이는 것 또한 하나의 답이겠지.",
 		"……인정하마. 그대의 빛은 진짜다.",
 		"루키우스의 축복  ·  빛의 공격이 강해진다",
+		Dialogue::KingLucius,
 	};
 
 	// A long shaft held in the hand at an angle on screen, measured from the

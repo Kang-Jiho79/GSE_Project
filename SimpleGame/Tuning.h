@@ -49,6 +49,93 @@ namespace Tuning
 		const float kSpawnClearance = 8.f;
 	}
 
+	// The prologue: a little while of the hidden village at peace, then the
+	// gray comes for it.
+	namespace Prologue
+	{
+		const float kCalmTime = 15.f;      // seconds of peace before the raid
+		const int kRaiders = 6;
+		const float kRaidRing = 6.5f;      // tiles from the square they come in at
+		const float kTakeTime = 5.f;       // into the raid, the villagers are lost
+		const float kRaidShake = 8.f;
+		const float kAftermathDelay = 1.5f; // after the last of them falls
+	}
+
+	// The story's events between the prologue and the end.
+	namespace Story
+	{
+		// Kinis speaks to him once he comes this near, in tiles.
+		const float kKinisReach = 4.f;
+
+		// A rescue: this many of the gray round the one being saved, this far
+		// from them; it is over when none are left within kRescueArea of them,
+		// and they speak once he is within kRescueTalk.
+		const int kRescueRaiders = 4;
+		const float kRescueRing = 3.f;
+		const float kRescueArea = 9.f;
+		const float kRescueTalk = 7.f;
+
+		// The god's hold only lets go of one this strong: both lifetime totals
+		// together, on top of having seen both kings fail to hear him.
+		const float kChosenPower = 400.f;
+
+		// Kinis, at the gray's heart, speaks once he comes this near; the two
+		// he saved meet again at the front once he is this near them.
+		const float kKinisTalk = 6.f;
+		const float kReunionReach = 6.f;
+	}
+
+	// Kinis, the first of the gray. Both powers he once held still answer
+	// him: a lance of light from afar, a cleave of darkness up close, and a
+	// ring of the gray they became between.
+	namespace Kinis
+	{
+		const float kMaxHealth = 1500.f;
+		const float kBodyRadius = 0.6f;
+		const float kWakeRange = 8.f;
+		const float kLeashRange = 18.f;
+		const float kFuryTime = 180.f;
+
+		const float kSpeed = 2.6f;
+		const float kKeepRange = 3.5f;
+		const float kCooldown = 1.1f;
+		const float kRecover = 0.5f;
+
+		// Below this share of health: shorter windups, three lances at once,
+		// and a fuller ring.
+		const float kPhaseShare = 0.5f;
+		const float kPhaseWindupScale = 0.8f;
+
+		const float kLanceWindup = 0.7f;
+		const float kLanceLength = 10.f;
+		const float kLanceWidth = 1.2f;
+		const float kLanceDamage = 20.f;
+		const float kLanceSpread = 25.f; // degrees between lances, once there are three
+		const float kLanceShake = 4.f;
+
+		const float kCleaveWindup = 0.5f;
+		const float kCleaveReach = 2.4f;  // he cleaves instead of lancing this near
+		const float kCleaveRange = 2.6f;
+		const float kCleaveArc = 200.f;
+		const float kCleaveDamage = 22.f;
+
+		const float kRingWindup = 0.9f;
+		const int kRingCount = 12;
+		const int kPhaseRingCount = 16;
+		const float kRingSpeed = 4.5f;
+		const float kRingLifetime = 3.f;
+		const float kRingDamage = 12.f;
+	}
+
+	// Talking to people.
+	namespace Dialogue
+	{
+		const float kTalkReach = 1.3f;     // tiles from someone to speak to them
+		const float kTypeRate = 40.f;      // characters a second as a line is written out
+		const float kGlitchRate = 12.f;    // times a second broken words churn
+		const int kLogEntries = 200;       // lines the log keeps
+	}
+
 	namespace FormSwitch
 	{
 		// Space is ignored until this runs out; a successful switch restarts it.

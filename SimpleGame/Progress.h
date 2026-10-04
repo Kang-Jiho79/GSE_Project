@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Regions.h"
+#include "Story.h"
+#include <string>
 
 // What the world remembers of his journey, apart from the man himself: where
 // he has been, where he will rise if he falls, and what he has overcome.
@@ -25,5 +27,23 @@ struct Progress
 	bool HasTitle() const
 	{
 		return recognizedByLucius && recognizedByNoctis;
+	}
+
+	// What he is called; what he typed when he began.
+	std::string heroName = "이름 없는 자";
+
+	bool story[Story::Count] = {};
+
+	bool Has(Story::Flag flag) const
+	{
+		return flag != Story::NoFlag && story[flag];
+	}
+
+	void Set(Story::Flag flag)
+	{
+		if (flag != Story::NoFlag)
+		{
+			story[flag] = true;
+		}
 	}
 };

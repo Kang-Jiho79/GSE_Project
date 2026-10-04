@@ -74,6 +74,17 @@ namespace Palette
 	// His shades: shadow with nothing of him in it but the eyes.
 	const Color kShade = { 0.05f, 0.045f, 0.07f };
 
+	// The people of each land, in plain clothes: pale linen in the light's
+	// villages, dyed near-black in the dark's, patched brown among the
+	// borderborn. Priests wear their side's colour full, with its mark.
+	const Color kClothLight = { 0.62f, 0.58f, 0.50f };
+	const Color kClothDark = { 0.17f, 0.14f, 0.22f };
+	const Color kClothBorderborn = { 0.33f, 0.26f, 0.19f };
+	const Color kClothAshen = { 0.36f, 0.36f, 0.37f };
+	const Color kRobeLight = { 0.86f, 0.84f, 0.78f };
+	const Color kRobeDark = { 0.10f, 0.08f, 0.13f };
+	const Color kSkin = { 0.62f, 0.52f, 0.44f };
+
 	// ---- Figures ----
 	// The ink line round anyone standing in the world, and the cold light
 	// catching the edge of them that faces the sky.

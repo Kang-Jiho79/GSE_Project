@@ -13,6 +13,7 @@
 #include "Progress.h"
 #include "Palette.h"
 #include "Tuning.h"
+#include "Dialogue.h"
 #include <cmath>
 
 namespace
@@ -47,6 +48,7 @@ namespace
 		"물러서는 것도 수다. 나쁘지 않군.",
 		"……좋다. 네 어둠을 인정하지.",
 		"녹티스의 축복  ·  피흡이 늘어난다",
+		Dialogue::KingNoctis,
 	};
 
 	// A straight length of blade from a point, at an angle on screen measured

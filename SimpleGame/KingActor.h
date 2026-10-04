@@ -19,7 +19,8 @@ public:
 	using BossActor::TakeHit;
 
 	// What it says: when he asks, when it spares him, when he walks away, when
-	// it yields, and the blessing it gives, written under the yielding.
+	// it yields, and the blessing it gives, written under the yielding - and
+	// the conversation it has with him once it has acknowledged him.
 	struct Lines
 	{
 		const char* challenge;
@@ -27,6 +28,7 @@ public:
 		const char* flee;
 		const char* yield;
 		const char* blessing;
+		int talk;
 	};
 
 	// recognized: it has already yielded to him, and will not fight again.
@@ -39,6 +41,9 @@ public:
 	// The form the duel holds him to.
 	Form Power() const;
 	bool CanChallenge() const;
+	// Having acknowledged him on an earlier visit, it will talk instead.
+	bool CanTalk() const;
+	int Conversation() const;
 	bool IsDueling() const;
 	bool HasYielded() const;
 	// He has asked: he is made whole and held to its power, and it wakes.

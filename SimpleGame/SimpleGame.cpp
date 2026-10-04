@@ -25,6 +25,12 @@ but WITHOUT ANY WARRANTY.
 #include "TextRenderer.h"
 #include "WorldMapScreen.h"
 #include "TemplePanel.h"
+#include "DialogueBox.h"
+#include "DialogueLog.h"
+#include "TitleScreen.h"
+#include "NameEntryScreen.h"
+#include "SaveGame.h"
+#include "EndingScreen.h"
 #include "Regions.h"
 #include "Progress.h"
 
@@ -40,31 +46,275 @@ Scene g_Scene(g_Progress);
 Hud g_Hud;
 WorldMapScreen g_WorldMap;
 TemplePanel g_TemplePanel;
+DialogueBox g_Dialogue;
+DialogueLog g_DialogueLog;
+TitleScreen g_Title;
+NameEntryScreen g_NameEntry;
+EndingScreen g_Ending;
+
+// Real seconds since launch, for anything on a menu that breathes or blinks.
+float g_MenuTime = 0.f;
+
+// Outside the game proper: the title, naming him, or how it ended.
+bool IsInMenu()
+{
+	return g_Title.IsOpen() || g_NameEntry.IsOpen() || g_Ending.IsOpen();
+}
 
 // A screen over the world that holds it still while it is open.
 bool IsOverlayOpen()
 {
-	return g_WorldMap.IsOpen() || g_TemplePanel.IsOpen();
-}
-
-void CloseOverlays()
-{
-	g_WorldMap.Close();
-	g_TemplePanel.Close();
+	return IsInMenu() || g_WorldMap.IsOpen() || g_TemplePanel.IsOpen() || g_Dialogue.IsOpen() || g_DialogueLog.IsOpen();
 }
 
 bool g_MoveUp = false;
 bool g_MoveDown = false;
 bool g_MoveLeft = false;
 bool g_MoveRight = false;
+bool g_AttackHeld = false;
+bool g_RunHeld = false;
+
+// What was last written to the save, so an autosave happens only when there
+// is something new: another region, or another step in the story.
+int g_SavedRegion = -1;
+int g_SavedMilestones = -1;
+
+void MarkSaved()
+{
+	g_SavedRegion = g_Scene.CurrentRegion();
+	g_SavedMilestones = SaveGame::Milestones(g_Progress);
+}
+
+void SaveJourney(const char* notice)
+{
+	if (SaveGame::Write(g_Status, g_Progress, g_Scene.CurrentRegion()))
+	{
+		MarkSaved();
+		g_Hud.Notify(notice);
+	}
+	else
+	{
+		g_Hud.Notify("기록하지 못했다");
+	}
+}
+
+// Saved on its own whenever he reaches another region or the story moves on -
+// but never mid-conversation, mid-duel, or fallen.
+void AutoSave()
+{
+	if (IsOverlayOpen() || g_Status.formLocked || g_Status.health <= 0.f || g_Scene.HoldsSave())
+	{
+		return;
+	}
+	if (g_Scene.CurrentRegion() == g_SavedRegion && SaveGame::Milestones(g_Progress) == g_SavedMilestones)
+	{
+		return;
+	}
+	SaveJourney("자동 기록");
+}
+
+void ResetInput()
+{
+	g_MoveUp = false;
+	g_MoveDown = false;
+	g_MoveLeft = false;
+	g_MoveRight = false;
+	g_AttackHeld = false;
+}
+
+// From the beginning, under the name he chose. Nothing is saved until the
+// story first moves on, so quitting at once leaves an old save as it was.
+void StartNewGame(const std::string& name)
+{
+	g_Status = PlayerStatus();
+	g_Progress = Progress();
+	g_Progress.heroName = name;
+	g_DialogueLog.Clear();
+	g_Dialogue.Close();
+	g_NameEntry.Close();
+	g_Title.Close();
+	ResetInput();
+
+	g_Scene.NewGame();
+	MarkSaved();
+}
+
+void ContinueGame()
+{
+	PlayerStatus status;
+	Progress progress;
+	int region;
+	if (!SaveGame::Read(status, progress, region))
+	{
+		g_Title.Open(SaveGame::Exists());
+		g_Hud.Notify("기록을 읽지 못했다");
+		return;
+	}
+
+	g_Status = status;
+	g_Progress = progress;
+	g_DialogueLog.Clear();
+	g_Dialogue.Close();
+	g_Title.Close();
+	ResetInput();
+
+	g_Scene.Continue(region);
+	MarkSaved();
+}
+
+// On through the ending, and back to the title at the end of it.
+void AdvanceEnding()
+{
+	g_Ending.Advance();
+	if (g_Ending.IsFinished())
+	{
+		g_Ending.Close();
+		g_Title.Open(SaveGame::Exists());
+	}
+}
+
+void ConfirmTitle()
+{
+	switch (g_Title.Confirm())
+	{
+	case TitleScreen::Pick::NewGame:
+	{
+		g_Title.Close();
+		g_NameEntry.Open(SaveGame::Exists());
+		break;
+	}
+	case TitleScreen::Pick::Continue:
+	{
+		ContinueGame();
+		break;
+	}
+	case TitleScreen::Pick::Quit:
+	{
+		glutLeaveMainLoop();
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
+}
+
+// Everything but a conversation, which only ends by being read through.
+void CloseOverlays()
+{
+	g_WorldMap.Close();
+	g_TemplePanel.Close();
+	g_DialogueLog.Close();
+}
+
+// Keys while a screen is open. A conversation takes F, Space and Enter to go
+// on and W/S to choose; the log takes W/S to look back; any other screen
+// closes on F or Esc.
+void OverlayKey(int lowered)
+{
+	// The ending reads on with F, Space or Enter.
+	if (g_Ending.IsOpen())
+	{
+		if (lowered == InputMap::kInteract || lowered == InputMap::kSwitchForm || lowered == InputMap::kConfirm)
+		{
+			AdvanceEnding();
+		}
+		return;
+	}
+
+	if (g_Title.IsOpen())
+	{
+		switch (lowered)
+		{
+		case InputMap::kMoveUp:
+		{
+			g_Title.Move(-1);
+			break;
+		}
+		case InputMap::kMoveDown:
+		{
+			g_Title.Move(1);
+			break;
+		}
+		case InputMap::kInteract:
+		case InputMap::kSwitchForm:
+		case InputMap::kConfirm:
+		{
+			ConfirmTitle();
+			break;
+		}
+		case InputMap::kQuit:
+		{
+			glutLeaveMainLoop();
+			break;
+		}
+		}
+		return;
+	}
+
+	if (g_Dialogue.IsOpen())
+	{
+		switch (lowered)
+		{
+		case InputMap::kInteract:
+		case InputMap::kSwitchForm:
+		case InputMap::kConfirm:
+		{
+			g_Dialogue.Advance(g_Progress, g_DialogueLog);
+			break;
+		}
+		case InputMap::kMoveUp:
+		{
+			g_Dialogue.MoveChoice(-1);
+			break;
+		}
+		case InputMap::kMoveDown:
+		{
+			g_Dialogue.MoveChoice(1);
+			break;
+		}
+		}
+		return;
+	}
+
+	if (g_DialogueLog.IsOpen())
+	{
+		switch (lowered)
+		{
+		case InputMap::kMoveUp:
+		{
+			g_DialogueLog.Scroll(1);
+			break;
+		}
+		case InputMap::kMoveDown:
+		{
+			g_DialogueLog.Scroll(-1);
+			break;
+		}
+		case InputMap::kDialogueLog:
+		case InputMap::kInteract:
+		case InputMap::kQuit:
+		{
+			g_DialogueLog.Close();
+			break;
+		}
+		}
+		return;
+	}
+
+	if (lowered == InputMap::kInteract || lowered == InputMap::kQuit)
+	{
+		CloseOverlays();
+	}
+}
+
 int g_LastTimeMs = 0;
 
 // Pixels relative to the window center - the same space the player is drawn
 // in, since the camera always centers on him.
 float g_MouseX = 0.f;
 float g_MouseY = 0.f;
-bool g_AttackHeld = false;
-bool g_RunHeld = false;
 
 // Set by the key callback, consumed by the next frame, so a press is seen
 // exactly once however long the key is held.
@@ -98,6 +348,8 @@ void RenderScene(void)
 		g_PostProcess->EndScene();
 	}
 
+	// On the menus the village shows behind them, but nothing of the game.
+	if (!IsInMenu())
 	{
 		ProfileScope scope("hud");
 		g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
@@ -106,7 +358,7 @@ void RenderScene(void)
 		g_Scene.RenderText(g_Text);
 
 		g_Text->Draw(TextRenderer::Face::Small,
-			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬 · F 상호작용",
+			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · L 대화 기록",
 			0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 	}
 
@@ -122,6 +374,11 @@ void RenderScene(void)
 		{
 			g_WorldMap.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MouseX, g_MouseY);
 			g_TemplePanel.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_Dialogue.Render(g_Renderer, g_Text, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_DialogueLog.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_Title.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MenuTime);
+			g_NameEntry.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MenuTime);
+			g_Ending.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_Renderer->EndFrame();
 			g_Text->Flush();
 		}
@@ -135,6 +392,7 @@ void Idle(void)
 	int nowMs = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (g_LastTimeMs == 0) ? 0.f : (nowMs - g_LastTimeMs) / 1000.f;
 	g_LastTimeMs = nowMs;
+	g_MenuTime += deltaTime;
 
 	InputState input;
 	input.moveRight = (g_MoveRight ? 1.f : 0.f) - (g_MoveLeft ? 1.f : 0.f);
@@ -161,6 +419,24 @@ void Idle(void)
 	{
 		g_Scene.Update(input, deltaTime, g_Status);
 
+		// The story has ended.
+		int ending = g_Scene.TakeEnding();
+		if (ending >= 0)
+		{
+			g_Ending.Open(ending);
+			ResetInput();
+			interact = false;
+		}
+
+		// The story wants a word.
+		int conversation = g_Scene.TakeConversation();
+		if (conversation >= 0)
+		{
+			g_Dialogue.Open(conversation, g_Progress);
+			g_AttackHeld = false;
+			interact = false;
+		}
+
 		if (interact)
 		{
 			switch (g_Scene.AvailableInteraction())
@@ -175,6 +451,7 @@ void Idle(void)
 			{
 				const Regions::Info& region = Regions::Get(g_Scene.CurrentRegion());
 				g_Scene.UseTemple(g_Status);
+				SaveJourney("여정을 기록했다");
 				g_TemplePanel.Open(region.name, region.style == Regions::Style::Ashen);
 				g_AttackHeld = false;
 				break;
@@ -184,6 +461,12 @@ void Idle(void)
 				g_Scene.BeginDuel(g_Status);
 				break;
 			}
+			case Scene::Interaction::Talk:
+			{
+				g_Dialogue.Open(g_Scene.TalkScript(), g_Progress);
+				g_AttackHeld = false;
+				break;
+			}
 			default:
 			{
 				break;
@@ -191,7 +474,10 @@ void Idle(void)
 			}
 		}
 	}
+	AutoSave();
 	g_Hud.Tick(deltaTime);
+	g_Dialogue.Update(deltaTime);
+	g_Ending.Update(deltaTime);
 
 	RenderScene();
 
@@ -218,10 +504,36 @@ void MouseInput(int button, int state, int x, int y)
 {
 	UpdateMousePosition(x, y);
 
-	// With a screen open the mouse belongs to it. On the map, a click on a
-	// place he can reach sets out for it; anything else is ignored.
+	// With a screen open the mouse belongs to it. In a conversation a click
+	// goes on, or takes the choice under it; on the map, a click on a place
+	// he can reach sets out for it; anything else is ignored.
 	if (IsOverlayOpen())
 	{
+		if (g_Ending.IsOpen())
+		{
+			if (button == InputMap::kAttackButton && state == GLUT_DOWN)
+			{
+				AdvanceEnding();
+			}
+			return;
+		}
+		if (g_Title.IsOpen())
+		{
+			if (button == InputMap::kAttackButton && state == GLUT_DOWN && g_Title.SelectAt(g_MouseX, g_MouseY))
+			{
+				ConfirmTitle();
+			}
+			return;
+		}
+		if (g_Dialogue.IsOpen())
+		{
+			if (button == InputMap::kAttackButton && state == GLUT_DOWN
+				&& (!g_Dialogue.IsChoosing() || g_Dialogue.SelectChoiceAt(g_MouseX, g_MouseY, WINDOW_SIZE_Y)))
+			{
+				g_Dialogue.Advance(g_Progress, g_DialogueLog);
+			}
+			return;
+		}
 		if (!g_WorldMap.IsOpen())
 		{
 			return;
@@ -259,14 +571,26 @@ void MouseInput(int button, int state, int x, int y)
 
 void KeyInput(unsigned char key, int x, int y)
 {
-	// With a screen open, F or Esc closes it and nothing else reaches the game.
+	// Naming him takes the keys as typed - Shift makes the doubled jamo -
+	// and Esc goes back to the title.
+	if (g_NameEntry.IsOpen())
+	{
+		if (key == InputMap::kQuit)
+		{
+			g_NameEntry.Close();
+			g_Title.Open(SaveGame::Exists());
+		}
+		else if (g_NameEntry.Key(key))
+		{
+			StartNewGame(g_NameEntry.Name());
+		}
+		return;
+	}
+
+	// With a screen open, nothing reaches the game.
 	if (IsOverlayOpen())
 	{
-		int lowered = tolower(key);
-		if (lowered == InputMap::kInteract || lowered == InputMap::kQuit)
-		{
-			CloseOverlays();
-		}
+		OverlayKey(tolower(key));
 		return;
 	}
 
@@ -338,6 +662,39 @@ void KeyInput(unsigned char key, int x, int y)
 		g_Scene.BeginTravel(Regions::Tenebrae);
 		break;
 	}
+	case InputMap::kDebugEscapeGod:
+	{
+		bool& escaped = g_Progress.story[Story::EscapedGodInfluence];
+		escaped = !escaped;
+		g_Hud.Notify(escaped ? "신의 영향 이탈 켬" : "신의 영향 이탈 끔");
+		break;
+	}
+	case InputMap::kDebugOpenWorld:
+	{
+		for (int i = 0; i < Regions::Count; i++)
+		{
+			g_Progress.visited[i] = true;
+		}
+		g_Progress.recognizedByLucius = true;
+		g_Progress.recognizedByNoctis = true;
+		g_Status.lightBlessing = true;
+		g_Status.darkBlessing = true;
+		g_Hud.Notify("모든 지역 개방 · 두 왕 인정");
+		break;
+	}
+	case InputMap::kDebugAddBoth:
+	{
+		g_Status.AddLight(50.f);
+		g_Status.AddDark(50.f);
+		g_Hud.Notify("빛 +50 · 어둠 +50");
+		break;
+	}
+	case InputMap::kDialogueLog:
+	{
+		g_DialogueLog.Open();
+		g_AttackHeld = false;
+		break;
+	}
 	case InputMap::kQuit:
 	{
 		glutLeaveMainLoop();
@@ -375,6 +732,19 @@ void KeyInputUp(unsigned char key, int x, int y)
 
 void SpecialKeyInput(int key, int x, int y)
 {
+	// The arrows stand in for W and S on a screen that takes them.
+	if (IsOverlayOpen())
+	{
+		if (key == InputMap::kMenuUp)
+		{
+			OverlayKey(InputMap::kMoveUp);
+		}
+		else if (key == InputMap::kMenuDown)
+		{
+			OverlayKey(InputMap::kMoveDown);
+		}
+	}
+
 	switch (key)
 	{
 	case InputMap::kTogglePostProcess:
@@ -451,6 +821,7 @@ int main(int argc, char **argv)
 	g_Text->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
+	g_Title.Open(SaveGame::Exists());
 
 	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";
 
