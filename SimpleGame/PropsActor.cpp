@@ -39,21 +39,41 @@ namespace
 	}
 }
 
+PropsActor::PropsActor(float density, float clearCol, float clearRow, float clearRadius)
+	: m_Density(density)
+	, m_ClearCol(clearCol)
+	, m_ClearRow(clearRow)
+	, m_ClearRadius(clearRadius)
+{
+}
+
 void PropsActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 {
+	if (m_Density <= 0.f)
+	{
+		return;
+	}
+
 	int centerCol, centerRow;
 	WorldGrid::WorldToTile(ctx.camX, ctx.camY, centerCol, centerRow);
 
 	int radius = ViewRadius(ctx);
 	int colMin = std::max(0, centerCol - radius);
-	int colMax = std::min(WorldGrid::kMapCols - 1, centerCol + radius);
+	int colMax = std::min(WorldGrid::MapCols() - 1, centerCol + radius);
 	int rowMin = std::max(0, centerRow - radius);
-	int rowMax = std::min(WorldGrid::kMapRows - 1, centerRow + radius);
+	int rowMax = std::min(WorldGrid::MapRows() - 1, centerRow + radius);
 
 	for (int row = rowMin; row <= rowMax; row++)
 	{
 		for (int col = colMin; col <= colMax; col++)
 		{
+			float fromClearCol = col - m_ClearCol;
+			float fromClearRow = row - m_ClearRow;
+			if (fromClearCol * fromClearCol + fromClearRow * fromClearRow < m_ClearRadius * m_ClearRadius)
+			{
+				continue;
+			}
+
 			unsigned int hash = WorldGrid::Hash(col + 7717, row + 3313);
 			float roll = (hash % 1000) / 1000.f;
 			int variant = (hash / 1000) % 8;
@@ -63,16 +83,16 @@ void PropsActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 			// Squared so groves have a dense heart and a sparse edge instead of
 			// a hard line.
 			float grove = WorldGrid::Noise((float)col, (float)row, kGroveCell);
-			bool tree = roll < grove * grove * kGroveDensity;
+			bool tree = roll < grove * grove * kGroveDensity * m_Density;
 
 			bool structure = false;
 			bool boulder = false;
 			bool rubble = false;
 			if (!tree)
 			{
-				structure = grove < kClearingLimit && roll2 < kStructureChance;
-				boulder = !structure && roll2 < kBoulderChance;
-				rubble = !structure && !boulder && roll2 < kRubbleChance;
+				structure = grove < kClearingLimit && roll2 < kStructureChance * m_Density;
+				boulder = !structure && roll2 < kBoulderChance * m_Density;
+				rubble = !structure && !boulder && roll2 < kRubbleChance * m_Density;
 			}
 
 			if (!tree && !structure && !boulder && !rubble)

@@ -35,7 +35,9 @@ namespace Palette
 	const Color kDarkGlow = { 0.03f, 0.02f, 0.05f };
 
 	// ---- The gray ----
-	// What the window clears to and the fog fades into.
+	// The near-black behind screens laid over the world. Each region has its
+	// own fog for the world itself (Regions::AtmosphereOf); this is close to
+	// the battlefield's.
 	const Color kVoid = { 0.045f, 0.043f, 0.055f };
 	// Under anything standing on the ground.
 	const Color kShadow = { 0.085f, 0.08f, 0.10f };

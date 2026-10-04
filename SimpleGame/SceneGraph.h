@@ -19,6 +19,10 @@ public:
 	void SetSpawnParent(Actor* parent);
 	void Spawn(std::unique_ptr<Actor> actor);
 
+	// Drops everything - the whole tree and anything waiting to join it - for
+	// a new level to be built in its place. Not to be called mid-traversal.
+	void Clear();
+
 	void Update(const ActorContext& ctx);
 	void Draw(DrawList& out, const ActorContext& ctx);
 

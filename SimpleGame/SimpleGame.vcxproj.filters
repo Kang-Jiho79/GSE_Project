@@ -108,6 +108,24 @@
     <ClInclude Include="TextRenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Regions.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WaystoneActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldMapScreen.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Settlement.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SettlementActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TemplePanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Impact.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -162,6 +180,24 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TextRenderer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Regions.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WaystoneActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldMapScreen.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Settlement.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SettlementActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TemplePanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Impact.cpp">

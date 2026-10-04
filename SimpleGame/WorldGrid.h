@@ -9,11 +9,15 @@
 // camera only ever translates.
 namespace WorldGrid
 {
-	const int kMapCols = 120;
-	const int kMapRows = 120;
-
 	const float kTileWidth = 64.f;
 	const float kTileHeight = 32.f;
+
+	// The map currently being played: its size, the seed every layout is
+	// hashed from, and how many terrace levels its ground rises through (1 is
+	// flat). Set when a region is entered; everything below answers for it.
+	void SetMap(int cols, int rows, unsigned int seed, int terraceLevels);
+	int MapCols();
+	int MapRows();
 
 	unsigned int Hash(int col, int row);
 
@@ -41,6 +45,16 @@ namespace WorldGrid
 	float GroundHeightAt(float worldX, float worldY);
 
 	void ClampToMap(float& col, float& row);
+
+	// Ground that cannot be walked: buildings. A box in tiles, cleared when a
+	// region is entered and filled by whatever stands in it.
+	void ClearBlockers();
+	void AddBlocker(float minCol, float minRow, float maxCol, float maxRow);
+	// Whether something of ordinary size standing here would be inside one.
+	bool IsBlocked(float col, float row);
+	// Moves a position by an offset, staying on the map and out of anything
+	// blocked. Walking into a wall slides along it rather than stopping dead.
+	void Move(float& col, float& row, float offsetCol, float offsetRow);
 
 	// Eases a value toward a target at a rate independent of frame length.
 	// The terraces are genuine steps, so anything walking them has to be

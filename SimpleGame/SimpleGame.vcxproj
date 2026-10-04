@@ -188,6 +188,12 @@
     <ClInclude Include="PostProcess.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Regions.h" />
+    <ClInclude Include="WaystoneActor.h" />
+    <ClInclude Include="WorldMapScreen.h" />
+    <ClInclude Include="Settlement.h" />
+    <ClInclude Include="SettlementActor.h" />
+    <ClInclude Include="TemplePanel.h" />
     <ClInclude Include="Impact.h" />
     <ClInclude Include="SparkActor.h" />
     <ClInclude Include="Form.h" />
@@ -227,6 +233,12 @@
     <ClCompile Include="PostProcess.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Regions.cpp" />
+    <ClCompile Include="WaystoneActor.cpp" />
+    <ClCompile Include="WorldMapScreen.cpp" />
+    <ClCompile Include="Settlement.cpp" />
+    <ClCompile Include="SettlementActor.cpp" />
+    <ClCompile Include="TemplePanel.cpp" />
     <ClCompile Include="Impact.cpp" />
     <ClCompile Include="SparkActor.cpp" />
     <ClCompile Include="LightFormMoves.cpp" />

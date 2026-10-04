@@ -35,6 +35,20 @@ namespace Tuning
 		const float kReviveInvuln = 1.5f;
 	}
 
+	namespace Travel
+	{
+		// Leaving a region: a quicker version of the death fade.
+		const float kFadeOut = 0.35f;
+		const float kHold = 0.15f;
+		const float kFadeIn = 0.45f;
+
+		// How close he must stand to a waystone to use it, in tiles.
+		const float kWaystoneReach = 1.6f;
+		// Monsters are not placed within this many tiles of it, so he never
+		// arrives in the middle of a fight.
+		const float kSpawnClearance = 8.f;
+	}
+
 	namespace FormSwitch
 	{
 		// Space is ignored until this runs out; a successful switch restarts it.

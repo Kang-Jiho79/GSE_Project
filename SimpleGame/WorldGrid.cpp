@@ -1,12 +1,30 @@
 #include "stdafx.h"
 #include "WorldGrid.h"
 #include <cmath>
+#include <vector>
 
 namespace
 {
 	const float kTerraceStep = 11.f; // pixels of rise per terrace level
-	const int kTerraceLevels = 4;
 	const float kNoiseCell = 9.f;
+
+	int s_MapCols = 120;
+	int s_MapRows = 120;
+	unsigned int s_Seed = 0;
+	int s_TerraceLevels = 4;
+
+	struct Blocker
+	{
+		float minCol;
+		float minRow;
+		float maxCol;
+		float maxRow;
+	};
+	std::vector<Blocker> s_Blockers;
+
+	// How far a walker's body reaches from its centre, in tiles, so it stops
+	// against a wall instead of half inside it.
+	const float kBodyRadius = 0.3f;
 
 	float HashUnit(int col, int row)
 	{
@@ -29,9 +47,29 @@ namespace
 
 namespace WorldGrid
 {
+	void SetMap(int cols, int rows, unsigned int seed, int terraceLevels)
+	{
+		s_MapCols = cols;
+		s_MapRows = rows;
+		s_Seed = seed;
+		s_TerraceLevels = (terraceLevels < 1) ? 1 : terraceLevels;
+	}
+
+	int MapCols()
+	{
+		return s_MapCols;
+	}
+
+	int MapRows()
+	{
+		return s_MapRows;
+	}
+
 	unsigned int Hash(int col, int row)
 	{
-		unsigned int h = (unsigned int)(col * 374761393 + row * 668265263 + 2166136261u);
+		// The seed is mixed in, so the same grid position grows different
+		// ground in every region.
+		unsigned int h = (unsigned int)(col * 374761393 + row * 668265263 + 2166136261u) + s_Seed * 2654435761u;
 		h = (h ^ (h >> 13)) * 1274126177u;
 		return h ^ (h >> 16);
 	}
@@ -73,8 +111,8 @@ namespace WorldGrid
 
 		outCol = (int)(col + 0.5f);
 		outRow = (int)(row + 0.5f);
-		outCol = (int)Clamp((float)outCol, 0.f, (float)(kMapCols - 1));
-		outRow = (int)Clamp((float)outRow, 0.f, (float)(kMapRows - 1));
+		outCol = (int)Clamp((float)outCol, 0.f, (float)(s_MapCols - 1));
+		outRow = (int)Clamp((float)outRow, 0.f, (float)(s_MapRows - 1));
 	}
 
 	float TileDepth(float worldX, float worldY)
@@ -112,14 +150,14 @@ namespace WorldGrid
 	{
 		float noise = Noise((float)col, (float)row, kNoiseCell);
 
-		int level = (int)(noise * kTerraceLevels);
+		int level = (int)(noise * s_TerraceLevels);
 		if (level < 0)
 		{
 			level = 0;
 		}
-		if (level > kTerraceLevels - 1)
+		if (level > s_TerraceLevels - 1)
 		{
-			level = kTerraceLevels - 1;
+			level = s_TerraceLevels - 1;
 		}
 		return level * kTerraceStep;
 	}
@@ -133,8 +171,8 @@ namespace WorldGrid
 
 	void ClampToMap(float& col, float& row)
 	{
-		col = Clamp(col, 0.f, (float)(kMapCols - 1));
-		row = Clamp(row, 0.f, (float)(kMapRows - 1));
+		col = Clamp(col, 0.f, (float)(s_MapCols - 1));
+		row = Clamp(row, 0.f, (float)(s_MapRows - 1));
 	}
 
 	float SmoothApproach(float current, float target, float rate, float deltaTime)
@@ -143,5 +181,62 @@ namespace WorldGrid
 		// with the frame rate the way a plain lerp by (rate * dt) would.
 		float blend = 1.f - expf(-rate * deltaTime);
 		return current + (target - current) * blend;
+	}
+
+	void ClearBlockers()
+	{
+		s_Blockers.clear();
+	}
+
+	void AddBlocker(float minCol, float minRow, float maxCol, float maxRow)
+	{
+		Blocker blocker = { minCol, minRow, maxCol, maxRow };
+		s_Blockers.push_back(blocker);
+	}
+
+	bool IsBlocked(float col, float row)
+	{
+		for (size_t i = 0; i < s_Blockers.size(); i++)
+		{
+			const Blocker& b = s_Blockers[i];
+			if (col > b.minCol - kBodyRadius && col < b.maxCol + kBodyRadius
+				&& row > b.minRow - kBodyRadius && row < b.maxRow + kBodyRadius)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void Move(float& col, float& row, float offsetCol, float offsetRow)
+	{
+		float nextCol = col + offsetCol;
+		float nextRow = row + offsetRow;
+		ClampToMap(nextCol, nextRow);
+		if (!IsBlocked(nextCol, nextRow))
+		{
+			col = nextCol;
+			row = nextRow;
+			return;
+		}
+
+		// Buildings are squared to the grid, so sliding means keeping whichever
+		// half of the step runs along the wall.
+		float slideCol = col + offsetCol;
+		float slideRow = row;
+		ClampToMap(slideCol, slideRow);
+		if (!IsBlocked(slideCol, slideRow))
+		{
+			col = slideCol;
+			return;
+		}
+
+		slideCol = col;
+		slideRow = row + offsetRow;
+		ClampToMap(slideCol, slideRow);
+		if (!IsBlocked(slideCol, slideRow))
+		{
+			row = slideRow;
+		}
 	}
 }

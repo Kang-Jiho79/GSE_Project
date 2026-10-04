@@ -226,9 +226,10 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 		// full distance and no further.
 		float time = (ctx.deltaTime < m_ShoveTimer) ? ctx.deltaTime : m_ShoveTimer;
 
-		float col, row;
-		WorldGrid::InverseIso(LocalX() + m_ShoveVelX * time, LocalY() + m_ShoveVelY * time, col, row);
-		WorldGrid::ClampToMap(col, row);
+		float col, row, offsetCol, offsetRow;
+		WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
+		WorldGrid::InverseIso(m_ShoveVelX * time, m_ShoveVelY * time, offsetCol, offsetRow);
+		WorldGrid::Move(col, row, offsetCol, offsetRow);
 
 		float x, y;
 		WorldGrid::IsoPosition(col, row, x, y);
@@ -679,9 +680,7 @@ void MonsterActor::StepAlong(float dirCol, float dirRow, float tiles)
 	float col, row;
 	WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
 
-	col += dirCol * tiles;
-	row += dirRow * tiles;
-	WorldGrid::ClampToMap(col, row);
+	WorldGrid::Move(col, row, dirCol * tiles, dirRow * tiles);
 
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);

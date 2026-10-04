@@ -14,6 +14,7 @@ namespace InputMap
 	const unsigned char kSwitchForm = ' ';
 	const unsigned char kSkill = 'e';
 	const unsigned char kSpecial = 'q';
+	const unsigned char kInteract = 'f';
 
 	// Debug: take a hit, or absorb one kill's worth of light or dark.
 	const unsigned char kDebugDamage = 'c';

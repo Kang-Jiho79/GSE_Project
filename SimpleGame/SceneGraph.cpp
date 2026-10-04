@@ -25,6 +25,13 @@ void SceneGraph::Spawn(std::unique_ptr<Actor> actor)
 	m_Pending.push_back(std::move(actor));
 }
 
+void SceneGraph::Clear()
+{
+	m_Root.RemoveAllChildren();
+	m_Pending.clear();
+	m_SpawnParent = &m_Root;
+}
+
 void SceneGraph::Update(const ActorContext& ctx)
 {
 	m_Root.UpdateTree(ctx, 0.f, 0.f);

@@ -25,6 +25,11 @@ Actor::~Actor()
 {
 }
 
+void Actor::RemoveAllChildren()
+{
+	m_Children.clear();
+}
+
 Actor* Actor::AddChild(std::unique_ptr<Actor> child)
 {
 	Actor* raw = child.get();

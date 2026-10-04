@@ -66,6 +66,7 @@ public:
 	virtual ~Actor();
 
 	Actor* AddChild(std::unique_ptr<Actor> child);
+	void RemoveAllChildren();
 
 	void SetLocalPosition(float x, float y);
 	float LocalX() const;

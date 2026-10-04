@@ -24,9 +24,9 @@ void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 	int radius = ViewRadius(ctx);
 	int colMin = std::max(0, centerCol - radius);
-	int colMax = std::min(WorldGrid::kMapCols - 1, centerCol + radius);
+	int colMax = std::min(WorldGrid::MapCols() - 1, centerCol + radius);
 	int rowMin = std::max(0, centerRow - radius);
-	int rowMax = std::min(WorldGrid::kMapRows - 1, centerRow + radius);
+	int rowMax = std::min(WorldGrid::MapRows() - 1, centerRow + radius);
 
 	for (int row = rowMin; row <= rowMax; row++)
 	{

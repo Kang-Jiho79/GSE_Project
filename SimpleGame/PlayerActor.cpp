@@ -302,9 +302,7 @@ void PlayerActor::StepOnGrid(float dirCol, float dirRow, float tiles)
 	float col, row;
 	WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
 
-	col += dirCol * tiles;
-	row += dirRow * tiles;
-	WorldGrid::ClampToMap(col, row);
+	WorldGrid::Move(col, row, dirCol * tiles, dirRow * tiles);
 
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);

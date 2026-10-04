@@ -23,6 +23,9 @@ but WITHOUT ANY WARRANTY.
 #include "Palette.h"
 #include "PostProcess.h"
 #include "TextRenderer.h"
+#include "WorldMapScreen.h"
+#include "TemplePanel.h"
+#include "Regions.h"
 
 const int WINDOW_SIZE_X = 1024;
 const int WINDOW_SIZE_Y = 640;
@@ -32,6 +35,20 @@ PostProcess* g_PostProcess = NULL;
 TextRenderer* g_Text = NULL;
 Scene g_Scene;
 Hud g_Hud;
+WorldMapScreen g_WorldMap;
+TemplePanel g_TemplePanel;
+
+// A screen over the world that holds it still while it is open.
+bool IsOverlayOpen()
+{
+	return g_WorldMap.IsOpen() || g_TemplePanel.IsOpen();
+}
+
+void CloseOverlays()
+{
+	g_WorldMap.Close();
+	g_TemplePanel.Close();
+}
 PlayerStatus g_Status;
 
 bool g_MoveUp = false;
@@ -53,12 +70,23 @@ bool g_SwitchFormPressed = false;
 bool g_DodgePressed = false;
 bool g_SkillPressed = false;
 bool g_SpecialPressed = false;
+bool g_InteractPressed = false;
 
 void RenderScene(void)
 {
 	g_Renderer->ResetCounts();
 
-	g_PostProcess->BeginScene(Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b);
+	// The region sets the dark behind the world and the grade over it.
+	const Regions::Atmosphere& mood = g_Scene.CurrentAtmosphere();
+	PostProcess::Grade grade;
+	grade.saturation = mood.saturation;
+	grade.contrast = mood.contrast;
+	grade.tintR = mood.tint.r;
+	grade.tintG = mood.tint.g;
+	grade.tintB = mood.tint.b;
+	g_PostProcess->SetGrade(grade);
+
+	g_PostProcess->BeginScene(mood.fog.r, mood.fog.g, mood.fog.b);
 	g_Scene.Render(g_Renderer, g_Status);
 
 	// The world has to reach the GPU before it can be post-processed.
@@ -72,19 +100,29 @@ void RenderScene(void)
 		ProfileScope scope("hud");
 		g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 		g_Scene.RenderMinimap(g_Renderer);
-		g_Scene.RenderDeathText(g_Text);
+		g_Scene.RenderText(g_Text);
 
 		g_Text->Draw(TextRenderer::Face::Small,
-			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬",
+			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬 · F 상호작용",
 			0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 	}
 
-	// present: the final flushes (the HUD's shapes, then its text on top) plus
-	// the buffer swap. With vsync on, the swap will dominate this number.
+	// present: the final flushes (the HUD's shapes, then its text on top; the
+	// world map, if open, over all of it the same way) plus the buffer swap.
+	// With vsync on, the swap will dominate this number.
 	{
 		ProfileScope scope("present");
 		g_Renderer->EndFrame();
 		g_Text->Flush();
+
+		if (IsOverlayOpen())
+		{
+			g_WorldMap.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MouseX, g_MouseY);
+			g_TemplePanel.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_Renderer->EndFrame();
+			g_Text->Flush();
+		}
+
 		glutSwapBuffers();
 	}
 }
@@ -107,12 +145,44 @@ void Idle(void)
 	input.aimX = g_MouseX;
 	input.aimY = g_MouseY;
 
+	bool interact = g_InteractPressed;
+
 	g_SwitchFormPressed = false;
 	g_DodgePressed = false;
 	g_SkillPressed = false;
 	g_SpecialPressed = false;
+	g_InteractPressed = false;
 
-	g_Scene.Update(input, deltaTime, g_Status);
+	// The world holds still while a screen is open over it.
+	if (!IsOverlayOpen())
+	{
+		g_Scene.Update(input, deltaTime, g_Status);
+
+		if (interact)
+		{
+			switch (g_Scene.AvailableInteraction())
+			{
+			case Scene::Interaction::WorldMap:
+			{
+				g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions());
+				g_AttackHeld = false;
+				break;
+			}
+			case Scene::Interaction::Temple:
+			{
+				const Regions::Info& region = Regions::Get(g_Scene.CurrentRegion());
+				g_Scene.UseTemple(g_Status);
+				g_TemplePanel.Open(region.name, region.style == Regions::Style::Ashen);
+				g_AttackHeld = false;
+				break;
+			}
+			default:
+			{
+				break;
+			}
+			}
+		}
+	}
 	g_Hud.Tick(deltaTime);
 
 	RenderScene();
@@ -140,6 +210,27 @@ void MouseInput(int button, int state, int x, int y)
 {
 	UpdateMousePosition(x, y);
 
+	// With a screen open the mouse belongs to it. On the map, a click on a
+	// place he can reach sets out for it; anything else is ignored.
+	if (IsOverlayOpen())
+	{
+		if (!g_WorldMap.IsOpen())
+		{
+			return;
+		}
+
+		if (button == InputMap::kAttackButton && state == GLUT_DOWN)
+		{
+			int region = g_WorldMap.RegionAt(g_MouseX, g_MouseY);
+			if (region >= 0)
+			{
+				g_WorldMap.Close();
+				g_Scene.BeginTravel(region);
+			}
+		}
+		return;
+	}
+
 	switch (button)
 	{
 	case InputMap::kAttackButton:
@@ -160,6 +251,17 @@ void MouseInput(int button, int state, int x, int y)
 
 void KeyInput(unsigned char key, int x, int y)
 {
+	// With a screen open, F or Esc closes it and nothing else reaches the game.
+	if (IsOverlayOpen())
+	{
+		int lowered = tolower(key);
+		if (lowered == InputMap::kInteract || lowered == InputMap::kQuit)
+		{
+			CloseOverlays();
+		}
+		return;
+	}
+
 	switch (tolower(key))
 	{
 	case InputMap::kMoveUp:
@@ -190,6 +292,11 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kSkill:
 	{
 		g_SkillPressed = true;
+		break;
+	}
+	case InputMap::kInteract:
+	{
+		g_InteractPressed = true;
 		break;
 	}
 	case InputMap::kSpecial:
