@@ -4,6 +4,7 @@
 #include "Form.h"
 #include "LightFormMoves.h"
 #include "DarkFormMoves.h"
+#include "AshFormMoves.h"
 
 struct PlayerStatus;
 
@@ -45,6 +46,7 @@ private:
 
 	LightFormMoves m_LightMoves;
 	DarkFormMoves m_DarkMoves;
+	AshFormMoves m_AshMoves;
 
 	// The roll: time left in it, time until the next one, and its direction in
 	// tiles, fixed when it starts.

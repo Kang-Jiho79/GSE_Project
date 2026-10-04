@@ -186,7 +186,7 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 	// Sparks in the colour of whatever form he struck with.
 	if (m_SparksPending)
 	{
-		SparkActor::Style style = (ctx.status->form == Form::Light) ? SparkActor::Style::Light : SparkActor::Style::Dark;
+		SparkActor::Style style = SparkActor::StyleFor(ctx.status->form);
 		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), style, kHitSparks, kHitSparkSpeed, kHitSparkLift);
 		m_SparksPending = false;
 	}

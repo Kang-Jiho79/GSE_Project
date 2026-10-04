@@ -146,7 +146,7 @@ void ContinueGame()
 	int region;
 	if (!SaveGame::Read(status, progress, region))
 	{
-		g_Title.Open(SaveGame::Exists());
+		g_Title.Open(SaveGame::Exists(), SaveGame::EndingsSeen());
 		g_Hud.Notify("기록을 읽지 못했다");
 		return;
 	}
@@ -169,7 +169,7 @@ void AdvanceEnding()
 	if (g_Ending.IsFinished())
 	{
 		g_Ending.Close();
-		g_Title.Open(SaveGame::Exists());
+		g_Title.Open(SaveGame::Exists(), SaveGame::EndingsSeen());
 	}
 }
 
@@ -423,7 +423,9 @@ void Idle(void)
 		int ending = g_Scene.TakeEnding();
 		if (ending >= 0)
 		{
-			g_Ending.Open(ending);
+			bool firstTime = !SaveGame::HasSeenEnding(ending);
+			SaveGame::RecordEnding(ending);
+			g_Ending.Open(ending, firstTime);
 			ResetInput();
 			interact = false;
 		}
@@ -578,7 +580,7 @@ void KeyInput(unsigned char key, int x, int y)
 		if (key == InputMap::kQuit)
 		{
 			g_NameEntry.Close();
-			g_Title.Open(SaveGame::Exists());
+			g_Title.Open(SaveGame::Exists(), SaveGame::EndingsSeen());
 		}
 		else if (g_NameEntry.Key(key))
 		{
@@ -687,6 +689,23 @@ void KeyInput(unsigned char key, int x, int y)
 		g_Status.AddLight(50.f);
 		g_Status.AddDark(50.f);
 		g_Hud.Notify("빛 +50 · 어둠 +50");
+		break;
+	}
+	case InputMap::kDebugAsh:
+	{
+		g_Status.ashUnlocked = !g_Status.ashUnlocked;
+		if (!g_Status.ashUnlocked && g_Status.form == Form::Ash)
+		{
+			g_Status.form = Form::Light;
+		}
+		g_Hud.Notify(g_Status.ashUnlocked ? "잿빛폼 켬" : "잿빛폼 끔");
+		break;
+	}
+	case InputMap::kDebugToRealm:
+	{
+		g_Progress.Set(Story::AcceptAsh);
+		g_Status.ashUnlocked = true;
+		g_Scene.BeginTravel(Regions::Realm);
 		break;
 	}
 	case InputMap::kDialogueLog:
@@ -821,7 +840,7 @@ int main(int argc, char **argv)
 	g_Text->Initialize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
 	g_Scene.SetViewport(WINDOW_SIZE_X, WINDOW_SIZE_Y);
-	g_Title.Open(SaveGame::Exists());
+	g_Title.Open(SaveGame::Exists(), SaveGame::EndingsSeen());
 
 	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";
 

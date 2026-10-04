@@ -20,6 +20,12 @@ namespace SaveGame
 	// or it is not one of ours.
 	bool Read(PlayerStatus& status, Progress& progress, int& region);
 
+	// The endings ever reached, kept in a file of their own beside the save,
+	// so beginning anew does not forget them.
+	bool HasSeenEnding(int ending);
+	void RecordEnding(int ending);
+	int EndingsSeen();
+
 	// How far along the story he is, as one number that only ever grows -
 	// bosses beaten, kings won over, things learned. When it changes, there is
 	// something worth saving.

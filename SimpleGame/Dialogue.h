@@ -121,11 +121,19 @@ namespace Dialogue
 		KinisLastBroken,
 		KinisLastClear,
 
+		// The god, at last: what he is, and what it says as it breaks. A
+		// shorter word for each time he comes back after falling.
+		GodMeeting,
+		GodReturn,
+		GodFall,
+
 		// The endings, as pages of narration.
 		EndingSavior,
 		EndingAsh,
 		EndingScheme,
 		EndingTrue,
+		// What became of everyone, after the true ending.
+		EpilogueTrue,
 
 		Count,
 	};
@@ -140,7 +148,8 @@ namespace Dialogue
 	// beside the words, rather than wherever the script is started from.
 	void Finish(int id, Progress& progress);
 
-	// The four endings: the pages each is told in, and its name.
+	// The four endings: the pages each is told in, its name, and the pages
+	// of what came after (-1 for none).
 	enum EndingId
 	{
 		Savior,
@@ -155,6 +164,7 @@ namespace Dialogue
 	{
 		int script;
 		const char* name;
+		int epilogue;
 	};
 
 	const Ending& GetEnding(int ending);

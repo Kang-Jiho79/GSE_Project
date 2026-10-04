@@ -3,11 +3,13 @@
 #include "Palette.h"
 
 // Which of the two primordial powers something belongs to. A gray monster keeps
-// this hidden while it lives; only its death shows it.
+// this hidden while it lives; only its death shows it. The gray itself is a
+// third, held only by him at the very end - nothing is ever born to it.
 enum class Alignment
 {
 	Light,
 	Dark,
+	Ashen,
 };
 
 namespace AlignmentColor
@@ -15,7 +17,8 @@ namespace AlignmentColor
 	// The solid core of a bolt or a mote.
 	inline void Core(Alignment alignment, float& r, float& g, float& b)
 	{
-		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightCore : Palette::kDarkCore;
+		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightCore
+			: ((alignment == Alignment::Dark) ? Palette::kDarkCore : Palette::kAshCore);
 		r = c.r;
 		g = c.g;
 		b = c.b;
@@ -25,7 +28,8 @@ namespace AlignmentColor
 	// light that gives off darkness, is near-black and darkens instead.
 	inline void Glow(Alignment alignment, float& r, float& g, float& b)
 	{
-		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightGlow : Palette::kDarkGlow;
+		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightGlow
+			: ((alignment == Alignment::Dark) ? Palette::kDarkGlow : Palette::kAshGlow);
 		r = c.r;
 		g = c.g;
 		b = c.b;

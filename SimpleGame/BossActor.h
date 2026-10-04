@@ -30,6 +30,8 @@ public:
 	bool IsAwake() const;
 	// 0 until its time runs out, then one higher every interval.
 	int FuryLevel() const;
+	// A word under its name on the bar, if the fight needs one; nullptr if not.
+	virtual const char* Hint() const;
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;

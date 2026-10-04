@@ -3,6 +3,8 @@
 #include "Renderer.h"
 #include "TextRenderer.h"
 #include "Palette.h"
+#include "Dialogue.h"
+#include <string>
 #include <cmath>
 
 namespace
@@ -17,10 +19,11 @@ namespace
 	const float kVeil = 0.82f;
 }
 
-void TitleScreen::Open(bool canContinue)
+void TitleScreen::Open(bool canContinue, int endingsSeen)
 {
 	m_Open = true;
 	m_CanContinue = canContinue;
+	m_EndingsSeen = endingsSeen;
 	m_Selected = canContinue ? 1 : 0;
 }
 
@@ -116,6 +119,13 @@ void TitleScreen::Render(Renderer* renderer, TextRenderer* text, int windowSizeX
 				Palette::kUiBone.r, Palette::kUiBone.g, Palette::kUiBone.b, pulse * 0.5f);
 		}
 		text->Draw(TextRenderer::Face::Body, kItems[i], 0.f, ItemY(i) - 6.f, Palette::kUiBone, alpha,
+			TextRenderer::Align::Center);
+	}
+
+	if (m_EndingsSeen > 0)
+	{
+		std::string seen = "본 결말  " + std::to_string(m_EndingsSeen) + " / " + std::to_string((int)Dialogue::EndingCount);
+		text->Draw(TextRenderer::Face::Small, seen.c_str(), 0.f, ItemY(kItemCount - 1) - 50.f, Palette::kUiNotch, 1.f,
 			TextRenderer::Align::Center);
 	}
 

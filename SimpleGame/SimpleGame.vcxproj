@@ -219,6 +219,8 @@
     <ClInclude Include="StoryEvents.h" />
     <ClInclude Include="KinisActor.h" />
     <ClInclude Include="EndingScreen.h" />
+    <ClInclude Include="AshFormMoves.h" />
+    <ClInclude Include="GodActor.h" />
     <ClInclude Include="Bosses.h" />
     <ClInclude Include="Impact.h" />
     <ClInclude Include="SparkActor.h" />
@@ -287,6 +289,8 @@
     <ClCompile Include="StoryEvents.cpp" />
     <ClCompile Include="KinisActor.cpp" />
     <ClCompile Include="EndingScreen.cpp" />
+    <ClCompile Include="AshFormMoves.cpp" />
+    <ClCompile Include="GodActor.cpp" />
     <ClCompile Include="Bosses.cpp" />
     <ClCompile Include="Impact.cpp" />
     <ClCompile Include="SparkActor.cpp" />

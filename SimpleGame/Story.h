@@ -29,6 +29,8 @@ namespace Story
 		RescuedDark,
 		// Free of the god, he saw the two he saved at each other's throats.
 		SawRenewedWar,
+		// He has stood before the god and heard what he is.
+		MetTheGod,
 
 		Count,
 	};

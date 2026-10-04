@@ -37,6 +37,7 @@ namespace
 		{ "루크투스",      Kind::Village, Style::Ashen,      true,   40,  1,  0.5f,   6, 0.3f, 0.5f,  0.76f, -0.36f },
 		{ "디비시오",      Kind::Field,   Style::Ashen,      false, 100,  3,  1.0f,  26, 0.5f, 0.5f,  0.70f,  0.00f },
 		{ "키네라",        Kind::Field,   Style::Ashen,      false,  70,  4,  0.4f,  16, 0.5f, 0.5f,  0.92f,  0.00f },
+		{ "신의 영역",     Kind::Field,   Style::Ashen,      false,  44,  1,  0.0f,   0, 0.5f, 0.5f,  0.00f,  0.00f },
 	};
 
 	struct Link
@@ -82,6 +83,11 @@ const Regions::Info& Regions::Get(int region)
 	return kRegions[region];
 }
 
+bool Regions::IsOffMap(int region)
+{
+	return region == Realm;
+}
+
 const Regions::Atmosphere& Regions::AtmosphereOf(int region)
 {
 	//                                 fog                       light  start  end   sat   contrast  tint
@@ -95,9 +101,17 @@ const Regions::Atmosphere& Regions::AtmosphereOf(int region)
 	// The heart of the gray: almost no colour left at all, and the dark close.
 	static const Atmosphere kHeart = { { 0.055f, 0.055f, 0.056f }, 120.f, 170.f, 480.f, 0.30f, 0.90f, { 0.96f, 0.96f, 0.97f } };
 
+	// The god's place: the dark pressed close and colour turned up hard, as
+	// if everything were lit for someone watching.
+	static const Atmosphere kRealm = { { 0.018f, 0.018f, 0.024f }, 220.f, 280.f, 620.f, 0.75f, 1.18f, { 1.00f, 1.00f, 1.02f } };
+
 	if (region == Kinera)
 	{
 		return kHeart;
+	}
+	if (region == Realm)
+	{
+		return kRealm;
 	}
 
 	const Info& info = Get(region);

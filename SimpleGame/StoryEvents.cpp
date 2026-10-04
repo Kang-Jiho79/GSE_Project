@@ -2,6 +2,7 @@
 #include "StoryEvents.h"
 #include "NpcActor.h"
 #include "KinisActor.h"
+#include "GodActor.h"
 #include "MonsterActor.h"
 #include "SparkActor.h"
 #include "Dialogue.h"
@@ -27,6 +28,10 @@ namespace
 	const float kReunionCol = 5.f;
 	const float kReunionRow = -2.f;
 	const float kReunionGap = 1.6f;
+
+	// Where the empty place hangs in the god's realm, from where he arrives.
+	const float kGodCol = -7.f;
+	const float kGodRow = -7.f;
 
 	// Where Kinis waits at the gray's heart, as a share of the map.
 	const float kKinisArenaCol = 0.82f;
@@ -63,6 +68,13 @@ int StoryEvents::RescueLeft() const
 	return (m_Stage == Stage::Rescue) ? m_Left : -1;
 }
 
+int StoryEvents::TakeTravel()
+{
+	int travel = m_Travel;
+	m_Travel = -1;
+	return travel;
+}
+
 int StoryEvents::TakeEnding()
 {
 	int ending = m_Ending;
@@ -73,6 +85,7 @@ int StoryEvents::TakeEnding()
 bool StoryEvents::HoldsSave() const
 {
 	return m_Stage == Stage::KinisTalked || m_Stage == Stage::KinisFight || m_Stage == Stage::KinisLastWords
+		|| m_Stage == Stage::GodTalked || m_Stage == Stage::GodFight || m_Stage == Stage::GodFalling
 		|| m_Stage == Stage::Done;
 }
 
@@ -108,7 +121,21 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 	m_Figure = nullptr;
 	m_Second = nullptr;
 	m_Kinis = nullptr;
+	m_God = nullptr;
 	m_Ending = -1;
+	m_Travel = -1;
+
+	if (region == Regions::Realm)
+	{
+		std::unique_ptr<GodActor> god(new GodActor(region));
+		float x, y;
+		WorldGrid::IsoPosition(centerCol + kGodCol, centerRow + kGodRow, x, y);
+		god->SetLocalPosition(x, y);
+		m_God = god.get();
+		graph.Spawn(std::move(god));
+		m_Stage = Stage::GodWaiting;
+		return;
+	}
 
 	if (region == Regions::Divisio && progress.Has(Story::EscapedGodInfluence) && !progress.Has(Story::SawRenewedWar))
 	{
@@ -276,10 +303,43 @@ int StoryEvents::Update(SceneGraph& graph, Progress& progress, const PlayerStatu
 		{
 			m_Ending = Dialogue::Savior;
 		}
+		else if (progress.Has(Story::AcceptAsh))
+		{
+			// The gray taken up: on to the one who set the board.
+			m_Travel = Regions::Realm;
+		}
 		else
 		{
-			m_Ending = progress.Has(Story::AcceptAsh) ? Dialogue::True : Dialogue::Scheme;
+			m_Ending = Dialogue::Scheme;
 		}
+		return -1;
+	}
+	case Stage::GodWaiting:
+	{
+		m_Stage = Stage::GodTalked;
+		return progress.Has(Story::MetTheGod) ? Dialogue::GodReturn : Dialogue::GodMeeting;
+	}
+	case Stage::GodTalked:
+	{
+		m_God->Provoke();
+		m_Stage = Stage::GodFight;
+		return -1;
+	}
+	case Stage::GodFight:
+	{
+		if (m_God->HasFallen())
+		{
+			m_Stage = Stage::GodFalling;
+			return Dialogue::GodFall;
+		}
+		return -1;
+	}
+	case Stage::GodFalling:
+	{
+		Dissolve(graph, *m_God);
+		m_God = nullptr;
+		m_Stage = Stage::Done;
+		m_Ending = Dialogue::True;
 		return -1;
 	}
 	case Stage::Done:

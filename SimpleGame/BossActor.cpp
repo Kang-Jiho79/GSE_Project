@@ -55,6 +55,11 @@ bool BossActor::IsAwake() const
 	return m_Awake;
 }
 
+const char* BossActor::Hint() const
+{
+	return nullptr;
+}
+
 int BossActor::FuryLevel() const
 {
 	return m_FuryLevel;
@@ -210,7 +215,7 @@ void BossActor::OnUpdate(const ActorContext& ctx)
 
 	if (m_SparksPending)
 	{
-		SparkActor::Style style = (ctx.status->form == Form::Light) ? SparkActor::Style::Light : SparkActor::Style::Dark;
+		SparkActor::Style style = SparkActor::StyleFor(ctx.status->form);
 		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), style, kHitSparks, kHitSparkSpeed, kHitSparkLift);
 		m_SparksPending = false;
 	}

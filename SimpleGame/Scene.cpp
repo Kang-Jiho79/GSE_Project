@@ -26,6 +26,7 @@
 #include "Bosses.h"
 #include "NpcActor.h"
 #include "Npcs.h"
+#include "Story.h"
 
 namespace
 {
@@ -292,10 +293,13 @@ void Scene::EnterRegion(int region)
 	m_Graph.SetSpawnParent(entities);
 
 	float x, y;
-	WorldGrid::IsoPosition(waystoneCol, waystoneRow, x, y);
-	std::unique_ptr<WaystoneActor> waystone(new WaystoneActor());
-	waystone->SetLocalPosition(x, y);
-	entities->AddChild(std::move(waystone));
+	if (!Regions::IsOffMap(region))
+	{
+		WorldGrid::IsoPosition(waystoneCol, waystoneRow, x, y);
+		std::unique_ptr<WaystoneActor> waystone(new WaystoneActor());
+		waystone->SetLocalPosition(x, y);
+		entities->AddChild(std::move(waystone));
+	}
 
 	std::unique_ptr<PlayerActor> player(new PlayerActor());
 	ArrivalPoint(x, y);
@@ -414,7 +418,7 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 
 	float waystoneCol, waystoneRow;
 	WaystoneTile(waystoneCol, waystoneRow);
-	m_AtWaystone = IsNear(waystoneCol, waystoneRow, Tuning::Travel::kWaystoneReach);
+	m_AtWaystone = !Regions::IsOffMap(m_Region) && IsNear(waystoneCol, waystoneRow, Tuning::Travel::kWaystoneReach);
 	m_AtAltar = m_Settlement.hasTemple
 		&& IsNear(m_Settlement.altarCol, m_Settlement.altarRow, Tuning::Travel::kWaystoneReach);
 
@@ -444,6 +448,19 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	if (m_Fade == Fade::None && m_Conversation < 0)
 	{
 		m_Conversation = m_Events.Update(m_Graph, m_Progress, status, m_Player->WorldX(), m_Player->WorldY());
+	}
+
+	// Having taken up the gray, he holds it.
+	if (m_Progress.Has(Story::AcceptAsh))
+	{
+		status.ashUnlocked = true;
+	}
+
+	// The story moving him on by itself - into the god's place.
+	int destination = m_Events.TakeTravel();
+	if (destination >= 0)
+	{
+		BeginTravel(destination);
 	}
 
 	// The nearest person within reach, if any - the prologue may just have
@@ -533,7 +550,13 @@ void Scene::UpdateFade(float deltaTime, PlayerStatus& status)
 		{
 			// He rises at the last temple he rested at, even if that is in
 			// another region altogether.
-			if (m_Progress.respawnRegion != m_Region)
+			// In the god's place there is no going back: he rises at its
+			// edge, and it begins again.
+			if (Regions::IsOffMap(m_Region))
+			{
+				EnterRegion(m_Region);
+			}
+			else if (m_Progress.respawnRegion != m_Region)
 			{
 				EnterRegion(m_Progress.respawnRegion);
 			}
@@ -825,6 +848,11 @@ void Scene::RenderBossBar(Renderer* renderer, TextRenderer* text)
 	}
 
 	std::string name = awake->Name();
+	if (awake->Hint() != nullptr)
+	{
+		name += "  ·  ";
+		name += awake->Hint();
+	}
 	if (furious)
 	{
 		name += "  ·  광폭";

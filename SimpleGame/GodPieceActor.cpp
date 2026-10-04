@@ -60,7 +60,12 @@ float GodPieceActor::BodyRadius() const
 
 float GodPieceActor::Resist(float damage)
 {
-	// A gold ward turns aside the light, a violet one the dark.
+	// A gold ward turns aside the light, a violet one the dark. The gray is
+	// neither, and goes through both.
+	if (PlayerForm() == Form::Ash)
+	{
+		return damage;
+	}
 	bool light = (PlayerForm() == Form::Light);
 	if ((m_Ward == Alignment::Light && light) || (m_Ward == Alignment::Dark && !light))
 	{

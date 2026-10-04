@@ -51,6 +51,12 @@ struct PlayerStatus
 	Cooldown lightSpecial;
 	Cooldown darkSkill;
 	Cooldown darkSpecial;
+	Cooldown ashSkill;
+	Cooldown ashSpecial;
+
+	// The gray Kinis left him, taken up: Space then turns through a third
+	// form after the other two.
+	bool ashUnlocked = false;
 
 	const Cooldown& SkillCooldown(Form which) const;
 	const Cooldown& SpecialCooldown(Form which) const;

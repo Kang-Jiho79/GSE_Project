@@ -16,7 +16,9 @@ public:
 		Quit,
 	};
 
-	void Open(bool canContinue);
+	// endingsSeen: how many of the endings have ever been reached, shown
+	// once there is at least one.
+	void Open(bool canContinue, int endingsSeen);
 	void Close();
 	bool IsOpen() const;
 
@@ -38,5 +40,6 @@ private:
 
 	bool m_Open = false;
 	bool m_CanContinue = false;
+	int m_EndingsSeen = 0;
 	int m_Selected = 0;
 };

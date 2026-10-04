@@ -127,6 +127,49 @@ namespace Tuning
 		const float kRingDamage = 12.f;
 	}
 
+	// The god (「   」): an empty place in the sky over its own board, and
+	// two hands. Three wards in turn, light, dark, then the gray, each over a
+	// third of its life.
+	namespace God
+	{
+		const float kMaxHealth = 4500.f;
+		const float kBodyRadius = 1.4f;
+		const float kWakeRange = 30.f;
+		const float kLeashRange = 99.f;   // nowhere to run to in its place
+		const float kFuryTime = 300.f;
+
+		const float kCooldown = 1.2f;
+		const float kRecover = 0.6f;
+		const float kShiftTime = 2.f;     // its ward turning over to the next power
+		const float kShiftShake = 9.f;
+		// Under the last ward, everything comes this much sooner.
+		const float kLastWardWindupScale = 0.8f;
+
+		// A hand coming down where he stood.
+		const float kPlaceWindup = 1.f;
+		const float kPlaceRadius = 1.8f;
+		const float kPlaceDamage = 26.f;
+		const float kPlaceShake = 6.f;
+
+		// A hand sweeping a line across the board, across the way to it.
+		const float kSweepWindup = 1.1f;
+		const float kSweepLength = 18.f;
+		const float kSweepWidth = 1.6f;
+		const float kSweepDamage = 22.f;
+
+		// From the second ward: every other square round him strikes.
+		const float kBoardWindup = 1.3f;
+		const int kBoardRadius = 5;
+		const float kBoardDamage = 20.f;
+
+		// Under the last: shot of all three powers, all round.
+		const float kRingWindup = 1.f;
+		const int kRingCount = 18;
+		const float kRingSpeed = 4.2f;
+		const float kRingLifetime = 4.f;
+		const float kRingDamage = 12.f;
+	}
+
 	// Talking to people.
 	namespace Dialogue
 	{
@@ -140,6 +183,34 @@ namespace Tuning
 	{
 		// Space is ignored until this runs out; a successful switch restarts it.
 		const float kSwitchCooldown = 1.f;
+	}
+
+	// The gray, taken up at the very end: neither near nor far, and best at
+	// undoing - shields, wards, and shots in the air.
+	namespace AshForm
+	{
+		// The wave: a wedge reaching past a blade and short of a bolt.
+		const float kWaveInterval = 0.45f;
+		const float kWaveRange = 3.2f;
+		const float kWaveArcDegrees = 70.f;
+		const float kWaveDamage = 14.f;
+
+		// E, unravel: a line through everything, shields and wards included.
+		const float kUnravelLength = 7.f;
+		const float kUnravelWidth = 1.4f;
+		const float kUnravelDamage = 30.f;
+		const float kUnravelCooldown = 5.f;
+
+		// Q, erase: every shot round him wiped away, a heavy blow to all
+		// within reach, and a moment untouched.
+		const float kEraseRadius = 3.5f;
+		const float kEraseDamage = 35.f;
+		const float kEraseInvuln = 0.5f;
+		const float kEraseCooldown = 12.f;
+
+		// Switching in: the shots nearest him wiped away.
+		const float kVeilRadius = 2.5f;
+		const float kVeilInvuln = 0.3f;
 	}
 
 	namespace SwapSkill

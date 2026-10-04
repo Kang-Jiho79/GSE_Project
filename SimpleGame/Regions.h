@@ -33,6 +33,7 @@ namespace Regions
 		Luctus,
 		Divisio,      // the front where light and dark still clash
 		Kinera,       // the heart of the gray
+		Realm,        // the god's own place, reached only at the very end
 
 		Count,
 	};
@@ -93,6 +94,9 @@ namespace Regions
 	};
 
 	const Info& Get(int region);
+	// Not on the world map and with no waystone: reached and left only by
+	// the story.
+	bool IsOffMap(int region);
 	const Atmosphere& AtmosphereOf(int region);
 	unsigned int Seed(int region);
 

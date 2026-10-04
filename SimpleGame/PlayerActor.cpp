@@ -110,6 +110,7 @@ void PlayerActor::Respawn(float x, float y)
 	m_LungeTimer = 0.f;
 	m_LightMoves = LightFormMoves();
 	m_DarkMoves = DarkFormMoves();
+	m_AshMoves = AshFormMoves();
 }
 
 void PlayerActor::SettleForm(PlayerStatus& status, Form form)
@@ -205,6 +206,7 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 
 	m_LightMoves.Update(ctx, *this);
 	m_DarkMoves.Update(ctx, *this);
+	m_AshMoves.Update(ctx, *this);
 
 	if (ctx.input.switchForm)
 	{
@@ -237,11 +239,21 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 
 FormMoves& PlayerActor::MovesFor(Form form)
 {
-	if (form == Form::Light)
+	switch (form)
+	{
+	case Form::Light:
 	{
 		return m_LightMoves;
 	}
-	return m_DarkMoves;
+	case Form::Dark:
+	{
+		return m_DarkMoves;
+	}
+	default:
+	{
+		return m_AshMoves;
+	}
+	}
 }
 
 void PlayerActor::Move(const ActorContext& ctx)
@@ -494,4 +506,5 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.SetFigure(false);
 	m_LightMoves.Draw(out, *this, x, groundY);
 	m_DarkMoves.Draw(out, *this, x, groundY);
+	m_AshMoves.Draw(out, *this, x, groundY);
 }

@@ -21,6 +21,12 @@ namespace Combat
 	float SpinDamage(const PlayerStatus& status);
 	float DarkBurstDamage(const PlayerStatus& status);
 
+	// The gray's, scaled by both lifetime totals together (their average),
+	// since it is both powers at once.
+	float AshWaveDamage(const PlayerStatus& status);
+	float UnravelDamage(const PlayerStatus& status);
+	float EraseDamage(const PlayerStatus& status);
+
 	// Health returned for melee damage that landed. scale raises the usual
 	// share for moves that feed it harder.
 	float Lifesteal(const PlayerStatus& status, float damageLanded, float scale = 1.f);

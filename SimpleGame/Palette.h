@@ -45,6 +45,10 @@ namespace Palette
 	const Color kAsh = { 0.62f, 0.62f, 0.64f };
 	// The gray laid over the world as his balance goes.
 	const Color kAshVeil = { 0.42f, 0.42f, 0.44f };
+	// The gray as a power in his hands, at the very end: a cold silver core,
+	// and a haze that dulls what is under it rather than lighting it.
+	const Color kAshCore = { 0.74f, 0.74f, 0.77f };
+	const Color kAshGlow = { 0.40f, 0.40f, 0.42f };
 	// What a threat is marked in: the side's own colour, washed most of the
 	// way to this - ground about to be struck, a spell thrown at him.
 	const Color kAshWarning = { 0.75f, 0.73f, 0.72f };
@@ -73,6 +77,21 @@ namespace Palette
 	const Color kNoctisMantle = { 0.20f, 0.13f, 0.30f };
 	// His shades: shadow with nothing of him in it but the eyes.
 	const Color kShade = { 0.05f, 0.045f, 0.07f };
+	// How each ending is told: the dark behind its pages and the colour of its
+	// name. The war resumed smoulders; the gray is drained; the god's scheme
+	// is darkest; the true ending starts dark and grows toward dawn.
+	const Color kEndingSaviorBack = { 0.060f, 0.032f, 0.026f };
+	const Color kEndingSaviorName = { 0.82f, 0.48f, 0.32f };
+	const Color kEndingAshBack = { 0.070f, 0.070f, 0.074f };
+	const Color kEndingAshName = { 0.66f, 0.66f, 0.68f };
+	const Color kEndingSchemeBack = { 0.018f, 0.016f, 0.024f };
+	const Color kEndingSchemeName = { 0.50f, 0.46f, 0.60f };
+	const Color kEndingTrueBack = { 0.030f, 0.030f, 0.036f };
+	const Color kEndingTrueDawn = { 0.20f, 0.17f, 0.14f };
+	const Color kEndingTrueName = { 0.96f, 0.90f, 0.78f };
+
+	// The god's hands: pale, smooth, the colour of nothing that lives.
+	const Color kGodHand = { 0.80f, 0.78f, 0.74f };
 
 	// The people of each land, in plain clothes: pale linen in the light's
 	// villages, dyed near-black in the dark's, patched brown among the

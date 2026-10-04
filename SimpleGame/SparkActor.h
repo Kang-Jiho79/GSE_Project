@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Actor.h"
+#include "Form.h"
 
 class SceneGraph;
 
@@ -20,6 +21,9 @@ public:
 
 	// Throws a spray at a world point. Does nothing while effects are off.
 	// speed is in pixels per second; lift is how high off the ground it starts.
+	// The sparks a blow struck in a form throws: gold, violet, or gray grit.
+	static Style StyleFor(Form form);
+
 	static void Burst(SceneGraph& graph, float worldX, float worldY, Style style,
 		int count, float speed, float lift);
 

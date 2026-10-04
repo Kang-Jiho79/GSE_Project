@@ -38,6 +38,8 @@ void PlayerStatus::Tick(float deltaTime)
 	lightSpecial.Tick(deltaTime);
 	darkSkill.Tick(deltaTime);
 	darkSpecial.Tick(deltaTime);
+	ashSkill.Tick(deltaTime);
+	ashSpecial.Tick(deltaTime);
 
 	if (!IsEroding())
 	{
@@ -55,11 +57,19 @@ void PlayerStatus::Tick(float deltaTime)
 
 const Cooldown& PlayerStatus::SkillCooldown(Form which) const
 {
+	if (which == Form::Ash)
+	{
+		return ashSkill;
+	}
 	return (which == Form::Light) ? lightSkill : darkSkill;
 }
 
 const Cooldown& PlayerStatus::SpecialCooldown(Form which) const
 {
+	if (which == Form::Ash)
+	{
+		return ashSpecial;
+	}
 	return (which == Form::Light) ? lightSpecial : darkSpecial;
 }
 
@@ -173,6 +183,8 @@ void PlayerStatus::Revive()
 	lightSpecial = Cooldown();
 	darkSkill = Cooldown();
 	darkSpecial = Cooldown();
+	ashSkill = Cooldown();
+	ashSpecial = Cooldown();
 	GrantInvuln(Tuning::Death::kReviveInvuln);
 }
 
@@ -183,7 +195,25 @@ bool PlayerStatus::TrySwitchForm()
 		return false;
 	}
 
-	form = (form == Form::Light) ? Form::Dark : Form::Light;
+	// Light, dark, and then the gray if he holds it, round again.
+	switch (form)
+	{
+	case Form::Light:
+	{
+		form = Form::Dark;
+		break;
+	}
+	case Form::Dark:
+	{
+		form = ashUnlocked ? Form::Ash : Form::Light;
+		break;
+	}
+	default:
+	{
+		form = Form::Light;
+		break;
+	}
+	}
 	formCooldown = Tuning::FormSwitch::kSwitchCooldown;
 	return true;
 }

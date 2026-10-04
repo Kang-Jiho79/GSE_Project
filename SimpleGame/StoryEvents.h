@@ -5,6 +5,7 @@
 
 class SceneGraph;
 class KinisActor;
+class GodActor;
 struct Progress;
 struct PlayerStatus;
 
@@ -49,6 +50,8 @@ public:
 	// From the moment Kinis is spoken to, nothing is saved: whatever happens,
 	// continuing goes back to arriving at the gray's heart.
 	bool HoldsSave() const;
+	// A region the story sends him to now, or -1. Taken once.
+	int TakeTravel();
 
 private:
 	enum class Stage
@@ -64,6 +67,10 @@ private:
 		KinisTalked,  // the conversation before the fight is over
 		KinisFight,
 		KinisLastWords,
+		GodWaiting,   // in the god's place, as he arrives
+		GodTalked,
+		GodFight,
+		GodFalling,   // has spoken its last; gone as soon as that ends
 		Done,
 	};
 
@@ -87,5 +94,7 @@ private:
 	NpcActor* m_Figure = nullptr;
 	NpcActor* m_Second = nullptr; // the other of the two at the front
 	KinisActor* m_Kinis = nullptr;
+	GodActor* m_God = nullptr;
 	int m_Ending = -1;
+	int m_Travel = -1;
 };

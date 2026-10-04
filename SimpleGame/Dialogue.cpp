@@ -381,6 +381,38 @@ namespace
 		{ "받아들이지 않는다", Story::NoFlag, kEnd },
 	};
 
+	// ---- The god ----
+
+	const Line kGodMeeting[] =
+	{
+		{ nullptr, "하늘에 구멍이 나 있었다. 빛도 어둠도 아닌, 아무것도 없는 자리.", Style::Speech },
+		{ nullptr, "그 가장자리를 두 개의 손이 천천히 돌고 있었다.", Style::Speech },
+		{ "「   」", "돌아왔구나, 나의 말아.", Style::Speech },
+		{ kHero, "……말?", Style::Speech },
+		{ "「   」", "숲에 너를 놓은 것은 나다. 잿빛을 거두라고. 판을 되돌리라고.", Style::Speech },
+		{ "「   」", "쓰러뜨린 자의 힘을 거두는 그 손도, 끝없이 커지는 그 그릇도, 모두 내가 쥐여 준 것이다.", Style::Speech },
+		{ kHero, "버려진 아이. 부모의 흔적조차 없던 아이. 처음부터…… 누구의 아이도 아니었다.", Style::Thought },
+		{ "「   」", "그런데 너는 잿빛을 삼켰다. 판 밖으로 걸어 나온 말은, 치워야지.", Style::Speech },
+		{ kHero, "판은 여기서 끝이다. 빛도 어둠도, 이제 서로를 미워할지 말지는 스스로 정할 것이다.", Style::Speech },
+		{ nullptr, "두 손이 판 위로 내려왔다.", Style::Speech },
+	};
+
+	const Line kGodReturn[] =
+	{
+		{ "「   」", "다시 판 위에 섰구나. 말은 몇 번이고 다시 놓을 수 있지.", Style::Speech },
+		{ kHero, "몇 번이든.", Style::Speech },
+	};
+
+	// It breaks as he did once: its own words lost to the same noise.
+	const Line kGodFall[] =
+	{
+		{ nullptr, "빈 자리에 금이 갔다.", Style::Speech },
+		{ "「   」", "말이…… 판을……", Style::Speech },
+		{ "「   」", "[이 놀이는] {끝나}[지 않는다…… 판은 또 펼쳐진다……]", Style::Broken },
+		{ nullptr, "구멍이 닫혔다. 하늘에는 아무것도 남지 않았다. 빈 자리조차.", Style::Speech },
+		{ kHero, "몸 안의 무언가가 조용해졌다. 이제 빛과 어둠이 서로를 미워한다면, 그건 그들의 선택이다.", Style::Thought },
+	};
+
 	// ---- The endings ----
 
 	const Line kEndingSavior[] =
@@ -409,19 +441,29 @@ namespace
 
 	const Line kEndingTrue[] =
 	{
-		{ nullptr, "잿빛이 스며들었다. 빛과 어둠, 그리고 잿빛. 세 힘이 처음으로 한 몸에 머물렀다.", Style::Speech },
-		{ nullptr, "그 순간, 하늘 너머에서 무언가가 이쪽을 내려다보았다.", Style::Speech },
-		{ nullptr, "판을 벗어난 말을, 판의 주인이 직접 집어 들려 하고 있었다.", Style::Speech },
-		{ nullptr, "신의 영역으로. 이야기는 계속된다.", Style::Speech },
+		{ nullptr, "신의 영역이 무너지고, 놀이판의 주인은 사라졌다.", Style::Speech },
+		{ nullptr, "빛의 나라와 어둠의 나라는 처음으로, 이유 없이 상대를 죽이고 싶은 마음을 잃었다.", Style::Speech },
+		{ nullptr, "남은 미움은 그들이 쌓아 온 것뿐이었다. 그것을 내려놓기까지는 오랜 세월이 걸릴 것이다.", Style::Speech },
+		{ nullptr, "경계에서 태어난 자들은 더 이상 숨지 않았다. 빛과 어둠과 잿빛을 함께 지닌 한 사람이, 그 길 앞에 서 있었기에.", Style::Speech },
+	};
+
+	// No pronoun for him here, as in every ending: he is whoever was named.
+	const Line kEpilogueTrue[] =
+	{
+		{ nullptr, "루키우스는 처음으로 경계로 향하는 길에 군대가 아닌 사절을 보냈다. 그 사절은 아무것도 되풀이하지 않았다.", Style::Speech },
+		{ nullptr, "녹티스는 오랫동안 장부를 덮어 두었다. 다시 펼쳤을 때, 거기에는 빚을 갚아야 할 이름들이 적혀 있었다.", Style::Speech },
+		{ nullptr, "피데스와 레퀴엠의 두 사람은 전선에서 다시 마주쳤다. 둘 다 칼을 뽑지 않았고, 그 오래된 기도를 더는 외우지 않았다.", Style::Speech },
+		{ nullptr, "리미나 숲 가장자리, 이름 없는 무덤들 곁에 작은 집 한 채가 다시 섰다.", Style::Speech },
+		{ nullptr, "그 집 앞에서, 숲에 버려졌던 아이는 처음으로 아무것도 거두지 않는 하루를 보냈다.", Style::Speech },
 	};
 
 	// In the order of Dialogue::EndingId.
 	const Dialogue::Ending kEndings[Dialogue::EndingCount] =
 	{
-		{ Dialogue::EndingSavior, "구원자 엔딩" },
-		{ Dialogue::EndingAsh, "잿빛 엔딩" },
-		{ Dialogue::EndingScheme, "신의 계략 엔딩" },
-		{ Dialogue::EndingTrue, "진엔딩" },
+		{ Dialogue::EndingSavior, "구원자 엔딩", -1 },
+		{ Dialogue::EndingAsh, "잿빛 엔딩", -1 },
+		{ Dialogue::EndingScheme, "신의 계략 엔딩", -1 },
+		{ Dialogue::EndingTrue, "진엔딩", Dialogue::EpilogueTrue },
 	};
 
 	// In the order of Dialogue::Id.
@@ -477,10 +519,15 @@ namespace
 		{ kKinisLastBroken, CountOf(kKinisLastBroken), nullptr, 0 },
 		{ kKinisLastClear, CountOf(kKinisLastClear), kKinisLastClearChoices, CountOf(kKinisLastClearChoices) },
 
+		{ kGodMeeting, CountOf(kGodMeeting), nullptr, 0 },
+		{ kGodReturn, CountOf(kGodReturn), nullptr, 0 },
+		{ kGodFall, CountOf(kGodFall), nullptr, 0 },
+
 		{ kEndingSavior, CountOf(kEndingSavior), nullptr, 0 },
 		{ kEndingAsh, CountOf(kEndingAsh), nullptr, 0 },
 		{ kEndingScheme, CountOf(kEndingScheme), nullptr, 0 },
 		{ kEndingTrue, CountOf(kEndingTrue), nullptr, 0 },
+		{ kEpilogueTrue, CountOf(kEpilogueTrue), nullptr, 0 },
 	};
 }
 
@@ -581,6 +628,11 @@ void Dialogue::Finish(int id, Progress& progress)
 	case KinisLastClear:
 	{
 		progress.Set(Story::KnowsWorldTruth);
+		break;
+	}
+	case GodMeeting:
+	{
+		progress.Set(Story::MetTheGod);
 		break;
 	}
 	default:

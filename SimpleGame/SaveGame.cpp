@@ -4,6 +4,7 @@
 #include "Progress.h"
 #include "Regions.h"
 #include "Story.h"
+#include "Dialogue.h"
 #include "Tuning.h"
 #include <cstdio>
 #include <cstdlib>
@@ -15,6 +16,31 @@
 namespace
 {
 	const char* const kPath = "SaveData.txt";
+	const char* const kRecordsPath = "Records.txt";
+
+	// One character per ending, 1 once it has been seen.
+	std::string ReadEndingFlags()
+	{
+		std::string flags(Dialogue::EndingCount, '0');
+		std::ifstream in(kRecordsPath, std::ios::binary);
+		std::string line;
+		while (in && std::getline(in, line))
+		{
+			if (!line.empty() && line[line.size() - 1] == '\r')
+			{
+				line.erase(line.size() - 1);
+			}
+			if (line.compare(0, 8, "endings=") == 0)
+			{
+				std::string value = line.substr(8);
+				for (int i = 0; i < Dialogue::EndingCount && i < (int)value.size(); i++)
+				{
+					flags[i] = (value[i] == '1') ? '1' : '0';
+				}
+			}
+		}
+		return flags;
+	}
 	const int kVersion = 1;
 
 	// Story flags are kept by name, so adding one later does not shift the
@@ -36,6 +62,7 @@ namespace
 		"RescuedLight",
 		"RescuedDark",
 		"SawRenewedWar",
+		"MetTheGod",
 	};
 	static_assert(sizeof(kStoryNames) / sizeof(kStoryNames[0]) == Story::Count, "a story flag has no name to save it by");
 
@@ -126,7 +153,9 @@ bool SaveGame::Write(const PlayerStatus& status, const Progress& progress, int r
 	Put(out, "health", status.health);
 	Put(out, "maxHealth", status.maxHealth);
 	Put(out, "upgrades", status.upgrades);
-	Put(out, "form", std::string(status.form == Form::Light ? "light" : "dark"));
+	const char* form = (status.form == Form::Light) ? "light" : ((status.form == Form::Dark) ? "dark" : "ash");
+	Put(out, "form", std::string(form));
+	Put(out, "ashUnlocked", status.ashUnlocked);
 	Put(out, "lightBlessing", status.lightBlessing);
 	Put(out, "darkBlessing", status.darkBlessing);
 
@@ -230,7 +259,11 @@ bool SaveGame::Read(PlayerStatus& status, Progress& progress, int& region)
 		}
 		else if (key == "form")
 		{
-			status.form = (value == "dark") ? Form::Dark : Form::Light;
+			status.form = (value == "dark") ? Form::Dark : ((value == "ash") ? Form::Ash : Form::Light);
+		}
+		else if (key == "ashUnlocked")
+		{
+			status.ashUnlocked = IsTrue(value);
 		}
 		else if (key == "lightBlessing")
 		{
@@ -301,12 +334,46 @@ bool SaveGame::Read(PlayerStatus& status, Progress& progress, int& region)
 	{
 		status.health = status.maxHealth;
 	}
+	// Never left in a form he no longer holds.
+	if (status.form == Form::Ash && !status.ashUnlocked)
+	{
+		status.form = Form::Light;
+	}
 	if (progress.heroName.empty())
 	{
 		progress.heroName = Progress().heroName;
 	}
 	progress.visited[region] = true;
 	return true;
+}
+
+bool SaveGame::HasSeenEnding(int ending)
+{
+	return ReadEndingFlags()[ending] == '1';
+}
+
+void SaveGame::RecordEnding(int ending)
+{
+	std::string flags = ReadEndingFlags();
+	flags[ending] = '1';
+	std::ofstream out(kRecordsPath, std::ios::binary | std::ios::trunc);
+	if (!out)
+	{
+		std::cout << "Could not write " << kRecordsPath << "\n";
+		return;
+	}
+	out << "endings=" << flags << '\n';
+}
+
+int SaveGame::EndingsSeen()
+{
+	std::string flags = ReadEndingFlags();
+	int count = 0;
+	for (size_t i = 0; i < flags.size(); i++)
+	{
+		count += (flags[i] == '1') ? 1 : 0;
+	}
+	return count;
 }
 
 int SaveGame::Milestones(const Progress& progress)

@@ -75,11 +75,19 @@ bool WorldMapScreen::IsOpen() const
 
 bool WorldMapScreen::IsKnown(int region) const
 {
+	if (Regions::IsOffMap(region))
+	{
+		return false;
+	}
 	return region == m_Current || m_Visited[region] || Regions::AreLinked(m_Current, region);
 }
 
 bool WorldMapScreen::CanTravelTo(int region) const
 {
+	if (Regions::IsOffMap(region))
+	{
+		return false;
+	}
 	return region != m_Current && (m_Visited[region] || Regions::AreLinked(m_Current, region));
 }
 
@@ -137,7 +145,10 @@ void WorldMapScreen::Render(Renderer* renderer, TextRenderer* text, int windowSi
 	int hovered = RegionAt(mouseX, mouseY);
 	for (int region = 0; region < Regions::Count; region++)
 	{
-		DrawNode(renderer, text, region, region == hovered);
+		if (!Regions::IsOffMap(region))
+		{
+			DrawNode(renderer, text, region, region == hovered);
+		}
 	}
 
 	float top = kPanelY + kPanelHeight / 2.f;

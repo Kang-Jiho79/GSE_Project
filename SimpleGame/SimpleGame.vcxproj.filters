@@ -201,6 +201,12 @@
     <ClInclude Include="EndingScreen.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="AshFormMoves.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GodActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Bosses.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -342,6 +348,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="EndingScreen.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AshFormMoves.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GodActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Bosses.cpp">

@@ -20,6 +20,25 @@ namespace
 	const float kDustSpread = 0.5f;   // dust keeps low: its rise is squashed to this
 }
 
+SparkActor::Style SparkActor::StyleFor(Form form)
+{
+	switch (form)
+	{
+	case Form::Light:
+	{
+		return Style::Light;
+	}
+	case Form::Dark:
+	{
+		return Style::Dark;
+	}
+	default:
+	{
+		return Style::Dust;
+	}
+	}
+}
+
 void SparkActor::Burst(SceneGraph& graph, float worldX, float worldY, Style style,
 	int count, float speed, float lift)
 {
