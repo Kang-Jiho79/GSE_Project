@@ -12,10 +12,22 @@
 #include "Combat.h"
 #include "SceneGraph.h"
 #include "Tuning.h"
+#include "Growth.h"
 #include <cmath>
 
 namespace
 {
+	// A spark off his hand with every bolt.
+	const int kCastSparks = 3;
+	const float kCastSparkSpeed = 110.f;
+	const float kCastSparkLift = 22.f;
+
+	// Light scattering along the beam once it has passed.
+	const int kBeamSparkPoints = 4;
+	const int kBeamSparks = 5;
+	const float kBeamSparkSpeed = 90.f;
+	const float kBeamSparkLift = 14.f;
+
 	// The spray as the form turns over to light.
 	const int kSwapSparks = 14;
 	const float kSwapSparkSpeed = 220.f;
@@ -43,18 +55,37 @@ void LightFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 		return;
 	}
 
-	std::unique_ptr<ProjectileActor> bolt(new ProjectileActor(Alignment::Light,
-		(ctx.input.aimX / aimLength) * Tuning::LightForm::kBoltSpeedPx,
-		(ctx.input.aimY / aimLength) * Tuning::LightForm::kBoltSpeedPx));
-	bolt->SetLocalPosition(player.WorldX(), player.WorldY());
-	ctx.graph->Spawn(std::move(bolt));
+	// One bolt at first; two, then three, fanned about the aim as it grows.
+	int bolts = 1;
+	if (Growth::Has(*ctx.status, Tuning::Growth::kAttackII))
+	{
+		bolts = 3;
+	}
+	else if (Growth::Has(*ctx.status, Tuning::Growth::kAttackI))
+	{
+		bolts = 2;
+	}
+	float aimAngle = atan2f(ctx.input.aimY, ctx.input.aimX);
+	float spread = Tuning::Growth::kBoltSpread * 3.14159265f / 180.f;
+	for (int i = 0; i < bolts; i++)
+	{
+		float angle = aimAngle + (i - (bolts - 1) * 0.5f) * spread;
+		std::unique_ptr<ProjectileActor> bolt(new ProjectileActor(Alignment::Light,
+			cosf(angle) * Tuning::LightForm::kBoltSpeedPx, sinf(angle) * Tuning::LightForm::kBoltSpeedPx));
+		bolt->SetLocalPosition(player.WorldX(), player.WorldY());
+		ctx.graph->Spawn(std::move(bolt));
+	}
+
+	player.Act(PlayerActor::Action::Cast, ctx.input.aimX, ctx.input.aimY);
+	SparkActor::Burst(*ctx.graph, player.WorldX(), player.WorldY(), SparkActor::Style::Light,
+		kCastSparks, kCastSparkSpeed, kCastSparkLift);
 
 	m_BoltCooldown = Tuning::LightForm::kBoltCooldown;
 }
 
 void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 {
-	if (!ctx.status->lightSkill.Ready())
+	if (!Growth::Has(*ctx.status, Tuning::Growth::kSkills) || !ctx.status->lightSkill.Ready())
 	{
 		return;
 	}
@@ -65,11 +96,28 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 		return;
 	}
 
+	float width = Tuning::LightForm::kBeamWidth;
+	if (Growth::Has(*ctx.status, Tuning::Growth::kSkillsII))
+	{
+		width *= Tuning::Growth::kBeamWidthScale;
+	}
 	float landed = Combat::HitLine(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::LightForm::kBeamLength, Tuning::LightForm::kBeamWidth, Combat::BeamDamage(*ctx.status), true);
+		Tuning::LightForm::kBeamLength, width, Combat::BeamDamage(*ctx.status), true);
 	if (landed > 0.f)
 	{
 		ctx.impact->Shake(Tuning::Feel::kLightShake);
+	}
+
+	player.Act(PlayerActor::Action::Beam, ctx.input.aimX, ctx.input.aimY);
+
+	// Light left hanging along where it went, scattering as it fades.
+	for (int i = 1; i <= kBeamSparkPoints; i++)
+	{
+		float along = Tuning::LightForm::kBeamLength * i / (kBeamSparkPoints + 1);
+		float offsetX, offsetY;
+		WorldGrid::IsoPosition(dirCol * along, dirRow * along, offsetX, offsetY);
+		SparkActor::Burst(*ctx.graph, player.WorldX() + offsetX, player.WorldY() + offsetY, SparkActor::Style::Light,
+			kBeamSparks, kBeamSparkSpeed, kBeamSparkLift);
 	}
 
 	std::unique_ptr<BeamActor> beam(new BeamActor(Alignment::Light, dirCol, dirRow, Tuning::LightForm::kBeamLength));
@@ -81,7 +129,7 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 
 void LightFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 {
-	if (!ctx.status->lightSpecial.Ready())
+	if (!Growth::Has(*ctx.status, Tuning::Growth::kSkills) || !ctx.status->lightSpecial.Ready())
 	{
 		return;
 	}
@@ -111,18 +159,31 @@ void LightFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 	strike->SetLocalPosition(x, y);
 	ctx.graph->Spawn(std::move(strike));
 
+	// Grown stronger, it strikes the same spot a second time.
+	if (Growth::Has(*ctx.status, Tuning::Growth::kSkillsII))
+	{
+		std::unique_ptr<LightningActor> again(new LightningActor(LightningActor::Target::Monsters,
+			Tuning::LightForm::kStrikeRadius, Tuning::LightForm::kStrikeDelay + Tuning::Growth::kSecondStrikeDelay,
+			Combat::StrikeDamage(*ctx.status)));
+		again->SetLocalPosition(x, y);
+		ctx.graph->Spawn(std::move(again));
+	}
+	player.Act(PlayerActor::Action::Call, ctx.input.aimX, ctx.input.aimY);
+
 	ctx.status->lightSpecial.Start(Tuning::LightForm::kStrikeCooldown);
 }
 
 void LightFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
-	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(),
-		Tuning::SwapSkill::kLightBurstRadius, 0.f, Tuning::SwapSkill::kLightBurstPush);
+	float scale = Growth::Has(*ctx.status, Tuning::Growth::kSwapII) ? Tuning::Growth::kSwapScale : 1.f;
+	float radius = Tuning::SwapSkill::kLightBurstRadius * scale;
+	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), radius, 0.f, Tuning::SwapSkill::kLightBurstPush * scale);
 	SparkActor::Burst(*ctx.graph, player.WorldX(), player.WorldY(), SparkActor::Style::Light,
 		kSwapSparks, kSwapSparkSpeed, kSwapSparkLift);
-	ctx.status->GrantInvuln(Tuning::SwapSkill::kLightBurstInvuln);
+	ctx.status->GrantInvuln(Tuning::SwapSkill::kLightBurstInvuln * scale);
+	player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
 
-	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Light, Tuning::SwapSkill::kLightBurstRadius, false));
+	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Light, radius, false));
 	burst->SetLocalPosition(player.WorldX(), player.WorldY());
 	ctx.graph->Spawn(std::move(burst));
 }

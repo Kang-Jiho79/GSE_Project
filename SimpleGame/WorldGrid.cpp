@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "WorldGrid.h"
+#include "Props.h"
 #include <cmath>
 #include <vector>
 
@@ -205,7 +206,21 @@ namespace WorldGrid
 				return true;
 			}
 		}
-		return false;
+		// Trees, boulders and stonework stand in the way too.
+		return Props::IsSolid(col, row, kBodyRadius);
+	}
+
+	bool BlocksShot(float col, float row)
+	{
+		for (size_t i = 0; i < s_Blockers.size(); i++)
+		{
+			const Blocker& b = s_Blockers[i];
+			if (col > b.minCol && col < b.maxCol && row > b.minRow && row < b.maxRow)
+			{
+				return true;
+			}
+		}
+		return Props::IsSolid(col, row, 0.f);
 	}
 
 	void Move(float& col, float& row, float offsetCol, float offsetRow)

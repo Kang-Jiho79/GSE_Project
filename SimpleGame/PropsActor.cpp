@@ -2,19 +2,12 @@
 #include "PropsActor.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
+#include "Props.h"
 #include <algorithm>
 #include <cmath>
 
 namespace
 {
-	const float kGroveCell = 13.f;      // tiles per grove-sized noise feature
-	const float kGroveDensity = 0.30f;  // tree chance at the heart of a grove
-	const float kClearingLimit = 0.5f;  // stonework only where grove noise is below this
-
-	const float kStructureChance = 0.025f;
-	const float kBoulderChance = 0.045f;
-	const float kRubbleChance = 0.065f;
-
 	const float kStone = 0.15f;
 	const float kWood = 0.125f;
 
@@ -39,21 +32,8 @@ namespace
 	}
 }
 
-PropsActor::PropsActor(float density, float clearCol, float clearRow, float clearRadius)
-	: m_Density(density)
-	, m_ClearCol(clearCol)
-	, m_ClearRow(clearRow)
-	, m_ClearRadius(clearRadius)
-{
-}
-
 void PropsActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 {
-	if (m_Density <= 0.f)
-	{
-		return;
-	}
-
 	int centerCol, centerRow;
 	WorldGrid::WorldToTile(ctx.camX, ctx.camY, centerCol, centerRow);
 
@@ -67,35 +47,10 @@ void PropsActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	{
 		for (int col = colMin; col <= colMax; col++)
 		{
-			float fromClearCol = col - m_ClearCol;
-			float fromClearRow = row - m_ClearRow;
-			if (fromClearCol * fromClearCol + fromClearRow * fromClearRow < m_ClearRadius * m_ClearRadius)
-			{
-				continue;
-			}
-
-			unsigned int hash = WorldGrid::Hash(col + 7717, row + 3313);
-			float roll = (hash % 1000) / 1000.f;
-			int variant = (hash / 1000) % 8;
-			float roll2 = ((hash / 8000) % 1000) / 1000.f;
-			float shadeGrain = ((hash / 8000000) % 7) * 0.004f;
-
-			// Squared so groves have a dense heart and a sparse edge instead of
-			// a hard line.
-			float grove = WorldGrid::Noise((float)col, (float)row, kGroveCell);
-			bool tree = roll < grove * grove * kGroveDensity * m_Density;
-
-			bool structure = false;
-			bool boulder = false;
-			bool rubble = false;
-			if (!tree)
-			{
-				structure = grove < kClearingLimit && roll2 < kStructureChance * m_Density;
-				boulder = !structure && roll2 < kBoulderChance * m_Density;
-				rubble = !structure && !boulder && roll2 < kRubbleChance * m_Density;
-			}
-
-			if (!tree && !structure && !boulder && !rubble)
+			int variant;
+			float shadeGrain;
+			Props::Kind kind = Props::At(col, row, variant, shadeGrain);
+			if (kind == Props::Kind::None)
 			{
 				continue;
 			}
@@ -113,45 +68,45 @@ void PropsActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 
 			float groundY = y + WorldGrid::Elevation(col, row);
 			float depth = (float)(col + row);
+			float shade = kStone + shadeGrain;
 
-			if (tree)
+			switch (kind)
+			{
+			case Props::Kind::Tree:
 			{
 				DrawTree(out, depth, x, groundY, variant, kWood + shadeGrain);
+				break;
 			}
-			else if (structure)
+			case Props::Kind::Wall:
 			{
-				float shade = kStone + shadeGrain;
-				switch (variant % 4)
-				{
-				case 0:
-				{
-					DrawWall(out, depth, x, groundY, variant, shade);
-					break;
-				}
-				case 1:
-				{
-					DrawPillar(out, depth, x, groundY, variant, shade);
-					break;
-				}
-				case 2:
-				{
-					DrawTower(out, depth, x, groundY, variant, shade);
-					break;
-				}
-				default:
-				{
-					DrawHouse(out, depth, x, groundY, variant, shade);
-					break;
-				}
-				}
+				DrawWall(out, depth, x, groundY, variant, shade);
+				break;
 			}
-			else if (boulder)
+			case Props::Kind::Pillar:
 			{
-				DrawBoulder(out, depth, x, groundY, variant, kStone + shadeGrain);
+				DrawPillar(out, depth, x, groundY, variant, shade);
+				break;
 			}
-			else
+			case Props::Kind::Tower:
 			{
-				DrawRubble(out, depth, x, groundY, variant, kStone + shadeGrain);
+				DrawTower(out, depth, x, groundY, variant, shade);
+				break;
+			}
+			case Props::Kind::House:
+			{
+				DrawHouse(out, depth, x, groundY, variant, shade);
+				break;
+			}
+			case Props::Kind::Boulder:
+			{
+				DrawBoulder(out, depth, x, groundY, variant, shade);
+				break;
+			}
+			default:
+			{
+				DrawRubble(out, depth, x, groundY, variant, shade);
+				break;
+			}
 			}
 		}
 	}

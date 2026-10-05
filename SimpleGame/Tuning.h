@@ -23,6 +23,44 @@ namespace Tuning
 		// Counted from the start of the roll, so this includes the roll itself.
 		const float kCooldown = 0.8f;
 		const float kInvulnDuration = 0.3f;
+
+		// From the first upgrade, each form dodges its own way. Light: a flash
+		// straight to a spot a little way off, untouchable for a moment.
+		const float kBlinkDistance = 3.2f;
+		const float kBlinkInvuln = 0.25f;
+		const int kBlinkSteps = 8;         // pieces it is checked in, so walls stop it
+		// Dark: a dash through as a shadow.
+		const float kShadowDashDistance = 3.5f;
+		const float kShadowDashTime = 0.16f;
+
+		// Once the dodge grows stronger: the light's leaves a burst where he
+		// was, the dark's cuts everything it passes through.
+		const float kBlinkBurstRadius = 1.6f;
+		const float kBlinkBurstDamage = 18.f;
+		const float kShadowDashWidth = 1.f;
+		const float kShadowDashDamage = 16.f;
+	}
+
+	// What each upgrade of the vessel brings: the upgrade it arrives at.
+	namespace Growth
+	{
+		const int kFormDodge = 1;   // each form's own dodge
+		const int kSkills = 2;      // E and Q, both forms
+		const int kAttackI = 3;     // light: two bolts; dark: blades round the last cut
+		const int kSwap = 4;        // the swap skills
+		const int kSkillsII = 5;    // E and Q stronger
+		const int kDodgeII = 6;     // the dodges strike
+		const int kAttackII = 7;    // light: three bolts; dark: a fourth cut
+		const int kSwapII = 8;      // the swap skills wider
+
+		// What the stronger steps do.
+		const float kBoltSpread = 8.f;       // degrees between bolts
+		const float kBeamWidthScale = 1.6f;
+		const float kSecondStrikeDelay = 0.3f;
+		const float kDashScale = 1.4f;
+		const float kEruptRadiusII = 5.5f;
+		const int kEruptWavesII = 2;
+		const float kSwapScale = 1.4f;
 	}
 
 	namespace Death
@@ -264,17 +302,26 @@ namespace Tuning
 	namespace DarkForm
 	{
 		// Three cuts; the last one hits hardest.
-		const int kComboLength = 3;
-		const float kSlashDamage[kComboLength] = { 10.f, 10.f, 20.f };
+		// Three cuts at first, four once the basic attack has grown: a quick
+		// slash, a sweep, a second quick slash, and the last brought down.
+		// Before the fourth is learned the third quick slash is skipped.
+		const int kComboLength = 4;
+		const float kSlashDamage[kComboLength] = { 10.f, 10.f, 12.f, 20.f };
 
 		// Share of melee damage dealt that comes back as health. Only blows that
 		// land in reach count - never anything thrown or lingering.
 		const float kLifesteal = 0.09f;
 
-		// Longer than the knights' start ranges, so a cut can land before one
-		// of them begins winding up a blow of its own.
-		const float kSlashRange = 1.5f;
-		const float kSlashArcDegrees = 120.f;
+		// Each cut its own: a quick narrow slash, a wide sweep back the other
+		// way, and the last brought down on a spot in front of him. The first
+		// reaches past the knights' start ranges, so it can land before one of
+		// them winds up a blow of its own.
+		const float kSlashRange[kComboLength] = { 1.5f, 1.9f, 1.6f, 0.f };
+		const float kSlashArcDegrees[kComboLength] = { 120.f, 210.f, 150.f, 0.f };
+		const float kSmashReach = 1.3f;   // tiles ahead the last cut comes down
+		const float kSmashRadiusPlain = 1.1f; // before the basic attack grows
+		const float kSmashRadius = 1.4f;
+		const int kSmashBlades = 4;       // blades of darkness thrown up round it
 		// Anything this close counts as in front, whichever way he is facing.
 		const float kPointBlank = 0.35f;
 
@@ -290,13 +337,26 @@ namespace Tuning
 		const float kDashDamage = 20.f;
 		const float kDashCooldown = 5.f;
 
-		// Q: a spin that keeps cutting everything around him for a while.
-		const float kSpinDuration = 1.5f;
-		const float kSpinInterval = 0.25f;
-		const float kSpinRadius = 1.6f;
-		const float kSpinDamage = 8.f;
-		const float kSpinLifestealScale = 2.f;
-		const float kSpinCooldown = 10.f;
+		// Q: the sword driven into the ground. A circle is marked out round
+		// him, and a moment later a blade of darkness bursts up under every
+		// enemy inside it (up to kEruptMax), with a few more where there is
+		// no one. He cannot move while the sword is down.
+		const float kPlantTime = 0.45f;
+		const float kEruptRadius = 4.5f;
+		const float kEruptDelay = 0.35f;
+		const float kEruptWaveGap = 0.4f;   // between waves, once there are two
+		const float kEruptDamage = 45.f;
+		const int kEruptMax = 10;
+		const int kEruptExtras = 7;
+		const float kEruptCooldown = 10.f;
+
+		// The dash leaves a shadow of him behind this often.
+		const float kAfterimageGap = 0.035f;
+
+		// Each cut carries him into it: a half step, less while he turns into
+		// the sweep, and further with the last.
+		const float kSlashStep[kComboLength] = { 0.3f, 0.15f, 0.3f, 0.55f };
+		const float kSlashStepTime = 0.08f;
 	}
 
 	namespace Monster

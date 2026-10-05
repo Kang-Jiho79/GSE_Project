@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "EnemyProjectileActor.h"
+#include "SparkActor.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
 #include "Combat.h"
@@ -8,6 +9,10 @@
 
 namespace
 {
+	const int kShotDust = 4;
+	const float kShotDustSpeed = 80.f;
+	const float kShotDustLift = 14.f;
+
 	const float kFlightHeight = 14.f; // pixels; the height bolts fly at
 	const float kFadeTime = 0.2f;     // fades out over the end of its life
 	const float kPi = 3.14159265f;
@@ -51,6 +56,14 @@ void EnemyProjectileActor::OnUpdate(const ActorContext& ctx)
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);
 	SetLocalPosition(x, y);
+
+	// Stopped by anything standing in the way, in a puff of grit.
+	if (WorldGrid::BlocksShot(col, row))
+	{
+		SparkActor::Burst(*ctx.graph, x, y, SparkActor::Style::Dust, kShotDust, kShotDustSpeed, kShotDustLift);
+		Destroy();
+		return;
+	}
 
 	if (Combat::StrikePlayerRadius(ctx, x, y, Tuning::Monster::kProjectileHitRadius, m_Damage))
 	{

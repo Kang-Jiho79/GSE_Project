@@ -207,6 +207,21 @@
     <ClInclude Include="GodActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Props.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BladeActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BladeFieldActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AfterimageActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Growth.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Bosses.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -354,6 +369,21 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GodActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Props.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BladeActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BladeFieldActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AfterimageActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Growth.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Bosses.cpp">

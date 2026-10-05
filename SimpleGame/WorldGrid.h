@@ -52,6 +52,9 @@ namespace WorldGrid
 	void AddBlocker(float minCol, float minRow, float maxCol, float maxRow);
 	// Whether something of ordinary size standing here would be inside one.
 	bool IsBlocked(float col, float row);
+	// Whether a shot flying low over this point has hit something standing:
+	// a building, a tree, a boulder or stonework - but not rubble.
+	bool BlocksShot(float col, float row);
 	// Moves a position by an offset, staying on the map and out of anything
 	// blocked. Walking into a wall slides along it rather than stopping dead.
 	void Move(float& col, float& row, float offsetCol, float offsetRow);

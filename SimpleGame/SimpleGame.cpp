@@ -31,6 +31,8 @@ but WITHOUT ANY WARRANTY.
 #include "NameEntryScreen.h"
 #include "SaveGame.h"
 #include "EndingScreen.h"
+#include "Growth.h"
+#include <string>
 #include "Regions.h"
 #include "Progress.h"
 
@@ -76,8 +78,29 @@ bool g_RunHeld = false;
 
 // What was last written to the save, so an autosave happens only when there
 // is something new: another region, or another step in the story.
+// The last upgrade said aloud, so each new one is announced once.
+int g_SeenUpgrades = 0;
+
 int g_SavedRegion = -1;
 int g_SavedMilestones = -1;
+
+// What the newest upgrade brings, across the top.
+void AnnounceGrowth()
+{
+	if (g_Status.upgrades <= g_SeenUpgrades)
+	{
+		return;
+	}
+	g_SeenUpgrades = g_Status.upgrades;
+	const char* gift = Growth::GiftOf(g_Status.upgrades);
+	std::string notice = "강화 " + std::to_string(g_Status.upgrades);
+	if (gift != nullptr)
+	{
+		notice += "  ·  ";
+		notice += gift;
+	}
+	g_Hud.Notify(notice);
+}
 
 void MarkSaved()
 {
@@ -137,6 +160,7 @@ void StartNewGame(const std::string& name)
 
 	g_Scene.NewGame();
 	MarkSaved();
+	g_SeenUpgrades = g_Status.upgrades;
 }
 
 void ContinueGame()
@@ -160,6 +184,7 @@ void ContinueGame()
 
 	g_Scene.Continue(region);
 	MarkSaved();
+	g_SeenUpgrades = g_Status.upgrades;
 }
 
 // On through the ending, and back to the title at the end of it.
@@ -476,6 +501,7 @@ void Idle(void)
 			}
 		}
 	}
+	AnnounceGrowth();
 	AutoSave();
 	g_Hud.Tick(deltaTime);
 	g_Dialogue.Update(deltaTime);

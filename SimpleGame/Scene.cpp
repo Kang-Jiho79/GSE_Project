@@ -14,6 +14,7 @@
 
 #include "TerrainActor.h"
 #include "PropsActor.h"
+#include "Props.h"
 #include "PlayerActor.h"
 #include "MonsterActor.h"
 #include "ProjectileActor.h"
@@ -288,8 +289,8 @@ void Scene::EnterRegion(int region)
 
 	// Nothing wild grows inside a settlement, only round its edges.
 	float clearing = (m_Settlement.radius > kWaystoneClearing) ? m_Settlement.radius : kWaystoneClearing;
-	environment->AddChild(std::unique_ptr<Actor>(
-		new PropsActor(info.propDensity, waystoneCol, waystoneRow, clearing)));
+	Props::SetField(info.propDensity, waystoneCol, waystoneRow, clearing);
+	environment->AddChild(std::unique_ptr<Actor>(new PropsActor()));
 
 	Actor* entities = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
 	m_Graph.SetSpawnParent(entities);

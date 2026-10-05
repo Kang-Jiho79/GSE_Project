@@ -12,6 +12,10 @@ namespace
 	const float kLift = 14.f;         // pixels above the ground, the height bolts fly at
 	const float kOuterWidth = 9.f;    // pixels across on screen
 	const float kCoreWidth = 3.f;
+	// The light's beam only: a soft halo far wider than the beam, and a
+	// flash where it leaves his hand.
+	const float kHaloWidth = 26.f;
+	const float kFlashRadius = 34.f;
 
 	// One straight piece of the beam between two distances along it, as a
 	// quad of the given screen width.
@@ -79,6 +83,14 @@ void BeamActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	// The light's beam blazes; the dark's dash trail does not.
 	out.SetGlow(m_Alignment == Alignment::Light ? 1.f : 0.f);
 
+	if (m_Alignment == Alignment::Light)
+	{
+		float startX, startY;
+		WorldGrid::IsoPosition(m_DirCol * kStart, m_DirRow * kStart, startX, startY);
+		out.AddGlow(WorldGrid::TileDepth(WorldX(), WorldY()) + 0.8f, x + startX, baseY + startY, kFlashRadius * (1.f - t * 0.5f),
+			r, g, b, fade);
+	}
+
 	int pieces = (int)ceilf((m_Length - kStart) / kPieceLength);
 	for (int i = 0; i < pieces; i++)
 	{
@@ -98,6 +110,11 @@ void BeamActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		// front of what it passes in front of.
 		float depth = WorldGrid::TileDepth(WorldX() + midX, WorldY() + midY) + 0.7f;
 
+		if (m_Alignment == Alignment::Light)
+		{
+			BeamPiece(out, depth, x + x0, baseY + y0, x + x1, baseY + y1, perpX, perpY,
+				kHaloWidth * (1.f + t * 0.6f), r, g, b, 0.18f * fade);
+		}
 		BeamPiece(out, depth, x + x0, baseY + y0, x + x1, baseY + y1, perpX, perpY,
 			kOuterWidth * thin, r, g, b, 0.55f * fade);
 		BeamPiece(out, depth, x + x0, baseY + y0, x + x1, baseY + y1, perpX, perpY,

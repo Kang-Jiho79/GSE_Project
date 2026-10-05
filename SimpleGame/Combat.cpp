@@ -70,9 +70,19 @@ float Combat::DashDamage(const PlayerStatus& status)
 	return Tuning::DarkForm::kDashDamage * DarkPower(status);
 }
 
-float Combat::SpinDamage(const PlayerStatus& status)
+float Combat::EruptDamage(const PlayerStatus& status)
 {
-	return Tuning::DarkForm::kSpinDamage * DarkPower(status);
+	return Tuning::DarkForm::kEruptDamage * DarkPower(status);
+}
+
+float Combat::BlinkBurstDamage(const PlayerStatus& status)
+{
+	return Tuning::Dodge::kBlinkBurstDamage * LightPower(status);
+}
+
+float Combat::ShadowDashDamage(const PlayerStatus& status)
+{
+	return Tuning::Dodge::kShadowDashDamage * DarkPower(status);
 }
 
 float Combat::DarkBurstDamage(const PlayerStatus& status)

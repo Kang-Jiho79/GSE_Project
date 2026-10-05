@@ -18,7 +18,10 @@ namespace Combat
 
 	float SlashDamage(const PlayerStatus& status, int comboStep);
 	float DashDamage(const PlayerStatus& status);
-	float SpinDamage(const PlayerStatus& status);
+	float EruptDamage(const PlayerStatus& status);
+	// The dodges, once they strike.
+	float BlinkBurstDamage(const PlayerStatus& status);
+	float ShadowDashDamage(const PlayerStatus& status);
 	float DarkBurstDamage(const PlayerStatus& status);
 
 	// The gray's, scaled by both lifetime totals together (their average),

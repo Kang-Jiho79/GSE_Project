@@ -29,7 +29,8 @@ private:
 	void DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 	void DrawForm(Renderer* renderer, const PlayerStatus& status, float left, float centerY);
 	void DrawSkills(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float left, float centerY);
-	void DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond,
+	// locked: not learned yet - drawn empty, and said so.
+	void DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond, bool locked,
 		const char* key, float centerX, float centerY, float r, float g, float b);
 	void DrawNotice(TextRenderer* text, float top);
 

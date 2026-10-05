@@ -8,10 +8,18 @@
 #include "Impact.h"
 #include "Tuning.h"
 #include "Random.h"
+#include "SparkActor.h"
+#include "BurstActor.h"
 #include <cmath>
 
 namespace
 {
+	// His own lightning, striking: light thrown out across the ground.
+	const float kImpactRing = 1.3f;   // times its radius
+	const int kImpactSparks = 18;
+	const float kImpactSparkSpeed = 260.f;
+	const float kImpactSparkLift = 30.f;
+
 	const float kStrikeShowTime = 0.3f;
 	const int kRingSegments = 32;
 	const float kRingWidth = 0.15f;     // tiles; the warning's outline
@@ -46,6 +54,13 @@ void LightningActor::OnUpdate(const ActorContext& ctx)
 			// catches if it struck anything.
 			float landed = Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), m_Radius, m_Damage, 0.f);
 			ctx.impact->Shake(Tuning::Feel::kStrikeShake);
+
+			// Light thrown out across the ground where it struck.
+			std::unique_ptr<BurstActor> ring(new BurstActor(Alignment::Light, m_Radius * kImpactRing, false));
+			ring->SetLocalPosition(WorldX(), WorldY());
+			ctx.graph->Spawn(std::move(ring));
+			SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkActor::Style::Light, kImpactSparks, kImpactSparkSpeed,
+				kImpactSparkLift);
 			if (landed > 0.f)
 			{
 				ctx.impact->HitStop(Tuning::Feel::kHeavyStop);

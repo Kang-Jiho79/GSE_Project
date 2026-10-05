@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Hud.h"
 #include "Tuning.h"
+#include "Growth.h"
 #include "Palette.h"
 #include "TextRenderer.h"
 #include <cmath>
@@ -273,11 +274,12 @@ void Hud::DrawSkills(Renderer* renderer, TextRenderer* text, const PlayerStatus&
 	AlignmentColor::Core(FormAlignment(status.form), r, g, b);
 
 	float x = left + kSkillSize / 2.f;
-	DrawSkillSlot(renderer, text, status.SkillCooldown(status.form), false, "E", x, centerY, r, g, b);
-	DrawSkillSlot(renderer, text, status.SpecialCooldown(status.form), true, "Q", x + kSkillSpacing, centerY, r, g, b);
+	bool locked = !Growth::Has(status, Tuning::Growth::kSkills);
+	DrawSkillSlot(renderer, text, status.SkillCooldown(status.form), false, locked, "E", x, centerY, r, g, b);
+	DrawSkillSlot(renderer, text, status.SpecialCooldown(status.form), true, locked, "Q", x + kSkillSpacing, centerY, r, g, b);
 }
 
-void Hud::DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond,
+void Hud::DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond, bool locked,
 	const char* key, float centerX, float centerY, float r, float g, float b)
 {
 	float size = diamond ? kSkillSize * 1.3f : kSkillSize;
@@ -292,6 +294,13 @@ void Hud::DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& 
 	{
 		renderer->DrawSolidRect(centerX, centerY, size + 4.f, size + 4.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
 		renderer->DrawSolidRect(centerX, centerY, size, size, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
+	}
+
+	if (locked)
+	{
+		text->Draw(TextRenderer::Face::Small, "잠김", centerX, centerY - kSmallTextDrop,
+			Palette::kUiNotch, 0.8f, TextRenderer::Align::Center);
+		return;
 	}
 
 	// Refills from the bottom while it recharges; full and bright once ready.

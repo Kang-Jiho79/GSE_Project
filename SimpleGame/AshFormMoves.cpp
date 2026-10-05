@@ -88,6 +88,7 @@ void AshFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 	m_WaveDirCol = dirCol;
 	m_WaveDirRow = dirRow;
 	m_WaveTimer = kWaveShowTime;
+	player.Act(PlayerActor::Action::Thrust, ctx.input.aimX, ctx.input.aimY);
 	m_Cooldown = Tuning::AshForm::kWaveInterval;
 }
 
@@ -112,6 +113,7 @@ void AshFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 		ctx.impact->Shake(Tuning::Feel::kLightShake);
 	}
 
+	player.Act(PlayerActor::Action::Beam, ctx.input.aimX, ctx.input.aimY);
 	std::unique_ptr<BeamActor> beam(new BeamActor(Alignment::Ashen, dirCol, dirRow, Tuning::AshForm::kUnravelLength));
 	beam->SetLocalPosition(player.WorldX(), player.WorldY());
 	ctx.graph->Spawn(std::move(beam));
@@ -130,6 +132,7 @@ void AshFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 	EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), radius);
 	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), radius, Combat::EraseDamage(*ctx.status), 0.f);
 	ctx.status->GrantInvuln(Tuning::AshForm::kEraseInvuln);
+	player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
 	ctx.impact->Shake(kEraseShake);
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Ashen, radius, false));
@@ -144,6 +147,7 @@ void AshFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 	float radius = Tuning::AshForm::kVeilRadius;
 	EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), radius);
 	ctx.status->GrantInvuln(Tuning::AshForm::kVeilInvuln);
+	player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Ashen, radius, true));
 	burst->SetLocalPosition(player.WorldX(), player.WorldY());
