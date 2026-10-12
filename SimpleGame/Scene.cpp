@@ -28,6 +28,7 @@
 #include "NpcActor.h"
 #include "Npcs.h"
 #include "Story.h"
+#include "Titles.h"
 
 namespace
 {
@@ -60,7 +61,7 @@ namespace
 	// A king's words, under the banner, and what is written under them.
 	const float kRemarkDrop = 175.f;
 	const float kRemarkSpacing = 30.f;
-	const char* const kTitleLine = "이명  ·  가장 어두운 빛이자 가장 밝은 어둠";
+	const char* const kTitlePrefix = "이명  ·  ";
 
 	// The boss bar, low in the middle above the controls line.
 	const float kBossBarWidth = 420.f;
@@ -467,6 +468,8 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	{
 		status.ashUnlocked = true;
 	}
+	// Off the board, the balance no longer binds him.
+	status.balanceUnbound = Titles::IsUnbound(m_Progress);
 
 	// The story moving him on by itself - into the god's place.
 	int destination = m_Events.TakeTravel();
@@ -678,11 +681,13 @@ void Scene::RenderText(TextRenderer* text) const
 			lineY -= kRemarkSpacing;
 			text->Draw(TextRenderer::Face::Body, m_King->Aside(), 0.f, lineY, Palette::kUiNotch, alpha, TextRenderer::Align::Center);
 		}
-		// Yielded to by both kings, he has a name.
-		if (m_King->HasYielded() && m_Progress.HasTitle())
+		// Each king that yields gives him a name of its own.
+		if (m_King->HasYielded())
 		{
 			lineY -= kRemarkSpacing;
-			text->Draw(TextRenderer::Face::Body, kTitleLine, 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
+			const char* title = (m_Region == Regions::Lumen) ? Titles::kDarkestLight : Titles::kBrightestDark;
+			std::string line = std::string(kTitlePrefix) + title;
+			text->Draw(TextRenderer::Face::Body, line.c_str(), 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
 		}
 	}
 

@@ -58,6 +58,11 @@ struct PlayerStatus
 	// form after the other two.
 	bool ashUnlocked = false;
 
+	// Off the board (Titles): however far the totals lean, the gray does not
+	// take him - no warning, no erosion, nothing given back on revival. Set
+	// from the story every frame by the scene.
+	bool balanceUnbound = false;
+
 	const Cooldown& SkillCooldown(Form which) const;
 	const Cooldown& SpecialCooldown(Form which) const;
 
@@ -73,6 +78,7 @@ struct PlayerStatus
 	// Balance as a share of the allowance: -1 and +1 are its edges.
 	float BalanceRatio() const;
 	// 0 until the warning starts, rising to 1 at the edge of the allowance.
+	// Always 0 once the balance no longer binds him.
 	float WarningLevel() const;
 	// Leaning past the allowance, and being eaten by the gray for it.
 	bool IsEroding() const;

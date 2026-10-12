@@ -89,6 +89,11 @@ void TemplePanel::Render(Renderer* renderer, TextRenderer* text, const PlayerSta
 	{
 		snprintf(reading, sizeof(reading), "%s 쪽으로 조금 기울어 있다.", side);
 	}
+	else if (status.balanceUnbound)
+	{
+		// Off the board, a lean is only a lean.
+		snprintf(reading, sizeof(reading), "%s 쪽으로 기울어 있지만, 잿빛은 더 이상 스며들지 못한다.", side);
+	}
 	else if (lean <= 1.f)
 	{
 		snprintf(reading, sizeof(reading), "%s 쪽으로 위태롭게 기울어 있다.", side);
@@ -97,7 +102,7 @@ void TemplePanel::Render(Renderer* renderer, TextRenderer* text, const PlayerSta
 	{
 		snprintf(reading, sizeof(reading), "균형이 무너져, 잿빛이 스며들고 있다.");
 	}
-	const Palette::Color& readingColor = (lean > 1.f) ? Palette::kAsh : Palette::kUiBone;
+	const Palette::Color& readingColor = (lean > 1.f && !status.balanceUnbound) ? Palette::kAsh : Palette::kUiBone;
 	text->Draw(TextRenderer::Face::Body, reading, 0.f, -56.f, readingColor, 1.f, TextRenderer::Align::Center);
 
 	text->Draw(TextRenderer::Face::Body, "상처가 아물고 여정이 기록되었다. 쓰러지면 이곳에서 다시 일어선다.",

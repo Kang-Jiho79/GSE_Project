@@ -16,6 +16,7 @@ namespace InputMap
 	const unsigned char kSpecial = 'q';
 	const unsigned char kInteract = 'f';
 	const unsigned char kDialogueLog = 'l';
+	const unsigned char kStatus = 9; // Tab
 	// Going on in a conversation, besides F.
 	const unsigned char kConfirm = 13; // Enter
 

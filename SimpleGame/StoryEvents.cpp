@@ -88,7 +88,7 @@ bool StoryEvents::HoldsSave() const
 
 bool StoryEvents::TrueEndReached(const Progress& progress) const
 {
-	return progress.HasTitle() && progress.Has(Story::TitleChosenByGod);
+	return progress.HasKingRecognition() && progress.Has(Story::EscapedGodInfluence);
 }
 
 NpcActor* StoryEvents::SpawnPerson(SceneGraph& graph, NpcActor::Kind kind, Regions::Style style, int conversation, float col, float row)
@@ -399,7 +399,7 @@ int StoryEvents::Update(SceneGraph& graph, Progress& progress, const PlayerStatu
 	// sure of the kings and strong enough: near the gray's heart, it comes
 	// back to him.
 	if (!m_Remembered && IsNearGray() && progress.Has(Story::KnowsOneGod) && progress.Has(Story::SawKingAnomaly)
-		&& !progress.Has(Story::TitleChosenByGod)
+		&& !progress.Has(Story::EscapedGodInfluence)
 		&& status.lightTotal + status.darkTotal >= Tuning::Story::kChosenPower)
 	{
 		m_Remembered = true;

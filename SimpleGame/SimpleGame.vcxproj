@@ -226,6 +226,8 @@
     <ClInclude Include="BladeFieldActor.h" />
     <ClInclude Include="AfterimageActor.h" />
     <ClInclude Include="Growth.h" />
+    <ClInclude Include="Titles.h" />
+    <ClInclude Include="StatusScreen.h" />
     <ClInclude Include="Bosses.h" />
     <ClInclude Include="Impact.h" />
     <ClInclude Include="SparkActor.h" />
@@ -301,6 +303,8 @@
     <ClCompile Include="BladeFieldActor.cpp" />
     <ClCompile Include="AfterimageActor.cpp" />
     <ClCompile Include="Growth.cpp" />
+    <ClCompile Include="Titles.cpp" />
+    <ClCompile Include="StatusScreen.cpp" />
     <ClCompile Include="Bosses.cpp" />
     <ClCompile Include="Impact.cpp" />
     <ClCompile Include="SparkActor.cpp" />

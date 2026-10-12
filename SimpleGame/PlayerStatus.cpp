@@ -104,6 +104,10 @@ float PlayerStatus::BalanceRatio() const
 
 float PlayerStatus::WarningLevel() const
 {
+	if (balanceUnbound)
+	{
+		return 0.f;
+	}
 	float lean = fabsf(BalanceRatio());
 	float share = Tuning::Balance::kWarningShare;
 	return Clamp((lean - share) / (1.f - share), 0.f, 1.f);
@@ -111,7 +115,7 @@ float PlayerStatus::WarningLevel() const
 
 bool PlayerStatus::IsEroding() const
 {
-	return health > 0.f && fabsf(BalanceRatio()) > 1.f;
+	return !balanceUnbound && health > 0.f && fabsf(BalanceRatio()) > 1.f;
 }
 
 void PlayerStatus::SpendIfBothFull()
@@ -161,7 +165,7 @@ void PlayerStatus::Heal(float amount)
 
 void PlayerStatus::Revive()
 {
-	if (fabsf(BalanceRatio()) > 1.f)
+	if (!balanceUnbound && fabsf(BalanceRatio()) > 1.f)
 	{
 		float kept = BalanceAllowance() * Tuning::Balance::kWarningShare;
 		float balance = Balance();

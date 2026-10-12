@@ -25,6 +25,7 @@ but WITHOUT ANY WARRANTY.
 #include "TextRenderer.h"
 #include "WorldMapScreen.h"
 #include "TemplePanel.h"
+#include "StatusScreen.h"
 #include "DialogueBox.h"
 #include "DialogueLog.h"
 #include "TitleScreen.h"
@@ -53,6 +54,7 @@ Scene g_Scene(g_Progress);
 Hud g_Hud;
 WorldMapScreen g_WorldMap;
 TemplePanel g_TemplePanel;
+StatusScreen g_StatusScreen;
 DialogueBox g_Dialogue;
 DialogueLog g_DialogueLog;
 TitleScreen g_Title;
@@ -71,7 +73,8 @@ bool IsInMenu()
 // A screen over the world that holds it still while it is open.
 bool IsOverlayOpen()
 {
-	return IsInMenu() || g_WorldMap.IsOpen() || g_TemplePanel.IsOpen() || g_Dialogue.IsOpen() || g_DialogueLog.IsOpen();
+	return IsInMenu() || g_WorldMap.IsOpen() || g_TemplePanel.IsOpen() || g_StatusScreen.IsOpen() || g_Dialogue.IsOpen()
+		|| g_DialogueLog.IsOpen();
 }
 
 bool g_MoveUp = false;
@@ -235,12 +238,13 @@ void CloseOverlays()
 {
 	g_WorldMap.Close();
 	g_TemplePanel.Close();
+	g_StatusScreen.Close();
 	g_DialogueLog.Close();
 }
 
 // Keys while a screen is open. A conversation takes F, Space and Enter to go
-// on and W/S to choose; the log takes W/S to look back; any other screen
-// closes on F or Esc.
+// on and W/S to choose; the log takes W/S to look back; the status screen
+// closes on Tab too; any other screen closes on F or Esc.
 void OverlayKey(int lowered)
 {
 	// The ending reads on with F, Space or Enter.
@@ -333,6 +337,12 @@ void OverlayKey(int lowered)
 		return;
 	}
 
+	if (g_StatusScreen.IsOpen() && lowered == InputMap::kStatus)
+	{
+		g_StatusScreen.Close();
+		return;
+	}
+
 	if (lowered == InputMap::kInteract || lowered == InputMap::kQuit)
 	{
 		CloseOverlays();
@@ -388,7 +398,7 @@ void RenderScene(void)
 		g_Scene.RenderText(g_Text);
 
 		g_Text->Draw(TextRenderer::Face::Small,
-			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 구르기 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · L 대화 기록",
+			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 회피 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · Tab 상태 · L 대화 기록",
 			0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 	}
 
@@ -404,6 +414,7 @@ void RenderScene(void)
 		{
 			g_WorldMap.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MouseX, g_MouseY);
 			g_TemplePanel.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_StatusScreen.Render(g_Renderer, g_Text, g_Status, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_Dialogue.Render(g_Renderer, g_Text, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_DialogueLog.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_Title.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MenuTime);
@@ -743,6 +754,16 @@ void KeyInput(unsigned char key, int x, int y)
 	{
 		g_DialogueLog.Open();
 		g_AttackHeld = false;
+		break;
+	}
+	case InputMap::kStatus:
+	{
+		// Not in the middle of a duel - that is no time to stop and look.
+		if (!g_Status.formLocked)
+		{
+			g_StatusScreen.Open();
+			g_AttackHeld = false;
+		}
 		break;
 	}
 	case InputMap::kQuit:

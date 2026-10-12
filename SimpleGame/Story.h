@@ -14,8 +14,7 @@ namespace Story
 		AskedKingAboutCollusion, // he put it to a king
 		SawKingAnomaly,          // and the king could not hear the question
 		KnowsOneGod,             // he overheard that both nations keep one god
-		TitleChosenByGod,        // "신에게 선택받은 자"
-		EscapedGodInfluence,     // the god's hold on him is gone
+		EscapedGodInfluence,     // the god's hold on him is gone: "판을 벗어난 자"
 		KnowsWorldTruth,         // Kinis's last words
 		AcceptAshOffer,          // he took Kinis's offer before their fight
 		AcceptAsh,               // he took the gray after it

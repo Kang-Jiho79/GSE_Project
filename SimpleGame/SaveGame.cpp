@@ -44,7 +44,8 @@ namespace
 	const int kVersion = 1;
 
 	// Story flags are kept by name, so adding one later does not shift the
-	// rest. In the order of Story::Flag.
+	// rest - and a name no longer known (TitleChosenByGod, folded into
+	// EscapedGodInfluence) is simply passed over. In the order of Story::Flag.
 	const char* const kStoryNames[] =
 	{
 		"VillageRaided",
@@ -52,7 +53,6 @@ namespace
 		"AskedKingAboutCollusion",
 		"SawKingAnomaly",
 		"KnowsOneGod",
-		"TitleChosenByGod",
 		"EscapedGodInfluence",
 		"KnowsWorldTruth",
 		"AcceptAshOffer",

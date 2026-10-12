@@ -270,7 +270,7 @@ namespace
 		{ kHero, "두 나라가 믿는 신은…… 하나다.", Style::Thought },
 		{ kHero, "왕들이 내 물음을 듣지 못했던 것도, 그 신 때문인가.", Style::Thought },
 		{ nullptr, "머릿속을 누르던 무언가가 걷혀 나갔다. 처음으로, 세상이 똑바로 보였다.", Style::Speech },
-		{ nullptr, "이명을 얻었다  ·  신에게 선택받은 자", Style::Speech },
+		{ nullptr, "이명이 바뀌었다  ·  신에게 선택받은 자  →  판을 벗어난 자", Style::Speech },
 	};
 
 	const Line kEavesdropClouded[] =
@@ -293,7 +293,7 @@ namespace
 		{ kHero, "이제는 생각이 끊기지 않는다. 두 나라가 믿는 신은 하나다.", Style::Thought },
 		{ kHero, "왕들이 내 물음을 듣지 못했던 것도, 그 신 때문이다.", Style::Thought },
 		{ nullptr, "머릿속을 누르던 무언가가 걷혀 나갔다. 처음으로, 세상이 똑바로 보였다.", Style::Speech },
-		{ nullptr, "이명을 얻었다  ·  신에게 선택받은 자", Style::Speech },
+		{ nullptr, "이명이 바뀌었다  ·  신에게 선택받은 자  →  판을 벗어난 자", Style::Speech },
 	};
 
 	// ---- The front ----
@@ -609,7 +609,6 @@ void Dialogue::Finish(int id, Progress& progress)
 	case ChosenLater:
 	{
 		progress.Set(Story::KnowsOneGod);
-		progress.Set(Story::TitleChosenByGod);
 		progress.Set(Story::EscapedGodInfluence);
 		break;
 	}

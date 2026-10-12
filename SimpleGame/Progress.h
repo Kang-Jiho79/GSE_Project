@@ -19,12 +19,13 @@ struct Progress
 	// A region's boss, once beaten, is gone for good.
 	bool bossDefeated[Regions::Count] = {};
 
-	// The kings who have acknowledged him, each by losing a duel to him.
-	// Both together give him a name.
+	// The kings who have acknowledged him, each by losing a duel to him -
+	// and each giving him a name of its own (Titles).
 	bool recognizedByLucius = false;
 	bool recognizedByNoctis = false;
 
-	bool HasTitle() const
+	// Both kings: half of what the true ending asks.
+	bool HasKingRecognition() const
 	{
 		return recognizedByLucius && recognizedByNoctis;
 	}
