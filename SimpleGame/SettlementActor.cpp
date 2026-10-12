@@ -128,9 +128,11 @@ void SettlementActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		}
 
 		float groundY = y + WorldGrid::GroundHeightAt(worldX, worldY);
-		// Sorted by its nearest corner, so anyone walking in front of it is
-		// drawn over it and anyone behind it is hidden.
-		float depth = building.col + building.row + building.footprint;
+		// Sorted by its centre. Anyone past its near faces is further along
+		// one axis than the centre's sum and drawn over it; anyone past its
+		// far faces is short of it and hidden. (Sorting by the near corner
+		// drew it over everyone standing beside it.)
+		float depth = building.col + building.row;
 
 		switch (building.type)
 		{

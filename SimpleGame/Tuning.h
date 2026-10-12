@@ -227,27 +227,36 @@ namespace Tuning
 	// undoing - shields, wards, and shots in the air.
 	namespace AshForm
 	{
-		// The wave: a wedge reaching past a blade and short of a bolt.
-		const float kWaveInterval = 0.45f;
-		const float kWaveRange = 3.2f;
-		const float kWaveArcDegrees = 70.f;
-		const float kWaveDamage = 14.f;
+		// The wave: a wedge reaching past a blade and short of a bolt, wiping
+		// the shots it passes through out of the air.
+		const float kWaveInterval = 0.32f;
+		const float kWaveRange = 3.8f;
+		const float kWaveArcDegrees = 100.f;
+		const float kWaveDamage = 24.f;
+		// Every third wave in a row rolls out all the way round him, further
+		// and harder. A longer pause than this starts the count over.
+		const int kWaveRingEvery = 3;
+		const float kWaveRingReach = 1.f;   // tiles past an ordinary wave
+		const float kWaveRingScale = 1.6f;  // its damage over an ordinary wave
+		const float kWaveChainTime = 0.8f;
 
 		// E, unravel: a line through everything, shields and wards included.
-		const float kUnravelLength = 7.f;
-		const float kUnravelWidth = 1.4f;
-		const float kUnravelDamage = 30.f;
-		const float kUnravelCooldown = 5.f;
+		const float kUnravelLength = 9.f;
+		const float kUnravelWidth = 1.8f;
+		const float kUnravelDamage = 70.f;
+		const float kUnravelCooldown = 4.f;
 
 		// Q, erase: every shot round him wiped away, a heavy blow to all
 		// within reach, and a moment untouched.
-		const float kEraseRadius = 3.5f;
-		const float kEraseDamage = 35.f;
-		const float kEraseInvuln = 0.5f;
-		const float kEraseCooldown = 12.f;
+		const float kEraseRadius = 4.5f;
+		const float kEraseDamage = 90.f;
+		const float kEraseInvuln = 0.8f;
+		const float kEraseCooldown = 10.f;
 
-		// Switching in: the shots nearest him wiped away.
-		const float kVeilRadius = 2.5f;
+		// Switching in: the shots nearest him wiped away, and a blow to
+		// everything that close.
+		const float kVeilRadius = 3.f;
+		const float kVeilDamage = 25.f;
 		const float kVeilInvuln = 0.3f;
 	}
 

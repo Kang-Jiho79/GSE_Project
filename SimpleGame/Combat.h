@@ -27,6 +27,7 @@ namespace Combat
 	// The gray's, scaled by both lifetime totals together (their average),
 	// since it is both powers at once.
 	float AshWaveDamage(const PlayerStatus& status);
+	float VeilDamage(const PlayerStatus& status);
 	float UnravelDamage(const PlayerStatus& status);
 	float EraseDamage(const PlayerStatus& status);
 

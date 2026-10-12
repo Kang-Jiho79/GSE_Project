@@ -27,9 +27,17 @@ namespace
 
 	BossActor* Place(SceneGraph& graph, BossActor* boss, int region)
 	{
-		float size = (float)Regions::Get(region).size;
-		return PlaceAt(graph, boss, size * kArenaCol, size * kArenaRow);
+		float col, row;
+		Bosses::Arena(region, col, row);
+		return PlaceAt(graph, boss, col, row);
 	}
+}
+
+void Bosses::Arena(int region, float& col, float& row)
+{
+	float size = (float)Regions::Get(region).size;
+	col = size * kArenaCol;
+	row = size * kArenaRow;
 }
 
 BossActor* Bosses::Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph)

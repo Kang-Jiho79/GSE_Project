@@ -741,7 +741,9 @@ void MonsterActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	MonsterModels::Pose pose;
 	pose.x = x;
 	pose.groundY = groundY;
-	pose.depth = WorldGrid::TileDepth(WorldX(), WorldY());
+	// Lifted past the tile it stands on, like every other body, so the tree
+	// or stone on the same tile does not cut through it.
+	pose.depth = WorldGrid::TileDepth(WorldX(), WorldY()) + 0.6f;
 	pose.worldX = WorldX();
 	pose.worldY = WorldY();
 	pose.facing = m_Facing;

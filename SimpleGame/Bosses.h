@@ -14,4 +14,8 @@ namespace Bosses
 {
 	// Returns the boss spawned, or nullptr if there is none here, or none left.
 	BossActor* Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph);
+
+	// Where a region's boss waits in the open - its arena - in tiles. The
+	// same spot in every region, kept clear of anything that would wall it in.
+	void Arena(int region, float& col, float& row);
 }

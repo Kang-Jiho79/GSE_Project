@@ -18,21 +18,34 @@ namespace
 {
 	const float kDegToRad = 3.14159265f / 180.f;
 
-	// The wave: a band of gray rolling out across the wedge and fading.
-	const float kWaveShowTime = 0.22f;
-	const int kWaveSegments = 10;
+	const float kPi = 3.14159265f;
+
+	// The wave: a band of gray rolling out across the wedge and fading, a
+	// fainter wash filling the ground it has crossed.
+	const float kWaveShowTime = 0.26f;
+	const int kWaveSegments = 14;
+	const int kRingSegments = 32;
 	const float kWaveInner = 0.4f;   // tiles
-	const float kWaveBand = 0.55f;   // tiles deep
+	const float kWaveBand = 0.8f;    // tiles deep
 	const float kWaveLift = 8.f;     // pixels above the ground
+	const float kWaveAlpha = 0.9f;
+	const float kWaveWashAlpha = 0.25f;
+	const float kWaveShine = 0.35f;
+	const int kWaveDust = 5;
+	const float kWaveDustSpeed = 150.f;
+	const float kWaveDustLift = 18.f;
 
 	const int kEraseDust = 4;
 	const float kEraseDustSpeed = 90.f;
 	const float kEraseDustLift = 20.f;
 	const float kEraseShake = 5.f;
 
-	// Wipes every enemy shot within a circle on the ground out of the air.
-	void EraseShots(SceneGraph& graph, float centerX, float centerY, float radiusTiles)
+	// Wipes every enemy shot out of the air within a circle on the ground -
+	// or, given a direction and a spread, within a wedge of it.
+	void EraseShots(SceneGraph& graph, float centerX, float centerY, float radiusTiles,
+		float dirCol = 0.f, float dirRow = 0.f, float arcDegrees = 360.f)
 	{
+		float minDot = cosf(arcDegrees * 0.5f * kDegToRad);
 		float centerCol, centerRow;
 		WorldGrid::InverseIso(centerX, centerY, centerCol, centerRow);
 
@@ -46,7 +59,12 @@ namespace
 			WorldGrid::InverseIso(shot.WorldX(), shot.WorldY(), col, row);
 			float dc = col - centerCol;
 			float dr = row - centerRow;
-			if (dc * dc + dr * dr > radiusTiles * radiusTiles)
+			float distance = sqrtf(dc * dc + dr * dr);
+			if (distance > radiusTiles)
+			{
+				return;
+			}
+			if (arcDegrees < 360.f && distance > 0.001f && (dc * dirCol + dr * dirRow) / distance < minDot)
 			{
 				return;
 			}
@@ -67,6 +85,10 @@ void AshFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 	{
 		m_WaveTimer -= ctx.deltaTime;
 	}
+	if (m_ChainTimer > 0.f)
+	{
+		m_ChainTimer -= ctx.deltaTime;
+	}
 }
 
 void AshFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
@@ -82,13 +104,48 @@ void AshFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 		return;
 	}
 
-	Combat::HitArc(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
-		Tuning::AshForm::kWaveRange, Tuning::AshForm::kWaveArcDegrees, Combat::AshWaveDamage(*ctx.status));
+	if (m_ChainTimer <= 0.f)
+	{
+		m_WaveCount = 0;
+	}
+	m_WaveCount++;
+	m_ChainTimer = Tuning::AshForm::kWaveChainTime;
+	m_WaveRing = (m_WaveCount % Tuning::AshForm::kWaveRingEvery == 0);
+
+	float damage = Combat::AshWaveDamage(*ctx.status);
+	float range = Tuning::AshForm::kWaveRange;
+	if (m_WaveRing)
+	{
+		range += Tuning::AshForm::kWaveRingReach;
+		damage *= Tuning::AshForm::kWaveRingScale;
+		EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), range);
+		if (Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), range, damage, 0.f) > 0.f)
+		{
+			ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+		}
+		ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+		player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
+	}
+	else
+	{
+		EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), range, dirCol, dirRow, Tuning::AshForm::kWaveArcDegrees);
+		if (Combat::HitArc(*ctx.graph, player.WorldX(), player.WorldY(), dirCol, dirRow,
+			range, Tuning::AshForm::kWaveArcDegrees, damage) > 0.f)
+		{
+			ctx.impact->Shake(Tuning::Feel::kLightShake);
+		}
+		player.Act(PlayerActor::Action::Thrust, ctx.input.aimX, ctx.input.aimY);
+	}
+
+	// Gray grit thrown off ahead of it.
+	float aheadX, aheadY;
+	WorldGrid::IsoPosition(dirCol, dirRow, aheadX, aheadY);
+	SparkActor::Burst(*ctx.graph, player.WorldX() + aheadX * 0.8f, player.WorldY() + aheadY * 0.8f,
+		SparkActor::Style::Dust, kWaveDust, kWaveDustSpeed, kWaveDustLift);
 
 	m_WaveDirCol = dirCol;
 	m_WaveDirRow = dirRow;
 	m_WaveTimer = kWaveShowTime;
-	player.Act(PlayerActor::Action::Thrust, ctx.input.aimX, ctx.input.aimY);
 	m_Cooldown = Tuning::AshForm::kWaveInterval;
 }
 
@@ -130,10 +187,19 @@ void AshFormMoves::Special(const ActorContext& ctx, PlayerActor& player)
 
 	float radius = Tuning::AshForm::kEraseRadius;
 	EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), radius);
-	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), radius, Combat::EraseDamage(*ctx.status), 0.f);
+	if (Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), radius, Combat::EraseDamage(*ctx.status), 0.f) > 0.f)
+	{
+		ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+	}
 	ctx.status->GrantInvuln(Tuning::AshForm::kEraseInvuln);
 	player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
 	ctx.impact->Shake(kEraseShake);
+
+	// A second ring closing in as the first spreads, so it reads heavier
+	// than the waves.
+	std::unique_ptr<BurstActor> inner(new BurstActor(Alignment::Ashen, radius * 0.6f, true));
+	inner->SetLocalPosition(player.WorldX(), player.WorldY());
+	ctx.graph->Spawn(std::move(inner));
 
 	std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Ashen, radius, false));
 	burst->SetLocalPosition(player.WorldX(), player.WorldY());
@@ -146,6 +212,7 @@ void AshFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
 	float radius = Tuning::AshForm::kVeilRadius;
 	EraseShots(*ctx.graph, player.WorldX(), player.WorldY(), radius);
+	Combat::HitRadius(*ctx.graph, player.WorldX(), player.WorldY(), radius, Combat::VeilDamage(*ctx.status), 0.f);
 	ctx.status->GrantInvuln(Tuning::AshForm::kVeilInvuln);
 	player.Act(PlayerActor::Action::Swap, 0.f, 0.f);
 
@@ -163,7 +230,7 @@ void AshFormMoves::Draw(DrawList& out, const PlayerActor& player, float screenX,
 
 	// Rolling outward over its life, and thinning as it goes.
 	float age = 1.f - m_WaveTimer / kWaveShowTime;
-	float range = Tuning::AshForm::kWaveRange;
+	float range = Tuning::AshForm::kWaveRange + (m_WaveRing ? Tuning::AshForm::kWaveRingReach : 0.f);
 	float outer = kWaveInner + (range - kWaveInner) * age;
 	float inner = outer - kWaveBand;
 	if (inner < kWaveInner)
@@ -175,6 +242,17 @@ void AshFormMoves::Draw(DrawList& out, const PlayerActor& player, float screenX,
 	AlignmentColor::Core(Alignment::Ashen, r, g, b);
 	float center = atan2f(m_WaveDirRow, m_WaveDirCol);
 	float half = Tuning::AshForm::kWaveArcDegrees * 0.5f * kDegToRad;
+	int segments = kWaveSegments;
+	if (m_WaveRing)
+	{
+		half = kPi;
+		segments = kRingSegments;
+	}
+	float fade = 1.f - age;
+	out.AddGroundArc(player.WorldX(), player.WorldY(), screenX, groundY + kWaveLift, kWaveInner, inner,
+		center - half, center + half, segments, r, g, b, kWaveWashAlpha * fade);
+	out.SetGlow(kWaveShine);
 	out.AddGroundArc(player.WorldX(), player.WorldY(), screenX, groundY + kWaveLift, inner, outer,
-		center - half, center + half, kWaveSegments, r, g, b, 0.75f * (1.f - age));
+		center - half, center + half, segments, r, g, b, kWaveAlpha * fade);
+	out.SetGlow(0.f);
 }

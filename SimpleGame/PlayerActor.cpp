@@ -86,14 +86,33 @@ namespace
 	const float kCloakBreadth = 22.f;
 	const float kCloakHem = 3.5f;
 
-	// The aura of the form he is in: a haze round him, and wisps rising off
-	// him and fading as they go.
-	const float kAuraRadius = 38.f;
-	const float kAuraStrength = 0.45f;
-	const int kAuraWisps = 6;
-	const float kWispRate = 0.7f;   // rises per second
-	const float kWispRise = 46.f;   // pixels
-	const float kWispSpread = 11.f; // pixels either side
+	// The aura of the form he is in: a wide haze round him and a brighter
+	// core at his chest, a ring turning on the ground at his feet, and wisps
+	// streaming up off him and fading as they go.
+	const float kAuraRadius = 58.f;
+	const float kAuraStrength = 0.6f;
+	const float kAuraCoreRadius = 26.f;
+	const float kAuraCoreStrength = 0.55f;
+	const float kAuraPulseRate = 3.f;
+	// How much each form's aura shines under bloom: light blazes, the dark
+	// and the gray only smoulder.
+	const float kAuraShineLight = 0.8f;
+	const float kAuraShineDark = 0.35f;
+	const float kAuraShineAsh = 0.3f;
+	// Under the dark form's violet, a shroud that darkens the ground first.
+	const float kShroudScale = 1.3f;
+	const float kShroudStrength = 0.55f;
+	const int kRingArcs = 3;
+	const float kRingInner = 0.5f;  // tiles
+	const float kRingOuter = 0.62f;
+	const float kRingSpan = 1.4f;   // radians each arc covers
+	const float kRingSpin = 1.6f;   // radians per second
+	const float kRingAlpha = 0.65f;
+	const int kAuraWisps = 12;
+	const float kWispRate = 0.85f;  // rises per second
+	const float kWispRise = 64.f;   // pixels
+	const float kWispSpread = 15.f; // pixels either side
+	const float kWispAlpha = 0.95f;
 
 	// Light form: shards circling the hand. Dark form: a blade of shadow.
 	const int kShards = 3;
@@ -637,23 +656,43 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.AddGlow(depth - 0.02f, x, groundY, kGlowRadius, darkGlowR, darkGlowG, darkGlowB,
 		ctx.status->dark / ctx.status->capacity * glowStrength);
 
-	// The aura of his form: gold that shines, violet that darkens what is
-	// under it, or the gray's dull haze - fading as the gray creeps in.
+	// The aura of his form: gold that blazes, violet that smoulders over a
+	// darkened ground, or the gray's dull haze - fading as the gray creeps in.
 	Alignment formPower = FormAlignment(ctx.status->form);
 	float auraR, auraG, auraB, hazeR, hazeG, hazeB;
 	AlignmentColor::Core(formPower, auraR, auraG, auraB);
 	AlignmentColor::Glow(formPower, hazeR, hazeG, hazeB);
-	float auraPulse = (0.85f + 0.15f * sinf(m_Time * 3.f)) * glowStrength;
-	out.SetGlow(formPower == Alignment::Light ? 0.5f : 0.f);
+	float auraPulse = (0.8f + 0.2f * sinf(m_Time * kAuraPulseRate)) * glowStrength;
+	float shine = kAuraShineAsh;
+	if (formPower == Alignment::Light)
+	{
+		shine = kAuraShineLight;
+	}
+	else if (formPower == Alignment::Dark)
+	{
+		shine = kAuraShineDark;
+		out.AddGlow(depth - 0.017f, x, groundY + 10.f, kAuraRadius * kShroudScale,
+			Palette::kOutline.r, Palette::kOutline.g, Palette::kOutline.b, kShroudStrength * glowStrength);
+	}
+
+	out.SetGlow(shine);
 	out.AddGlow(depth - 0.015f, x, groundY + 18.f, kAuraRadius, hazeR, hazeG, hazeB, kAuraStrength * auraPulse);
+	out.AddGlow(depth - 0.014f, x, groundY + 24.f, kAuraCoreRadius, auraR, auraG, auraB, kAuraCoreStrength * auraPulse);
+	for (int i = 0; i < kRingArcs; i++)
+	{
+		float from = m_Time * kRingSpin + i * 2.f * kPi / kRingArcs;
+		out.AddGroundArc(WorldX(), WorldY(), x, groundY, kRingInner, kRingOuter, from, from + kRingSpan, 6,
+			auraR, auraG, auraB, kRingAlpha * auraPulse);
+	}
 	for (int i = 0; i < kAuraWisps; i++)
 	{
 		float rise = fmodf(m_Time * kWispRate + i / (float)kAuraWisps, 1.f);
-		float wispX = x + sinf(i * 2.4f + m_Time * 1.7f) * kWispSpread;
-		float wispY = groundY + 4.f + rise * kWispRise;
-		float fade = (1.f - rise) * Clamp(rise * 4.f, 0.f, 1.f) * 0.7f * glowStrength;
+		float wispX = x + sinf(i * 2.4f + m_Time * 1.7f) * kWispSpread * (1.f - rise * 0.4f);
+		float wispY = groundY + 2.f + rise * kWispRise;
+		float fade = (1.f - rise) * Clamp(rise * 4.f, 0.f, 1.f) * kWispAlpha * glowStrength;
 		float front = (i % 2 == 0) ? 0.06f : -0.005f;
-		out.AddDiamond(depth + front, wispX, wispY, 2.5f, 5.f, auraR, auraG, auraB, fade);
+		float size = (i % 3 == 0) ? 1.5f : 1.f;
+		out.AddDiamond(depth + front, wispX, wispY, 3.f * size, 7.f * size, auraR, auraG, auraB, fade);
 	}
 	out.SetGlow(0.f);
 

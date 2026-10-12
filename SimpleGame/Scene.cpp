@@ -35,6 +35,12 @@ namespace
 	const int kSpawnTries = 20;
 	// Nothing grows this close to the waystone.
 	const float kWaystoneClearing = 4.f;
+	// Open ground round where a boss waits, so it has room to fight in.
+	const float kArenaClearing = 7.f;
+	// The window height the regions' light and fog distances were set for;
+	// a taller window stretches them to match, so the larger view is seen
+	// rather than fogged over.
+	const float kAtmosphereWindowY = 640.f;
 	// He arrives this far from the waystone along both axes, and rises this far
 	// in front of an altar.
 	const float kArrivalOffset = 1.5f;
@@ -290,6 +296,9 @@ void Scene::EnterRegion(int region)
 	// Nothing wild grows inside a settlement, only round its edges.
 	float clearing = (m_Settlement.radius > kWaystoneClearing) ? m_Settlement.radius : kWaystoneClearing;
 	Props::SetField(info.propDensity, waystoneCol, waystoneRow, clearing);
+	float arenaCol, arenaRow;
+	Bosses::Arena(region, arenaCol, arenaRow);
+	Props::SetArena(arenaCol, arenaRow, kArenaClearing);
 	environment->AddChild(std::unique_ptr<Actor>(new PropsActor()));
 
 	Actor* entities = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
@@ -741,7 +750,9 @@ void Scene::Render(Renderer* renderer, PlayerStatus& status)
 		// into the region's own dark - the same the window clears to - so the
 		// world dissolves instead of ending at a visible edge.
 		const Regions::Atmosphere& mood = CurrentAtmosphere();
-		m_DrawList.SetAtmosphere(mood.lightRadius, mood.fogStart, mood.fogEnd, mood.fog.r, mood.fog.g, mood.fog.b);
+		float reach = m_WindowSizeY / kAtmosphereWindowY;
+		m_DrawList.SetAtmosphere(mood.lightRadius * reach, mood.fogStart * reach, mood.fogEnd * reach,
+			mood.fog.r, mood.fog.g, mood.fog.b);
 		m_Graph.Draw(m_DrawList, ctx);
 	}
 

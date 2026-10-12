@@ -36,8 +36,13 @@ but WITHOUT ANY WARRANTY.
 #include "Regions.h"
 #include "Progress.h"
 
-const int WINDOW_SIZE_X = 1024;
-const int WINDOW_SIZE_Y = 640;
+// The window: this large where the screen has room, shrunk to fit (keeping
+// its shape) where it does not. Set once in main, before anything is made.
+const int kWindowWantX = 1600;
+const int kWindowWantY = 900;
+const float kScreenShare = 0.9f; // the most of the screen it may take
+int WINDOW_SIZE_X = kWindowWantX;
+int WINDOW_SIZE_Y = kWindowWantY;
 
 Renderer* g_Renderer = NULL;
 PostProcess* g_PostProcess = NULL;
@@ -837,6 +842,23 @@ int main(int argc, char **argv)
 	// Initialize GL things
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+	int screenX = glutGet(GLUT_SCREEN_WIDTH);
+	int screenY = glutGet(GLUT_SCREEN_HEIGHT);
+	if (screenX > 0 && screenY > 0)
+	{
+		float fit = 1.f;
+		if (screenX * kScreenShare < kWindowWantX * fit)
+		{
+			fit = screenX * kScreenShare / kWindowWantX;
+		}
+		if (screenY * kScreenShare < kWindowWantY * fit)
+		{
+			fit = screenY * kScreenShare / kWindowWantY;
+		}
+		// Even sizes, so the centre falls on a whole pixel.
+		WINDOW_SIZE_X = (int)(kWindowWantX * fit) / 2 * 2;
+		WINDOW_SIZE_Y = (int)(kWindowWantY * fit) / 2 * 2;
+	}
 	glutInitWindowPosition(0, 0);
 	glutInitWindowSize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
 	glutCreateWindow("The Darkest Light - Prototype");

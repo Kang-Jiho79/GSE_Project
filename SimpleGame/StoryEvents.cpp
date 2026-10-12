@@ -12,6 +12,7 @@
 #include "SceneGraph.h"
 #include "WorldGrid.h"
 #include "Tuning.h"
+#include "Bosses.h"
 #include <cmath>
 
 namespace
@@ -32,10 +33,6 @@ namespace
 	// Where the empty place hangs in the god's realm, from where he arrives.
 	const float kGodCol = -7.f;
 	const float kGodRow = -7.f;
-
-	// Where Kinis waits at the gray's heart, as a share of the map.
-	const float kKinisArenaCol = 0.82f;
-	const float kKinisArenaRow = 0.22f;
 
 	const int kDustSparks = 16;
 	const float kDustSpeed = 110.f;
@@ -150,10 +147,11 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 
 	if (region == Regions::Kinera)
 	{
-		float size = (float)Regions::Get(region).size;
 		std::unique_ptr<KinisActor> kinis(new KinisActor(region));
+		float arenaCol, arenaRow;
+		Bosses::Arena(region, arenaCol, arenaRow);
 		float x, y;
-		WorldGrid::IsoPosition(size * kKinisArenaCol, size * kKinisArenaRow, x, y);
+		WorldGrid::IsoPosition(arenaCol, arenaRow, x, y);
 		kinis->SetLocalPosition(x, y);
 		m_Kinis = kinis.get();
 		graph.Spawn(std::move(kinis));

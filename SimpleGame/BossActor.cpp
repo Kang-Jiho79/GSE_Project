@@ -26,6 +26,13 @@ namespace
 	// A blow turned aside throws gray grit instead of sparks.
 	const int kDeflectDust = 6;
 	const float kDeflectSpeed = 120.f;
+
+	// Ways it tries when its path is blocked, in radians off the way it
+	// wants to go, and the share of a full step (squared) that counts as
+	// getting somewhere.
+	const int kDetourTurns = 5;
+	const float kDetourTurn[kDetourTurns] = { 0.f, 0.785f, -0.785f, 1.571f, -1.571f };
+	const float kDetourProgress = 0.25f;
 }
 
 BossActor::BossActor(const char* name, float maxHealth, int region, float wakeRange, float leashRange, float furyTime)
@@ -301,9 +308,31 @@ float BossActor::ToPlayer(const ActorContext& ctx, float& dirCol, float& dirRow)
 
 void BossActor::StepAlong(float dirCol, float dirRow, float tiles)
 {
-	float col, row;
-	WorldGrid::InverseIso(LocalX(), LocalY(), col, row);
-	WorldGrid::Move(col, row, dirCol * tiles, dirRow * tiles);
+	float startCol, startRow;
+	WorldGrid::InverseIso(LocalX(), LocalY(), startCol, startRow);
+
+	// Straight on if it can. If something big stands in the way, it turns
+	// aside a step at a time - either way, then square to it - until one
+	// gets it somewhere, so it works its way round instead of pressing into
+	// the stone.
+	float col = startCol;
+	float row = startRow;
+	for (int i = 0; i < kDetourTurns; i++)
+	{
+		float turn = kDetourTurn[i];
+		float turnedCol = dirCol * cosf(turn) - dirRow * sinf(turn);
+		float turnedRow = dirCol * sinf(turn) + dirRow * cosf(turn);
+		col = startCol;
+		row = startRow;
+		WorldGrid::Move(col, row, turnedCol * tiles, turnedRow * tiles);
+
+		float movedCol = col - startCol;
+		float movedRow = row - startRow;
+		if (movedCol * movedCol + movedRow * movedRow >= tiles * tiles * kDetourProgress)
+		{
+			break;
+		}
+	}
 
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);

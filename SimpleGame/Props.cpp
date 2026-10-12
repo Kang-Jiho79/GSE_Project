@@ -68,6 +68,16 @@ namespace
 	float s_ClearCol = 0.f;
 	float s_ClearRow = 0.f;
 	float s_ClearRadius = 0.f;
+	float s_ArenaCol = 0.f;
+	float s_ArenaRow = 0.f;
+	float s_ArenaRadius = 0.f;
+
+	bool InClearing(int col, int row, float centerCol, float centerRow, float radius)
+	{
+		float fromCol = col - centerCol;
+		float fromRow = row - centerRow;
+		return fromCol * fromCol + fromRow * fromRow < radius * radius;
+	}
 }
 
 void Props::SetField(float density, float clearCol, float clearRow, float clearRadius)
@@ -76,6 +86,14 @@ void Props::SetField(float density, float clearCol, float clearRow, float clearR
 	s_ClearCol = clearCol;
 	s_ClearRow = clearRow;
 	s_ClearRadius = clearRadius;
+	s_ArenaRadius = 0.f;
+}
+
+void Props::SetArena(float col, float row, float radius)
+{
+	s_ArenaCol = col;
+	s_ArenaRow = row;
+	s_ArenaRadius = radius;
 }
 
 Props::Kind Props::At(int col, int row, int& variant, float& grain)
@@ -87,9 +105,8 @@ Props::Kind Props::At(int col, int row, int& variant, float& grain)
 		return Kind::None;
 	}
 
-	float fromClearCol = col - s_ClearCol;
-	float fromClearRow = row - s_ClearRow;
-	if (fromClearCol * fromClearCol + fromClearRow * fromClearRow < s_ClearRadius * s_ClearRadius)
+	if (InClearing(col, row, s_ClearCol, s_ClearRow, s_ClearRadius)
+		|| InClearing(col, row, s_ArenaCol, s_ArenaRow, s_ArenaRadius))
 	{
 		return Kind::None;
 	}

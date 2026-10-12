@@ -95,6 +95,11 @@ float Combat::AshWaveDamage(const PlayerStatus& status)
 	return Tuning::AshForm::kWaveDamage * AshPower(status);
 }
 
+float Combat::VeilDamage(const PlayerStatus& status)
+{
+	return Tuning::AshForm::kVeilDamage * AshPower(status);
+}
+
 float Combat::UnravelDamage(const PlayerStatus& status)
 {
 	return Tuning::AshForm::kUnravelDamage * AshPower(status);

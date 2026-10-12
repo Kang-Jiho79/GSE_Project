@@ -228,7 +228,9 @@ namespace WorldGrid
 		float nextCol = col + offsetCol;
 		float nextRow = row + offsetRow;
 		ClampToMap(nextCol, nextRow);
-		if (!IsBlocked(nextCol, nextRow))
+		// Anything already caught inside something - set down there, or
+		// shoved in - walks out freely instead of being held fast.
+		if (!IsBlocked(nextCol, nextRow) || IsBlocked(col, row))
 		{
 			col = nextCol;
 			row = nextRow;
