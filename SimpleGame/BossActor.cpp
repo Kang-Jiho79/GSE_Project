@@ -10,6 +10,7 @@
 #include "Random.h"
 #include "Tuning.h"
 #include "DrawList.h"
+#include "Combat.h"
 #include "Palette.h"
 #include <cmath>
 
@@ -190,8 +191,32 @@ float BossActor::TakeHit(float damage)
 		return 0.f;
 	}
 
+	// A special takes only so much of it, however many of its blows land.
+	int special = Combat::LimitBlow();
+	if (special != 0)
+	{
+		if (special != m_LimitSerial)
+		{
+			m_LimitSerial = special;
+			m_LimitTaken = 0.f;
+		}
+		float left = m_MaxHealth * Tuning::Limit::kBossCap - m_LimitTaken;
+		if (damage > left)
+		{
+			damage = left;
+		}
+		if (damage <= 0.f)
+		{
+			return 0.f;
+		}
+	}
+
 	float landed = (damage < m_Health) ? damage : m_Health;
 	m_Health -= damage;
+	if (special != 0)
+	{
+		m_LimitTaken += landed;
+	}
 	m_HitFlash = 1.f;
 	m_SparksPending = true;
 	return landed;

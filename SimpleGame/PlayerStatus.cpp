@@ -153,7 +153,18 @@ bool PlayerStatus::TryDamage(float amount)
 
 	health = Clamp(health - amount, 0.f, maxHealth);
 	m_InvulnTimer = Tuning::Player::kHitInvulnDuration;
+	ChargeLimit(amount * Tuning::Limit::kPerTaken);
 	return true;
+}
+
+void PlayerStatus::ChargeLimit(float amount)
+{
+	limit = Clamp(limit + amount, 0.f, Tuning::Limit::kMax);
+}
+
+bool PlayerStatus::IsLimitReady() const
+{
+	return limit >= Tuning::Limit::kMax;
 }
 
 void PlayerStatus::GrantInvuln(float seconds)
@@ -203,6 +214,7 @@ void PlayerStatus::Revive()
 	ashParry = Cooldown();
 	parryTimer = 0.f;
 	parried = false;
+	limitRelease = false;
 	GrantInvuln(Tuning::Death::kReviveInvuln);
 }
 

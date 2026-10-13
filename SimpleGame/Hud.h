@@ -34,8 +34,12 @@ private:
 	// locked: not learned yet - drawn empty, and said so.
 	void DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond, bool locked,
 		const char* key, float centerX, float centerY, float r, float g, float b);
+	// The special's gauge, after E and Q.
+	void DrawLimitSlot(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float centerX, float centerY,
+		float r, float g, float b);
 	void DrawNotice(TextRenderer* text, float top);
 
 	std::string m_Notice;
 	float m_NoticeTimer = 0.f;
+	float m_Time = 0.f;
 };

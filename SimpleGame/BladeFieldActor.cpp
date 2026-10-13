@@ -91,6 +91,7 @@ void BladeFieldActor::Erupt(const ActorContext& ctx)
 		ctx.graph->Spawn(std::move(blade));
 	}
 
+	Combat::NoteLanded(landed);
 	ctx.status->Heal(Combat::Lifesteal(*ctx.status, landed));
 	ctx.impact->Shake(Tuning::Feel::kHeavyShake);
 	if (landed > 0.f)

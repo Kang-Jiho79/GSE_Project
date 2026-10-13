@@ -79,7 +79,7 @@ void ProjectileActor::OnUpdate(const ActorContext& ctx)
 		// Both colours hurt a gray thing equally - gray is opposed to colour
 		// itself, not to one side of it. A shield can still catch it, judged
 		// from the side the bolt came in on.
-		enemy.TakeHit(Combat::BoltDamage(*ctx.status), x - m_VelX, y - m_VelY);
+		Combat::NoteLanded(enemy.TakeHit(Combat::BoltDamage(*ctx.status), x - m_VelX, y - m_VelY));
 		spent = true;
 	});
 

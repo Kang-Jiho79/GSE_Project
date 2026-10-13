@@ -151,6 +151,7 @@ bool SaveGame::Write(const PlayerStatus& status, const Progress& progress, int r
 	Put(out, "lightTotal", status.lightTotal);
 	Put(out, "darkTotal", status.darkTotal);
 	Put(out, "health", status.health);
+	Put(out, "limit", status.limit);
 	Put(out, "maxHealth", status.maxHealth);
 	Put(out, "upgrades", status.upgrades);
 	const char* form = (status.form == Form::Light) ? "light" : ((status.form == Form::Dark) ? "dark" : "ash");
@@ -248,6 +249,10 @@ bool SaveGame::Read(PlayerStatus& status, Progress& progress, int& region)
 		else if (key == "health")
 		{
 			status.health = ToFloat(value);
+		}
+		else if (key == "limit")
+		{
+			status.limit = ToFloat(value);
 		}
 		else if (key == "maxHealth")
 		{

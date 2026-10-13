@@ -31,6 +31,8 @@ public:
 	float Zoom() const;
 	// What the world's time is multiplied by under the current shot.
 	float TimeScale() const;
+	// Whether the current shot drains the world of colour.
+	bool IsGray() const;
 
 	// Cues and a conversation the shots have begun, each taken once; -1 when
 	// there are none left.
@@ -44,6 +46,8 @@ public:
 
 private:
 	void BeginShot(int index);
+	// The specials' cut-in: his eyes in a band across the screen.
+	void DrawPortrait(Renderer* renderer, int windowSizeX, int windowSizeY) const;
 	void SkipAhead();
 	void Target(const Cutscenes::Shot& shot, float& x, float& y) const;
 	const Cutscenes::Shot& Current() const;
@@ -67,6 +71,7 @@ private:
 	float m_FromZoom = 1.f;
 
 	float m_Letterbox = 0.f; // 0..1, easing in and out
+	float m_PortraitTime = 0.f; // real seconds the eyes have been showing
 	float m_SkipHeld = 0.f;  // seconds the skip has been held
 
 	std::vector<int> m_Cues;

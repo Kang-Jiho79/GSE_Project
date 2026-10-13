@@ -370,6 +370,7 @@ bool g_SwitchFormPressed = false;
 bool g_DodgePressed = false;
 bool g_SkillPressed = false;
 bool g_SpecialPressed = false;
+bool g_LimitPressed = false;
 bool g_InteractPressed = false;
 
 void RenderScene(void)
@@ -379,7 +380,8 @@ void RenderScene(void)
 	// The region sets the dark behind the world and the grade over it.
 	const Regions::Atmosphere& mood = g_Scene.CurrentAtmosphere();
 	PostProcess::Grade grade;
-	grade.saturation = mood.saturation;
+	// A cut-in may drain the colour out of everything.
+	grade.saturation = mood.saturation * (1.f - g_Scene.Desaturation());
 	grade.contrast = mood.contrast;
 	grade.tintR = mood.tint.r;
 	grade.tintG = mood.tint.g;
@@ -471,10 +473,18 @@ void Idle(void)
 	g_SkillPressed = false;
 	g_SpecialPressed = false;
 	g_InteractPressed = false;
+	bool limit = g_LimitPressed;
+	g_LimitPressed = false;
 
 	// The world holds still while a screen is open over it.
 	if (!IsOverlayOpen())
 	{
+		// R with the gauge full: the cut-in, and then the special.
+		if (limit)
+		{
+			g_Scene.BeginLimit(g_Status, g_MouseX, g_MouseY);
+		}
+
 		g_Scene.Update(input, deltaTime, g_Status);
 
 		// The story has ended.
@@ -702,6 +712,17 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kSpecial:
 	{
 		g_SpecialPressed = true;
+		break;
+	}
+	case InputMap::kLimit:
+	{
+		g_LimitPressed = true;
+		break;
+	}
+	case InputMap::kDebugLimit:
+	{
+		g_Status.limit = Tuning::Limit::kMax;
+		g_Hud.Notify("필살기 게이지 가득");
 		break;
 	}
 	case InputMap::kDebugDamage:

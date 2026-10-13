@@ -18,6 +18,11 @@ namespace Cutscenes
 		// coming to there.
 		Intervention,
 		Intervened,
+		// The specials' cut-ins (R), anchored at him: his eyes across the
+		// screen, the world stopped, and the special going off as it ends.
+		LimitLight,
+		LimitDark,
+		LimitAsh,
 
 		Count,
 	};
@@ -29,6 +34,7 @@ namespace Cutscenes
 		CueTestBurst, // a spray of light at the anchor
 		CueGodMark,   // the pale mark over the king
 		CueIntervene, // the world gone white: on to Bellum
+		CueLimit,     // the cut-in over: his special goes off
 	};
 
 	// Where the camera looks over the shot.
@@ -45,6 +51,16 @@ namespace Cutscenes
 		None,
 		Black,
 		White,
+	};
+
+	// His eyes in a band across the screen, in a form's colour - the
+	// specials' cut-in.
+	enum Portrait
+	{
+		NoPortrait = -1,
+		PortraitLight,
+		PortraitDark,
+		PortraitAsh,
 	};
 
 	// How fast the world runs under the shot. Stopped is a held breath: the
@@ -77,6 +93,9 @@ namespace Cutscenes
 
 		int cue;          // Cue, or NoCue
 		int conversation; // a Dialogue::Id opened as it begins, or -1
+
+		int portrait;     // Portrait, or NoPortrait
+		bool gray;        // the world drained of colour
 	};
 
 	struct Script

@@ -258,6 +258,54 @@ namespace Tuning
 		const int kLogEntries = 200;       // lines the log keeps
 	}
 
+	// The special (R): a gauge of its own, filled by blows landed and taken,
+	// apart from the vessel and the balance. Full, R plays a cut-in - his eyes
+	// across the screen, the world stopped - and the form's special goes off.
+	namespace Limit
+	{
+		const float kMax = 100.f;
+		const float kPerDealt = 0.12f;  // per point of damage he lands
+		const float kPerTaken = 1.f;    // per point of damage he takes
+		// One special takes no more than this share of a boss's whole life.
+		const float kBossCap = 0.2f;
+
+		// Light: pillars of light falling round the cursor one after another,
+		// then one great one in the middle. Scaled like his other light blows.
+		const float kPillarReach = 9.f;     // tiles to the cursor, at most
+		const int kPillarCount = 8;
+		const float kPillarSpread = 5.f;    // tiles round the centre
+		const float kPillarRadius = 1.4f;
+		const float kPillarDamage = 35.f;
+		const float kPillarFirst = 0.25f;   // seconds until the first lands
+		const float kPillarGap = 0.1f;
+		const float kFinalRadius = 2.5f;
+		const float kFinalDamage = 110.f;
+		const float kFinalDelay = 1.2f;
+
+		// Dark: onto the nearest enemy ahead, held, cut again and again, and
+		// blown apart. Scaled like his other dark blows; drinks twice as deep.
+		const float kGrabReach = 6.f;
+		const float kGrabDegrees = 120.f;
+		const float kGrabDashTime = 0.12f;
+		const float kGrabStop = 0.9f;       // tiles short of it he stops
+		const int kGrabHits = 6;
+		const float kGrabGap = 0.15f;
+		const float kGrabRadius = 1.3f;
+		const float kGrabDamage = 18.f;
+		const float kGrabBlastRadius = 2.5f;
+		const float kGrabBlastDamage = 100.f;
+		const float kGrabLifesteal = 2.f;
+
+		// Ash: in a stopped, colourless world, through up to six enemies near
+		// him one after another; as the scythe is drawn back, every cut bursts
+		// at once. Fixed, like all the gray's.
+		const float kReapReach = 7.f;
+		const int kReapMost = 6;
+		const float kReapRadius = 1.2f;
+		const float kReapDamage = 100.f;
+		const float kReapDelay = 0.05f;     // world seconds after the world runs again
+	}
+
 	namespace FormSwitch
 	{
 		// Space is ignored until this runs out; a successful switch restarts it.

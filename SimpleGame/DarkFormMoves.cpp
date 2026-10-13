@@ -15,6 +15,7 @@
 #include "Combat.h"
 #include "Tuning.h"
 #include "Growth.h"
+#include "EnemyActor.h"
 #include <cmath>
 
 namespace
@@ -91,6 +92,46 @@ void DarkFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 	{
 		m_PlantTimer -= ctx.deltaTime;
 	}
+
+	// The special: cut after cut into what he holds, then the blast.
+	if (m_GrabSteps > 0)
+	{
+		m_GrabTimer -= ctx.deltaTime;
+		if (m_GrabTimer <= 0.f)
+		{
+			m_GrabSteps--;
+			bool blast = (m_GrabSteps == 0);
+			float radius = blast ? Tuning::Limit::kGrabBlastRadius : Tuning::Limit::kGrabRadius;
+			float damage = blast ? Combat::GrabBlastDamage(*ctx.status) : Combat::GrabDamage(*ctx.status);
+
+			Combat::BeginLimitBlow(m_GrabSerial);
+			float landed = Combat::HitRadius(*ctx.graph, m_GrabX, m_GrabY, radius, damage, 0.f);
+			Combat::EndLimitBlow();
+			ctx.status->Heal(Combat::Lifesteal(*ctx.status, landed, Tuning::Limit::kGrabLifesteal));
+
+			float aimX = m_GrabX - player.WorldX();
+			float aimY = m_GrabY - player.WorldY();
+			if (blast)
+			{
+				std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Dark, radius, false));
+				burst->SetLocalPosition(m_GrabX, m_GrabY);
+				ctx.graph->Spawn(std::move(burst));
+				SparkActor::Burst(*ctx.graph, m_GrabX, m_GrabY, SparkActor::Style::Dark,
+					kShockSparks, kShockSparkSpeed, kShockSparkLift);
+				ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+				ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+				player.Act(PlayerActor::Action::Finisher, aimX, aimY);
+			}
+			else
+			{
+				SparkActor::Burst(*ctx.graph, m_GrabX, m_GrabY, SparkActor::Style::Dark,
+					kCutSparks, kCutSparkSpeed, kCutSparkLift);
+				ctx.impact->Shake(Tuning::Feel::kLightShake);
+				player.Act((m_GrabSteps % 2 == 0) ? PlayerActor::Action::Slash : PlayerActor::Action::Sweep, aimX, aimY);
+				m_GrabTimer = Tuning::Limit::kGrabGap;
+			}
+		}
+	}
 }
 
 bool DarkFormMoves::IsPlanting() const
@@ -98,9 +139,63 @@ bool DarkFormMoves::IsPlanting() const
 	return m_PlantTimer > 0.f;
 }
 
+bool DarkFormMoves::IsHolding() const
+{
+	return m_GrabSteps > 0;
+}
+
+void DarkFormMoves::Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY)
+{
+	m_GrabSerial = Combat::NewLimitSerial();
+	m_PlantTimer = 0.f;
+	m_ComboStep = 0;
+	m_ComboTimer = 0.f;
+
+	float dirCol, dirRow;
+	if (!WorldGrid::ScreenToGroundDirection(aimX, aimY, dirCol, dirRow))
+	{
+		dirCol = 1.f;
+		dirRow = 0.f;
+	}
+
+	// Onto the nearest ahead, stopping just short of it; with no one there,
+	// the cuts and the blast land a step in front of him.
+	EnemyActor* prey = Combat::NearestEnemy(*ctx.graph, player.WorldX(), player.WorldY(), Tuning::Limit::kGrabReach,
+		dirCol, dirRow, Tuning::Limit::kGrabDegrees);
+	if (prey != nullptr)
+	{
+		m_GrabX = prey->WorldX();
+		m_GrabY = prey->WorldY();
+		float playerCol, playerRow, preyCol, preyRow;
+		WorldGrid::InverseIso(player.WorldX(), player.WorldY(), playerCol, playerRow);
+		WorldGrid::InverseIso(m_GrabX, m_GrabY, preyCol, preyRow);
+		float dc = preyCol - playerCol;
+		float dr = preyRow - playerRow;
+		float span = sqrtf(dc * dc + dr * dr);
+		float travel = span - prey->BodyRadius() - Tuning::Limit::kGrabStop;
+		if (span > 0.001f && travel > 0.f)
+		{
+			player.Lunge(dc / span, dr / span, travel, Tuning::Limit::kGrabDashTime);
+		}
+	}
+	else
+	{
+		float aheadX, aheadY;
+		WorldGrid::IsoPosition(dirCol * Tuning::Limit::kGrabStop * 2.f, dirRow * Tuning::Limit::kGrabStop * 2.f,
+			aheadX, aheadY);
+		m_GrabX = player.WorldX() + aheadX;
+		m_GrabY = player.WorldY() + aheadY;
+	}
+
+	m_GrabSteps = Tuning::Limit::kGrabHits + 1;
+	m_GrabTimer = Tuning::Limit::kGrabDashTime;
+	ctx.status->GrantInvuln(Tuning::Limit::kGrabDashTime + Tuning::Limit::kGrabGap * Tuning::Limit::kGrabHits);
+	player.Act(PlayerActor::Action::Thrust, aimX, aimY);
+}
+
 void DarkFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 {
-	if (m_Cooldown > 0.f || IsPlanting())
+	if (m_Cooldown > 0.f || IsPlanting() || IsHolding())
 	{
 		return;
 	}
@@ -305,6 +400,7 @@ void DarkFormMoves::Interrupt()
 	m_ComboStep = 0;
 	m_ComboTimer = 0.f;
 	m_PlantTimer = 0.f;
+	m_GrabSteps = 0;
 }
 
 void DarkFormMoves::Draw(DrawList& out, const PlayerActor& player, float screenX, float groundY) const

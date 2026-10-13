@@ -92,6 +92,9 @@ private:
 	int m_FuryLevel = 0;
 	Form m_PlayerForm = Form::Light;
 	bool m_DeflectPending = false;
+	// The special last struck with, and how much of it it has taken.
+	int m_LimitSerial = 0;
+	float m_LimitTaken = 0.f;
 
 	bool m_Anchored = false;
 	float m_HomeX = 0.f;

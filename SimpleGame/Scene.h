@@ -70,6 +70,13 @@ public:
 	void PlayCutscene(int id);
 	void PlayCutscene(int id, float anchorX, float anchorY);
 	bool IsInCutscene() const;
+	// R with the gauge full: the gauge is spent and his form's cut-in plays;
+	// the special goes off as it ends, toward where he aimed (screen offset
+	// from him, in window pixels). Works in a duel too. Returns whether it
+	// began.
+	bool BeginLimit(PlayerStatus& status, float aimX, float aimY);
+	// How far the world is drained of colour right now, 0..1.
+	float Desaturation() const;
 
 	// Fades out, builds the region, and fades back in with him at its waystone.
 	// Ignored during a fade or a duel.
@@ -118,7 +125,7 @@ private:
 
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
 	// What a cutscene's shot asks for as it begins.
-	void PlayCue(int cue);
+	void PlayCue(int cue, PlayerStatus& status);
 	// Whether he has put the collusion to this region's king.
 	bool AskedKing() const;
 	// The camera onto him at no zoom, or wherever a playing cutscene has it.

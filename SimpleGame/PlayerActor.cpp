@@ -432,7 +432,7 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	{
 		LungeStep(ctx);
 	}
-	else if (!m_DarkMoves.IsPlanting())
+	else if (!m_DarkMoves.IsPlanting() && !m_DarkMoves.IsHolding())
 	{
 		Move(ctx);
 	}
@@ -512,6 +512,13 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	m_LightMoves.Update(ctx, *this);
 	m_DarkMoves.Update(ctx, *this);
 	m_AshMoves.Update(ctx, *this);
+
+	// The cut-in over: the form's special goes off, toward where he aimed.
+	if (ctx.status->limitRelease)
+	{
+		ctx.status->limitRelease = false;
+		MovesFor(ctx.status->form).Limit(ctx, *this, ctx.status->limitAimX, ctx.status->limitAimY);
+	}
 
 	// And Space its parry: there is nothing left to switch to.
 	if (ctx.input.switchForm && ctx.status->ashUnlocked)

@@ -19,11 +19,16 @@ public:
 	void Special(const ActorContext& ctx, PlayerActor& player) override;
 	// Light -> dark: drags everything nearby in and hurts it on arrival.
 	void Enter(const ActorContext& ctx, PlayerActor& player) override;
+	// R: onto the nearest enemy ahead, held there and cut again and again,
+	// then blown apart - drinking twice as deep as any other cut.
+	void Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY) override;
 	void Interrupt() override;
 	void Draw(DrawList& out, const PlayerActor& player, float screenX, float groundY) const override;
 
 	// The sword is in the ground: he neither moves nor swings.
 	bool IsPlanting() const;
+	// Mid-special, holding his prey: the same.
+	bool IsHolding() const;
 
 private:
 	void DrawCut(DrawList& out, const PlayerActor& player, float screenX, float groundY) const;
@@ -48,4 +53,12 @@ private:
 
 	// The sword in the ground: time left before he pulls it out.
 	float m_PlantTimer = 0.f;
+
+	// The special under way: where its prey was, the blows left (the last
+	// is the blast), until the next, and its number.
+	int m_GrabSteps = 0;
+	float m_GrabTimer = 0.f;
+	float m_GrabX = 0.f;
+	float m_GrabY = 0.f;
+	int m_GrabSerial = 0;
 };

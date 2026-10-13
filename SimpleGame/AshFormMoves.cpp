@@ -204,6 +204,30 @@ void AshFormMoves::Update(const ActorContext& ctx, PlayerActor& player)
 		ctx.status->parried = false;
 		Counter(ctx, player);
 	}
+
+	// The world running again: every cut of the special bursts at once.
+	if (m_ReapDelay > 0.f)
+	{
+		m_ReapDelay -= ctx.deltaTime;
+		if (m_ReapDelay <= 0.f)
+		{
+			Combat::BeginLimitBlow(m_ReapSerial);
+			for (int i = 0; i < m_ReapCount; i++)
+			{
+				float radius = Tuning::Limit::kReapRadius;
+				Combat::HitRadius(*ctx.graph, m_ReapX[i], m_ReapY[i], radius, Combat::ReapDamage(), 0.f);
+				std::unique_ptr<BurstActor> burst(new BurstActor(Alignment::Ashen, radius * 1.6f, false));
+				burst->SetLocalPosition(m_ReapX[i], m_ReapY[i]);
+				ctx.graph->Spawn(std::move(burst));
+				SparkActor::Burst(*ctx.graph, m_ReapX[i], m_ReapY[i], SparkActor::Style::Dust,
+					kCounterDust, kCounterDustSpeed, kDashDustLift);
+			}
+			Combat::EndLimitBlow();
+			ctx.impact->HitStop(Tuning::Feel::kHeavyStop);
+			ctx.impact->Shake(Tuning::Feel::kHeavyShake);
+			m_ReapCount = 0;
+		}
+	}
 }
 
 void AshFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
@@ -280,41 +304,6 @@ void AshFormMoves::Attack(const ActorContext& ctx, PlayerActor& player)
 	m_ComboTimer = Tuning::AshForm::kComboWindow;
 }
 
-EnemyActor* AshFormMoves::Nearest(const ActorContext& ctx, const PlayerActor& player, float reachTiles,
-	float dirCol, float dirRow, float spreadDegrees) const
-{
-	float minDot = cosf(spreadDegrees * 0.5f * kDegToRad);
-	float playerCol, playerRow;
-	WorldGrid::InverseIso(player.WorldX(), player.WorldY(), playerCol, playerRow);
-
-	EnemyActor* nearest = nullptr;
-	float best = reachTiles;
-	ctx.graph->ForEach<EnemyActor>([&](EnemyActor& enemy)
-	{
-		if (enemy.IsDestroyed())
-		{
-			return;
-		}
-		float col, row;
-		WorldGrid::InverseIso(enemy.WorldX(), enemy.WorldY(), col, row);
-		float dc = col - playerCol;
-		float dr = row - playerRow;
-		float distance = sqrtf(dc * dc + dr * dr) - enemy.BodyRadius();
-		if (distance > best)
-		{
-			return;
-		}
-		float span = sqrtf(dc * dc + dr * dr);
-		if (spreadDegrees < 360.f && span > 0.001f && (dc * dirCol + dr * dirRow) / span < minDot)
-		{
-			return;
-		}
-		best = distance;
-		nearest = &enemy;
-	});
-	return nearest;
-}
-
 void AshFormMoves::GetBehind(PlayerActor& player, const EnemyActor& enemy, float& dirCol, float& dirRow) const
 {
 	float playerCol, playerRow, col, row;
@@ -354,8 +343,8 @@ bool AshFormMoves::DashCut(const ActorContext& ctx, PlayerActor& player)
 	m_BlastX = fromX;
 	m_BlastY = fromY;
 
-	EnemyActor* target = Nearest(ctx, player, Tuning::AshForm::kDashSearch, dirCol, dirRow,
-		Tuning::AshForm::kDashSearchDegrees);
+	EnemyActor* target = Combat::NearestEnemy(*ctx.graph, player.WorldX(), player.WorldY(), Tuning::AshForm::kDashSearch,
+		dirCol, dirRow, Tuning::AshForm::kDashSearchDegrees);
 	if (target != nullptr)
 	{
 		float targetX = target->WorldX();
@@ -417,7 +406,8 @@ void AshFormMoves::Counter(const ActorContext& ctx, PlayerActor& player)
 	ctx.impact->Shake(Tuning::Feel::kHeavyShake);
 
 	// Behind whoever is nearest, and through them.
-	EnemyActor* target = Nearest(ctx, player, Tuning::AshForm::kParryReach, 1.f, 0.f, 360.f);
+	EnemyActor* target = Combat::NearestEnemy(*ctx.graph, player.WorldX(), player.WorldY(), Tuning::AshForm::kParryReach,
+		1.f, 0.f, 360.f);
 	if (target != nullptr)
 	{
 		float targetX = target->WorldX();
@@ -517,6 +507,96 @@ void AshFormMoves::Enter(const ActorContext& ctx, PlayerActor& player)
 {
 }
 
+void AshFormMoves::Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY)
+{
+	m_ReapSerial = Combat::NewLimitSerial();
+	m_ComboStep = 0;
+	m_ComboTimer = 0.f;
+
+	// Everyone in reach, nearest first, up to six.
+	const int kCandidates = 32;
+	EnemyActor* found[kCandidates];
+	float distance[kCandidates];
+	int count = 0;
+	float playerCol, playerRow;
+	WorldGrid::InverseIso(player.WorldX(), player.WorldY(), playerCol, playerRow);
+	ctx.graph->ForEach<EnemyActor>([&](EnemyActor& enemy)
+	{
+		if (enemy.IsDestroyed() || count >= kCandidates)
+		{
+			return;
+		}
+		float col, row;
+		WorldGrid::InverseIso(enemy.WorldX(), enemy.WorldY(), col, row);
+		float span = sqrtf((col - playerCol) * (col - playerCol) + (row - playerRow) * (row - playerRow))
+			- enemy.BodyRadius();
+		if (span > Tuning::Limit::kReapReach)
+		{
+			return;
+		}
+		found[count] = &enemy;
+		distance[count] = span;
+		count++;
+	});
+	for (int i = 0; i < count; i++)
+	{
+		for (int j = i + 1; j < count; j++)
+		{
+			if (distance[j] < distance[i])
+			{
+				float d = distance[i];
+				distance[i] = distance[j];
+				distance[j] = d;
+				EnemyActor* e = found[i];
+				found[i] = found[j];
+				found[j] = e;
+			}
+		}
+	}
+
+	// Through each in turn: an image of him left where he was, a streak of
+	// the gray along the way, and the cut hanging where it was made.
+	m_ReapCount = 0;
+	for (int i = 0; i < count && m_ReapCount < kReapMost && m_ReapCount < Tuning::Limit::kReapMost; i++)
+	{
+		float fromX = player.WorldX();
+		float fromY = player.WorldY();
+		std::unique_ptr<AfterimageActor> image(new AfterimageActor(Alignment::Ashen, (i % 2 == 0) ? 1.f : -1.f));
+		image->SetLocalPosition(fromX, fromY);
+		ctx.graph->Spawn(std::move(image));
+
+		m_ReapX[m_ReapCount] = found[i]->WorldX();
+		m_ReapY[m_ReapCount] = found[i]->WorldY();
+		m_ReapCount++;
+
+		float dirCol = 1.f;
+		float dirRow = 0.f;
+		GetBehind(player, *found[i], dirCol, dirRow);
+		float toCol, toRow, fromCol, fromRow;
+		WorldGrid::InverseIso(player.WorldX(), player.WorldY(), toCol, toRow);
+		WorldGrid::InverseIso(fromX, fromY, fromCol, fromRow);
+		float travelled = sqrtf((toCol - fromCol) * (toCol - fromCol) + (toRow - fromRow) * (toRow - fromRow));
+		if (travelled > 0.1f)
+		{
+			std::unique_ptr<BeamActor> streak(new BeamActor(Alignment::Ashen, dirCol, dirRow, travelled));
+			streak->SetLocalPosition(fromX, fromY);
+			ctx.graph->Spawn(std::move(streak));
+		}
+	}
+
+	// No one near: the scythe drawn round him, the cut where he stands.
+	if (m_ReapCount == 0)
+	{
+		m_ReapX[0] = player.WorldX();
+		m_ReapY[0] = player.WorldY();
+		m_ReapCount = 1;
+	}
+
+	m_ReapDelay = Tuning::Limit::kReapDelay;
+	ctx.status->GrantInvuln(Tuning::AshForm::kCounterInvuln);
+	player.Act(PlayerActor::Action::Spin, aimX, aimY);
+}
+
 void AshFormMoves::Interrupt()
 {
 	m_ComboStep = 0;
@@ -549,6 +629,29 @@ void AshFormMoves::Draw(DrawList& out, const PlayerActor& player, float screenX,
 		float alpha = (m_EchoDelay > 0.f) ? kEchoWaitAlpha : m_EchoTimer / kEchoShowTime;
 		DrawBand(out, m_EchoX, m_EchoY, echoX, echoY, m_EchoDirCol, m_EchoDirRow,
 			Tuning::AshForm::kCutRange[last], Tuning::AshForm::kCutArcDegrees[last], CutSide(last), 1.f, alpha);
+	}
+
+	// The special's cuts, hanging where they were made: a bright cross over
+	// each until they burst.
+	if (m_ReapDelay > 0.f)
+	{
+		out.SetGlow(kCutShine);
+		for (int i = 0; i < m_ReapCount; i++)
+		{
+			float x = screenX + (m_ReapX[i] - player.WorldX());
+			float y = groundY + kCutLift + (m_ReapY[i] - player.WorldY());
+			for (int stroke = 0; stroke < 2; stroke++)
+			{
+				float dirCol = 0.7071f;
+				float dirRow = (stroke == 0) ? 0.7071f : -0.7071f;
+				float half = Tuning::Limit::kReapRadius;
+				float startX, startY;
+				WorldGrid::IsoPosition(-dirCol * half, -dirRow * half, startX, startY);
+				out.AddGroundStrip(m_ReapX[i] + startX, m_ReapY[i] + startY, x + startX, y + startY,
+					dirCol, dirRow, 0.f, half * 2.f, 0.12f, 1.f, 1.f, 1.f, 0.95f);
+			}
+		}
+		out.SetGlow(0.f);
 	}
 
 	// The parry's stance: a ring close round him, tightening as it runs out.

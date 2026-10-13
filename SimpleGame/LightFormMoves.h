@@ -15,6 +15,9 @@ public:
 	void Special(const ActorContext& ctx, PlayerActor& player) override;
 	// Dark -> light: throws everything nearby back and covers his way out.
 	void Enter(const ActorContext& ctx, PlayerActor& player) override;
+	// R: pillars of light falling round the cursor one after another, and
+	// a great one in the middle last.
+	void Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY) override;
 
 private:
 	float m_BoltCooldown = 0.f;

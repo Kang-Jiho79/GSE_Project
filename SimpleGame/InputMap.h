@@ -14,6 +14,8 @@ namespace InputMap
 	const unsigned char kSwitchForm = ' ';
 	const unsigned char kSkill = 'e';
 	const unsigned char kSpecial = 'q';
+	// The form's special, once its gauge is full.
+	const unsigned char kLimit = 'r';
 	const unsigned char kInteract = 'f';
 	const unsigned char kDialogueLog = 'l';
 	const unsigned char kStatus = 9; // Tab
@@ -34,6 +36,8 @@ namespace InputMap
 	// and a large dose of both powers, to reach the later story quickly.
 	const unsigned char kDebugOpenWorld = '6';
 	const unsigned char kDebugAddBoth = '7';
+	// Debug: the special's gauge filled.
+	const unsigned char kDebugLimit = '0';
 	// Debug: the gray taken up (light and dark given up for it) or not.
 	const unsigned char kDebugAsh = '8';
 	// Debug: straight into the god's place, the gray already taken up.

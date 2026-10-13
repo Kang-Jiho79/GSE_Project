@@ -10,6 +10,7 @@
 #include "PlayerStatus.h"
 #include "WorldGrid.h"
 #include "Combat.h"
+#include "Random.h"
 #include "SceneGraph.h"
 #include "Tuning.h"
 #include "Growth.h"
@@ -125,6 +126,54 @@ void LightFormMoves::Skill(const ActorContext& ctx, PlayerActor& player)
 	ctx.graph->Spawn(std::move(beam));
 
 	ctx.status->lightSkill.Start(Tuning::LightForm::kBeamCooldown);
+}
+
+void LightFormMoves::Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY)
+{
+	int serial = Combat::NewLimitSerial();
+
+	// Round the cursor, no further off than his reach.
+	float playerCol, playerRow, aimCol, aimRow;
+	WorldGrid::InverseIso(player.WorldX(), player.WorldY(), playerCol, playerRow);
+	WorldGrid::InverseIso(aimX, aimY, aimCol, aimRow);
+	float distance = sqrtf(aimCol * aimCol + aimRow * aimRow);
+	if (distance > Tuning::Limit::kPillarReach)
+	{
+		aimCol *= Tuning::Limit::kPillarReach / distance;
+		aimRow *= Tuning::Limit::kPillarReach / distance;
+	}
+	float centerCol = playerCol + aimCol;
+	float centerRow = playerRow + aimRow;
+	WorldGrid::ClampToMap(centerCol, centerRow);
+
+	// Round the centre in turn, each a little further on round the circle.
+	float start = Random::Angle();
+	for (int i = 0; i < Tuning::Limit::kPillarCount; i++)
+	{
+		float angle = start + i * 2.39996f;
+		float reach = Tuning::Limit::kPillarSpread * (0.35f + 0.65f * Random::Unit());
+		float col = centerCol + cosf(angle) * reach;
+		float row = centerRow + sinf(angle) * reach;
+		WorldGrid::ClampToMap(col, row);
+		float x, y;
+		WorldGrid::IsoPosition(col, row, x, y);
+		std::unique_ptr<LightningActor> pillar(new LightningActor(LightningActor::Target::Monsters,
+			Tuning::Limit::kPillarRadius, Tuning::Limit::kPillarFirst + i * Tuning::Limit::kPillarGap,
+			Combat::PillarDamage(*ctx.status)));
+		pillar->SetLimitSerial(serial);
+		pillar->SetLocalPosition(x, y);
+		ctx.graph->Spawn(std::move(pillar));
+	}
+
+	float x, y;
+	WorldGrid::IsoPosition(centerCol, centerRow, x, y);
+	std::unique_ptr<LightningActor> last(new LightningActor(LightningActor::Target::Monsters,
+		Tuning::Limit::kFinalRadius, Tuning::Limit::kFinalDelay, Combat::FinalPillarDamage(*ctx.status)));
+	last->SetLimitSerial(serial);
+	last->SetLocalPosition(x, y);
+	ctx.graph->Spawn(std::move(last));
+
+	player.Act(PlayerActor::Action::Call, aimX, aimY);
 }
 
 void LightFormMoves::Special(const ActorContext& ctx, PlayerActor& player)

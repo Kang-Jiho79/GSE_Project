@@ -13,6 +13,10 @@ namespace
 {
 	const float kDegToRad = 3.14159265f / 180.f;
 
+	int s_LimitSerial = 0;
+	int s_LimitBlow = 0;
+	float s_Landed = 0.f;
+
 	// Lucius's blessing makes every light blow that much harder on top.
 	float LightPower(const PlayerStatus& status)
 	{
@@ -120,10 +124,105 @@ float Combat::EraseDamage()
 	return Tuning::AshForm::kEraseDamage;
 }
 
+float Combat::PillarDamage(const PlayerStatus& status)
+{
+	return Tuning::Limit::kPillarDamage * LightPower(status);
+}
+
+float Combat::FinalPillarDamage(const PlayerStatus& status)
+{
+	return Tuning::Limit::kFinalDamage * LightPower(status);
+}
+
+float Combat::GrabDamage(const PlayerStatus& status)
+{
+	return Tuning::Limit::kGrabDamage * DarkPower(status);
+}
+
+float Combat::GrabBlastDamage(const PlayerStatus& status)
+{
+	return Tuning::Limit::kGrabBlastDamage * DarkPower(status);
+}
+
+float Combat::ReapDamage()
+{
+	return Tuning::Limit::kReapDamage;
+}
+
+int Combat::NewLimitSerial()
+{
+	return ++s_LimitSerial;
+}
+
+void Combat::BeginLimitBlow(int serial)
+{
+	s_LimitBlow = serial;
+}
+
+void Combat::EndLimitBlow()
+{
+	s_LimitBlow = 0;
+}
+
+int Combat::LimitBlow()
+{
+	return s_LimitBlow;
+}
+
+void Combat::NoteLanded(float landed)
+{
+	if (s_LimitBlow == 0)
+	{
+		s_Landed += landed;
+	}
+}
+
+float Combat::TakeLanded()
+{
+	float landed = s_Landed;
+	s_Landed = 0.f;
+	return landed;
+}
+
 float Combat::Lifesteal(const PlayerStatus& status, float damageLanded, float scale)
 {
 	float share = Tuning::DarkForm::kLifesteal + (status.darkBlessing ? Tuning::Duel::kLifestealBlessing : 0.f);
 	return damageLanded * share * scale;
+}
+
+EnemyActor* Combat::NearestEnemy(SceneGraph& graph, float x, float y, float reachTiles,
+	float dirCol, float dirRow, float spreadDegrees)
+{
+	float minDot = cosf(spreadDegrees * 0.5f * kDegToRad);
+	float originCol, originRow;
+	WorldGrid::InverseIso(x, y, originCol, originRow);
+
+	EnemyActor* nearest = nullptr;
+	float best = reachTiles;
+	graph.ForEach<EnemyActor>([&](EnemyActor& enemy)
+	{
+		if (enemy.IsDestroyed())
+		{
+			return;
+		}
+		float col, row;
+		WorldGrid::InverseIso(enemy.WorldX(), enemy.WorldY(), col, row);
+		float dc = col - originCol;
+		float dr = row - originRow;
+		float span = sqrtf(dc * dc + dr * dr);
+		float distance = span - enemy.BodyRadius();
+		if (distance > best)
+		{
+			return;
+		}
+		if (spreadDegrees < 360.f && span > 0.001f && (dc * dirCol + dr * dirRow) / span < minDot)
+		{
+			return;
+		}
+		best = distance;
+		nearest = &enemy;
+	});
+	return nearest;
 }
 
 float Combat::HitArc(SceneGraph& graph, float originX, float originY, float dirCol, float dirRow,
@@ -160,6 +259,7 @@ float Combat::HitArc(SceneGraph& graph, float originX, float originY, float dirC
 		landed += enemy.TakeHit(damage);
 	});
 
+	NoteLanded(landed);
 	return landed;
 }
 
@@ -209,6 +309,7 @@ float Combat::HitRadius(SceneGraph& graph, float centerX, float centerY,
 		enemy.Shove(fromCol / distance * amount, fromRow / distance * amount);
 	});
 
+	NoteLanded(landed);
 	return landed;
 }
 
@@ -253,6 +354,7 @@ float Combat::HitLine(SceneGraph& graph, float originX, float originY, float dir
 		}
 	});
 
+	NoteLanded(landed);
 	return landed;
 }
 

@@ -42,6 +42,11 @@ LightningActor::LightningActor(Target target, float radiusTiles, float delay, fl
 	}
 }
 
+void LightningActor::SetLimitSerial(int serial)
+{
+	m_LimitSerial = serial;
+}
+
 void LightningActor::OnUpdate(const ActorContext& ctx)
 {
 	m_Age += ctx.deltaTime;
@@ -52,7 +57,12 @@ void LightningActor::OnUpdate(const ActorContext& ctx)
 		{
 			// His own lightning: the ground shakes either way, and the world
 			// catches if it struck anything.
+			if (m_LimitSerial != 0)
+			{
+				Combat::BeginLimitBlow(m_LimitSerial);
+			}
 			float landed = Combat::HitRadius(*ctx.graph, WorldX(), WorldY(), m_Radius, m_Damage, 0.f);
+			Combat::EndLimitBlow();
 			ctx.impact->Shake(Tuning::Feel::kStrikeShake);
 
 			// Light thrown out across the ground where it struck.

@@ -66,6 +66,18 @@ struct PlayerStatus
 	float parryTimer = 0.f;
 	bool parried = false;
 
+	// The special's gauge (R), apart from the vessel. Filled by blows he
+	// lands (the scene hands over what Combat noted) and blows he takes.
+	float limit = 0.f;
+	// Set by the scene as the cut-in ends: the form's special goes off this
+	// frame, toward where he aimed when he pressed R (screen offset).
+	bool limitRelease = false;
+	float limitAimX = 0.f;
+	float limitAimY = 0.f;
+
+	void ChargeLimit(float amount);
+	bool IsLimitReady() const;
+
 	// Off the board (Titles): however far the totals lean, the gray does not
 	// take him - no warning, no erosion, nothing given back on revival. Set
 	// from the story every frame by the scene.

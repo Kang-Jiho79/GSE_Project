@@ -18,6 +18,9 @@ public:
 	// Radius in tiles; delay is how long the mark shows before it lands.
 	LightningActor(Target target, float radiusTiles, float delay, float damage);
 
+	// Called down by a special (R): its blow is struck under that number.
+	void SetLimitSerial(int serial);
+
 protected:
 	void OnUpdate(const ActorContext& ctx) override;
 	void OnDraw(DrawList& out, const ActorContext& ctx) const override;
@@ -33,6 +36,7 @@ private:
 
 	float m_Age = 0.f;
 	bool m_Struck = false;
+	int m_LimitSerial = 0;
 
 	// Sideways kinks of the bolt, rolled once so it does not flicker.
 	static const int kKinks = 5;

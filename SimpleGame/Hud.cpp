@@ -41,6 +41,11 @@ namespace
 	// lettering yet.
 	const float kSkillSize = 18.f;
 	const float kSkillSpacing = 28.f;
+	// R, the special: a larger diamond after Q, filling with its gauge and
+	// breathing once full.
+	const float kLimitSize = 26.f;
+	const float kLimitGap = 36.f;
+	const float kLimitPulseRate = 5.f;
 
 	// Small text sits this far below a centre line to look centred on it.
 	const float kSmallTextDrop = 4.5f;
@@ -105,6 +110,7 @@ void Hud::Notify(const std::string& message)
 
 void Hud::Tick(float deltaTime)
 {
+	m_Time += deltaTime;
 	if (m_NoticeTimer > 0.f)
 	{
 		m_NoticeTimer -= deltaTime;
@@ -303,6 +309,33 @@ void Hud::DrawSkills(Renderer* renderer, TextRenderer* text, const PlayerStatus&
 	bool locked = !Growth::Has(status, Tuning::Growth::kSkills);
 	DrawSkillSlot(renderer, text, status.SkillCooldown(status.form), false, locked, "E", x, centerY, r, g, b);
 	DrawSkillSlot(renderer, text, status.SpecialCooldown(status.form), true, locked, "Q", x + kSkillSpacing, centerY, r, g, b);
+	DrawLimitSlot(renderer, text, status, x + kSkillSpacing + kLimitGap, centerY, r, g, b);
+}
+
+void Hud::DrawLimitSlot(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float centerX, float centerY,
+	float r, float g, float b)
+{
+	float size = kLimitSize;
+	float half = size / 2.f;
+	float fill = Clamp01(status.limit / Tuning::Limit::kMax);
+	bool ready = status.IsLimitReady();
+
+	renderer->DrawSolidDiamond(centerX, centerY, size + 6.f, size + 6.f, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+	renderer->DrawSolidDiamond(centerX, centerY, size, size, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
+
+	// Fills from the bottom with the gauge; full, it brightens and breathes.
+	float shade = ready ? 0.85f + 0.15f * sinf(m_Time * kLimitPulseRate) : 0.45f;
+	renderer->SetClip(centerX - half, centerY - half, size, size * fill);
+	renderer->SetGlow(ready ? 0.8f : 0.f);
+	renderer->DrawSolidDiamond(centerX, centerY, size, size, r * shade, g * shade, b * shade, 1.f);
+	renderer->SetGlow(0.f);
+	renderer->ClearClip();
+
+	if (ready)
+	{
+		text->Draw(TextRenderer::Face::Small, "R", centerX, centerY - kSmallTextDrop,
+			Palette::kUiInk, 1.f, TextRenderer::Align::Center, 0.f, false);
+	}
 }
 
 void Hud::DrawSkillSlot(Renderer* renderer, TextRenderer* text, const Cooldown& cooldown, bool diamond, bool locked,

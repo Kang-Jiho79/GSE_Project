@@ -1,6 +1,7 @@
 #pragma once
 
 class SceneGraph;
+class EnemyActor;
 struct PlayerStatus;
 struct ActorContext;
 
@@ -36,6 +37,27 @@ namespace Combat
 	float UnravelDamage();
 	float EraseDamage();
 
+	// The specials (R).
+	float PillarDamage(const PlayerStatus& status);
+	float FinalPillarDamage(const PlayerStatus& status);
+	float GrabDamage(const PlayerStatus& status);
+	float GrabBlastDamage(const PlayerStatus& status);
+	float ReapDamage();
+
+	// Every blow of a special is struck between Begin and End with its own
+	// number: a boss counts what one special has taken from it against its
+	// cap, and none of it fills the gauge again. 0 outside.
+	int NewLimitSerial();
+	void BeginLimitBlow(int serial);
+	void EndLimitBlow();
+	int LimitBlow();
+
+	// Damage he has landed since this was last asked, for the gauge. The
+	// three Hit functions note it themselves; anything striking an enemy
+	// directly notes its own.
+	void NoteLanded(float landed);
+	float TakeLanded();
+
 	// Health returned for melee damage that landed. scale raises the usual
 	// share for moves that feed it harder.
 	float Lifesteal(const PlayerStatus& status, float damageLanded, float scale = 1.f);
@@ -65,6 +87,12 @@ namespace Combat
 	// the origin out to lengthTiles along a unit direction.
 	bool StrikePlayerLine(const ActorContext& ctx, float originX, float originY, float dirCol, float dirRow,
 		float lengthTiles, float widthTiles, float damage);
+
+	// The nearest enemy within reach of a point (tiles, counted to the edge
+	// of its body) - only inside the wedge round a unit direction, unless the
+	// spread is a full turn. nullptr for none.
+	EnemyActor* NearestEnemy(SceneGraph& graph, float x, float y, float reachTiles,
+		float dirCol, float dirRow, float spreadDegrees);
 
 	// Damages, then shoves, every monster within a circle on the ground. A
 	// positive shove pushes away from the centre; a negative one pulls toward

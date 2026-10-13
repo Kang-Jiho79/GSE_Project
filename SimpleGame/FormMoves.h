@@ -25,6 +25,11 @@ public:
 	// switch itself is a move in the fight.
 	virtual void Enter(const ActorContext& ctx, PlayerActor& player) = 0;
 
+	// R: the form's special, as its cut-in ends. aimX/aimY: where he aimed
+	// on screen when he pressed it. Every blow of it is struck under one
+	// Combat::NewLimitSerial, so a boss takes only its cap from it.
+	virtual void Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY) = 0;
+
 	// Drops anything left half-done, such as a combo, when he leaves the form.
 	virtual void Interrupt() {}
 

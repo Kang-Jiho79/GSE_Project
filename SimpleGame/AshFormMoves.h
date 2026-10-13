@@ -27,6 +27,10 @@ public:
 	void Special(const ActorContext& ctx, PlayerActor& player) override;
 	// Never switched into: the gray is the only form left once he holds it.
 	void Enter(const ActorContext& ctx, PlayerActor& player) override;
+	// R: with the world stopped and drained of colour, through up to six
+	// enemies near him one after another; when the world runs again, every
+	// cut bursts at once.
+	void Limit(const ActorContext& ctx, PlayerActor& player, float aimX, float aimY) override;
 	void Interrupt() override;
 	void Draw(DrawList& out, const PlayerActor& player, float screenX, float groundY) const override;
 
@@ -38,10 +42,6 @@ public:
 private:
 	// A blow he parried, answered.
 	void Counter(const ActorContext& ctx, PlayerActor& player);
-	// The nearest enemy within reach - only inside the wedge round the
-	// direction, unless the spread is a full turn. nullptr for none.
-	EnemyActor* Nearest(const ActorContext& ctx, const PlayerActor& player, float reachTiles,
-		float dirCol, float dirRow, float spreadDegrees) const;
 	// Puts him on the far side of an enemy at once - or as far as a wall
 	// lets him. Gives the direction he went, in tiles.
 	void GetBehind(PlayerActor& player, const EnemyActor& enemy, float& dirCol, float& dirRow) const;
@@ -76,4 +76,13 @@ private:
 
 	// What is left of the parry's stance, for its ring.
 	float m_StanceTime = 0.f;
+
+	// The special's cuts, hanging where they were made until they burst,
+	// and its number.
+	static const int kReapMost = 6;
+	int m_ReapCount = 0;
+	float m_ReapDelay = 0.f;
+	float m_ReapX[kReapMost] = {};
+	float m_ReapY[kReapMost] = {};
+	int m_ReapSerial = 0;
 };

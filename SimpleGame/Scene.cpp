@@ -31,6 +31,7 @@
 #include "Titles.h"
 #include "Cutscenes.h"
 #include "GodMarkActor.h"
+#include "Combat.h"
 
 namespace
 {
@@ -201,6 +202,37 @@ void Scene::PlayCutscene(int id, float anchorX, float anchorY)
 	m_Cutscene.Play(id, anchorX, anchorY, m_Player->LocalX(), m_Player->LocalY());
 }
 
+bool Scene::BeginLimit(PlayerStatus& status, float aimX, float aimY)
+{
+	if (!status.IsLimitReady() || status.health <= 0.f || m_Fade != Fade::None || m_Cutscene.IsPlaying()
+		|| m_Conversation >= 0)
+	{
+		return false;
+	}
+
+	int id = Cutscenes::LimitLight;
+	if (status.form == Form::Dark)
+	{
+		id = Cutscenes::LimitDark;
+	}
+	else if (status.form == Form::Ash)
+	{
+		id = Cutscenes::LimitAsh;
+	}
+
+	status.limit = 0.f;
+	// The mouse is read against the window; the world may be zoomed.
+	status.limitAimX = aimX / m_Zoom;
+	status.limitAimY = aimY / m_Zoom;
+	m_Cutscene.Play(id, m_Player->LocalX(), m_Player->LocalY(), m_Player->LocalX(), m_Player->LocalY());
+	return true;
+}
+
+float Scene::Desaturation() const
+{
+	return m_Cutscene.IsGray() ? 1.f : 0.f;
+}
+
 bool Scene::AskedKing() const
 {
 	if (m_King == nullptr)
@@ -232,7 +264,7 @@ void Scene::SettleCamera()
 	m_Zoom = (m_Region == Regions::Realm) ? Tuning::God::kRealmZoom : 1.f;
 }
 
-void Scene::PlayCue(int cue)
+void Scene::PlayCue(int cue, PlayerStatus& status)
 {
 	switch (cue)
 	{
@@ -257,6 +289,11 @@ void Scene::PlayCue(int cue)
 	case Cutscenes::CueIntervene:
 	{
 		m_Intervening = true;
+		break;
+	}
+	case Cutscenes::CueLimit:
+	{
+		status.limitRelease = true;
 		break;
 	}
 	default:
@@ -533,7 +570,7 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	m_Cutscene.Update(deltaTime, m_Player->LocalX(), m_Player->LocalY(), input.skip);
 	for (int cue = m_Cutscene.TakeCue(); cue != Cutscenes::NoCue; cue = m_Cutscene.TakeCue())
 	{
-		PlayCue(cue);
+		PlayCue(cue, status);
 	}
 	// Under the white, the old battlefield is built and he comes to there.
 	if (m_Intervening)
@@ -575,6 +612,8 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		ProfileScope scope("update");
 		m_Graph.Update(ctx);
 	}
+	// What he landed this frame fills the special's gauge.
+	status.ChargeLimit(Combat::TakeLanded() * Tuning::Limit::kPerDealt);
 	// Again now that he has moved, so the frame is drawn with him at its
 	// centre rather than where he stood a moment ago.
 	SettleCamera();
