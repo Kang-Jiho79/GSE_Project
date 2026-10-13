@@ -39,6 +39,9 @@ namespace Palette
 	// own fog for the world itself (Regions::AtmosphereOf); this is close to
 	// the battlefield's.
 	const Color kVoid = { 0.045f, 0.043f, 0.055f };
+	// What a cutscene washes the screen toward when it whites out - the
+	// pale of the altars' mark.
+	const Color kCutsceneWhite = { 0.97f, 0.96f, 0.93f };
 	// Under anything standing on the ground.
 	const Color kShadow = { 0.085f, 0.08f, 0.10f };
 	// The gray creeping into the HUD as his balance goes.

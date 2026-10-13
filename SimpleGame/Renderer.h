@@ -41,6 +41,10 @@ public:
 	// Whether everything queued from now on is part of a figure - someone
 	// standing in the world, to be outlined. Sticks until changed.
 	void SetFigure(bool figure);
+	// How much larger everything queued from now on is drawn, about the
+	// window's centre - the camera closing in (above 1) or drawing back. Only
+	// the world is zoomed: set it back to 1 before the HUD.
+	void SetWorldZoom(float zoom);
 
 	// Confines drawing to a rectangle so a shape can be drawn partially filled.
 	// Both flush whatever is queued first, since a clip is a state change.
@@ -94,6 +98,7 @@ private:
 
 	float m_Glow = 0.f;
 	float m_Figure = 0.f;
+	float m_Zoom = 1.f;
 
 	std::vector<Instance> m_Pending;
 

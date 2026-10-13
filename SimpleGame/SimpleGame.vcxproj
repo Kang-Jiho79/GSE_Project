@@ -228,6 +228,8 @@
     <ClInclude Include="Growth.h" />
     <ClInclude Include="Titles.h" />
     <ClInclude Include="StatusScreen.h" />
+    <ClInclude Include="Cutscene.h" />
+    <ClInclude Include="Cutscenes.h" />
     <ClInclude Include="Bosses.h" />
     <ClInclude Include="Impact.h" />
     <ClInclude Include="SparkActor.h" />
@@ -305,6 +307,8 @@
     <ClCompile Include="Growth.cpp" />
     <ClCompile Include="Titles.cpp" />
     <ClCompile Include="StatusScreen.cpp" />
+    <ClCompile Include="Cutscene.cpp" />
+    <ClCompile Include="Cutscenes.cpp" />
     <ClCompile Include="Bosses.cpp" />
     <ClCompile Include="Impact.cpp" />
     <ClCompile Include="SparkActor.cpp" />

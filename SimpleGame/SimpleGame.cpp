@@ -26,6 +26,7 @@ but WITHOUT ANY WARRANTY.
 #include "WorldMapScreen.h"
 #include "TemplePanel.h"
 #include "StatusScreen.h"
+#include "Cutscenes.h"
 #include "DialogueBox.h"
 #include "DialogueLog.h"
 #include "TitleScreen.h"
@@ -83,6 +84,10 @@ bool g_MoveLeft = false;
 bool g_MoveRight = false;
 bool g_AttackHeld = false;
 bool g_RunHeld = false;
+// F, Space and Enter held down, for skipping a cutscene.
+bool g_InteractHeld = false;
+bool g_SwitchFormHeld = false;
+bool g_ConfirmHeld = false;
 
 // What was last written to the save, so an autosave happens only when there
 // is something new: another region, or another step in the story.
@@ -151,6 +156,9 @@ void ResetInput()
 	g_MoveLeft = false;
 	g_MoveRight = false;
 	g_AttackHeld = false;
+	g_InteractHeld = false;
+	g_SwitchFormHeld = false;
+	g_ConfirmHeld = false;
 }
 
 // From the beginning, under the name he chose. Nothing is saved until the
@@ -392,14 +400,22 @@ void RenderScene(void)
 	if (!IsInMenu())
 	{
 		ProfileScope scope("hud");
-		g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
-		g_Scene.RenderMinimap(g_Renderer);
-		g_Scene.RenderBossBar(g_Renderer, g_Text);
+		// A cutscene has the screen to itself, but for its own caption.
+		bool cinematic = g_Scene.IsInCutscene();
+		if (!cinematic)
+		{
+			g_Hud.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_Scene.RenderMinimap(g_Renderer);
+			g_Scene.RenderBossBar(g_Renderer, g_Text);
+		}
 		g_Scene.RenderText(g_Text);
 
-		g_Text->Draw(TextRenderer::Face::Small,
-			"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 회피 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · Tab 상태 · L 대화 기록",
-			0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
+		if (!cinematic)
+		{
+			g_Text->Draw(TextRenderer::Face::Small,
+				"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 회피 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · Tab 상태 · L 대화 기록",
+				0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
+		}
 	}
 
 	// present: the final flushes (the HUD's shapes, then its text on top; the
@@ -446,6 +462,7 @@ void Idle(void)
 	input.special = g_SpecialPressed;
 	input.aimX = g_MouseX;
 	input.aimY = g_MouseY;
+	input.skip = g_InteractHeld || g_SwitchFormHeld || g_ConfirmHeld;
 
 	bool interact = g_InteractPressed;
 
@@ -663,6 +680,12 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kSwitchForm:
 	{
 		g_SwitchFormPressed = true;
+		g_SwitchFormHeld = true;
+		break;
+	}
+	case InputMap::kConfirm:
+	{
+		g_ConfirmHeld = true;
 		break;
 	}
 	case InputMap::kSkill:
@@ -673,6 +696,7 @@ void KeyInput(unsigned char key, int x, int y)
 	case InputMap::kInteract:
 	{
 		g_InteractPressed = true;
+		g_InteractHeld = true;
 		break;
 	}
 	case InputMap::kSpecial:
@@ -798,6 +822,21 @@ void KeyInputUp(unsigned char key, int x, int y)
 		g_MoveRight = false;
 		break;
 	}
+	case InputMap::kInteract:
+	{
+		g_InteractHeld = false;
+		break;
+	}
+	case InputMap::kSwitchForm:
+	{
+		g_SwitchFormHeld = false;
+		break;
+	}
+	case InputMap::kConfirm:
+	{
+		g_ConfirmHeld = false;
+		break;
+	}
 	}
 }
 
@@ -834,6 +873,15 @@ void SpecialKeyInput(int key, int x, int y)
 	{
 		g_Scene.SetEffectsEnabled(!g_Scene.AreEffectsEnabled());
 		g_Hud.Notify(g_Scene.AreEffectsEnabled() ? "타격 효과 켬" : "타격 효과 끔");
+		break;
+	}
+	case InputMap::kDebugCutscene:
+	{
+		if (!IsOverlayOpen())
+		{
+			g_Scene.PlayCutscene(Cutscenes::Test);
+			ResetInput();
+		}
 		break;
 	}
 	case InputMap::kRunKeyLeft:

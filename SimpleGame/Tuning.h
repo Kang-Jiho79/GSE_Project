@@ -760,6 +760,26 @@ namespace Tuning
 		const float kChargeCooldown = 5.f;
 	}
 
+	// Cutscenes: the camera they move, the bars, and how one is skipped.
+	namespace Cutscene
+	{
+		// How far the camera may close in or draw back.
+		const float kMinZoom = 0.5f;
+		const float kMaxZoom = 2.5f;
+		// Each black bar's share of the window's height, and how long the
+		// bars take to slide in or out.
+		const float kLetterboxShare = 0.1f;
+		const float kLetterboxEase = 0.5f;
+		// How fast the world runs under a slowed shot.
+		const float kSlowScale = 0.25f;
+		// Seconds a caption takes to fade in.
+		const float kCaptionFade = 0.35f;
+		// Seconds F, Space or Enter must be held to skip.
+		const float kSkipHold = 1.f;
+		// Kept from harm while one plays, a little at a time.
+		const float kShield = 0.1f;
+	}
+
 	// How hard a blow is felt through the screen.
 	namespace Feel
 	{

@@ -150,10 +150,15 @@ void Renderer::SetFigure(bool figure)
 	m_Figure = figure ? 1.f : 0.f;
 }
 
+void Renderer::SetWorldZoom(float zoom)
+{
+	m_Zoom = zoom;
+}
+
 void Renderer::QueueCorners(const float corners[8], float r, float g, float b, float a)
 {
-	float scaleX = 2.f / m_WindowSizeX;
-	float scaleY = 2.f / m_WindowSizeY;
+	float scaleX = 2.f * m_Zoom / m_WindowSizeX;
+	float scaleY = 2.f * m_Zoom / m_WindowSizeY;
 
 	Instance instance;
 	instance.cornerLo[0] = corners[0] * scaleX; // bottom-left

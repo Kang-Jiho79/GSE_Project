@@ -29,6 +29,8 @@
 #include "Npcs.h"
 #include "Story.h"
 #include "Titles.h"
+#include "Cutscenes.h"
+#include "SparkActor.h"
 
 namespace
 {
@@ -42,6 +44,10 @@ namespace
 	// a taller window stretches them to match, so the larger view is seen
 	// rather than fogged over.
 	const float kAtmosphereWindowY = 640.f;
+	// A cutscene's spray of light.
+	const int kCueSparks = 24;
+	const float kCueSparkSpeed = 220.f;
+	const float kCueSparkLift = 40.f;
 	// He arrives this far from the waystone along both axes, and rises this far
 	// in front of an altar.
 	const float kArrivalOffset = 1.5f;
@@ -104,7 +110,7 @@ const bool* Scene::VisitedRegions() const
 
 Scene::Interaction Scene::AvailableInteraction() const
 {
-	if (m_Fade != Fade::None)
+	if (m_Fade != Fade::None || m_Cutscene.IsPlaying())
 	{
 		return Interaction::None;
 	}
@@ -175,7 +181,59 @@ int Scene::TakeEnding()
 
 bool Scene::HoldsSave() const
 {
-	return m_Events.HoldsSave();
+	return m_Events.HoldsSave() || m_Cutscene.IsPlaying();
+}
+
+void Scene::PlayCutscene(int id)
+{
+	if (m_Fade != Fade::None || m_Cutscene.IsPlaying() || (m_King != nullptr && m_King->IsDueling()))
+	{
+		return;
+	}
+	float col, row, x, y;
+	WaystoneTile(col, row);
+	WorldGrid::IsoPosition(col, row, x, y);
+	m_Cutscene.Play(id, x, y, m_Player->LocalX(), m_Player->LocalY());
+}
+
+bool Scene::IsInCutscene() const
+{
+	return m_Cutscene.IsPlaying();
+}
+
+void Scene::SettleCamera()
+{
+	// His parent never moves, so where he was placed is where he is - even
+	// in a region built this very frame, before anything was traversed.
+	if (m_Cutscene.IsPlaying())
+	{
+		m_CamX = m_Cutscene.CameraX();
+		m_CamY = m_Cutscene.CameraY();
+		m_Zoom = m_Cutscene.Zoom();
+		return;
+	}
+	m_CamX = m_Player->LocalX();
+	m_CamY = m_Player->LocalY();
+	m_Zoom = 1.f;
+}
+
+void Scene::PlayCue(int cue)
+{
+	switch (cue)
+	{
+	case Cutscenes::CueTestBurst:
+	{
+		float col, row, x, y;
+		WaystoneTile(col, row);
+		WorldGrid::IsoPosition(col, row, x, y);
+		SparkActor::Burst(m_Graph, x, y, SparkActor::Style::Light, kCueSparks, kCueSparkSpeed, kCueSparkLift);
+		break;
+	}
+	default:
+	{
+		break;
+	}
+	}
 }
 
 int Scene::TalkScript() const
@@ -209,7 +267,7 @@ bool Scene::IsNear(float col, float row, float reach) const
 
 void Scene::BeginTravel(int region)
 {
-	if (m_Fade != Fade::None)
+	if (m_Fade != Fade::None || m_Cutscene.IsPlaying())
 	{
 		return;
 	}
@@ -318,6 +376,12 @@ void Scene::EnterRegion(int region)
 	ArrivalPoint(x, y);
 	player->SetLocalPosition(x, y);
 	m_Player = player.get();
+	// The camera starts on him, even before the first update - the title
+	// shows this place behind it without ever running it.
+	m_Cutscene = Cutscene();
+	m_CamX = x;
+	m_CamY = y;
+	m_Zoom = 1.f;
 	entities->AddChild(std::move(player));
 
 	SpawnMonsters(info);
@@ -396,11 +460,13 @@ ActorContext Scene::MakeContext(float deltaTime, PlayerStatus& status)
 	// origin and a screen offset is already a world offset.
 	ctx.playerX = m_Player->WorldX();
 	ctx.playerY = m_Player->WorldY();
-	ctx.camX = ctx.playerX + m_Impact.OffsetX();
-	ctx.camY = ctx.playerY + m_Impact.OffsetY();
+	ctx.camX = m_CamX + m_Impact.OffsetX();
+	ctx.camY = m_CamY + m_Impact.OffsetY();
 
-	ctx.windowSizeX = m_WindowSizeX;
-	ctx.windowSizeY = m_WindowSizeY;
+	// Closed in, the window shows less of the world; drawn back, more - so
+	// what is culled and how far the ground is walked follow the zoom.
+	ctx.windowSizeX = (int)(m_WindowSizeX / m_Zoom);
+	ctx.windowSizeY = (int)(m_WindowSizeY / m_Zoom);
 	ctx.status = &status;
 	ctx.graph = &m_Graph;
 	ctx.impact = &m_Impact;
@@ -413,21 +479,46 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 {
 	UpdateFade(deltaTime, status);
 
+	// A cutscene runs on real time and takes the camera; the cues and the
+	// conversation its shots begin are acted on at once.
+	m_Cutscene.Update(deltaTime, m_Player->LocalX(), m_Player->LocalY(), input.skip);
+	for (int cue = m_Cutscene.TakeCue(); cue != Cutscenes::NoCue; cue = m_Cutscene.TakeCue())
+	{
+		PlayCue(cue);
+	}
+	int scripted = m_Cutscene.TakeConversation();
+	if (scripted >= 0)
+	{
+		m_Conversation = scripted;
+	}
+	if (m_Cutscene.IsPlaying())
+	{
+		status.GrantInvuln(Tuning::Cutscene::kShield);
+	}
+	SettleCamera();
+
 	// A hit stop holds the world still while real time - the fades, the
-	// shake dying away - carries on.
-	float worldTime = m_Impact.Advance(deltaTime);
+	// shake dying away - carries on. A cutscene may slow or stop it too.
+	float worldTime = m_Impact.Advance(deltaTime) * m_Cutscene.TimeScale();
 	ActorContext ctx = MakeContext(worldTime, status);
 
-	// Under a fade he gets no say; the rest of the world carries on around him.
-	if (m_Fade == Fade::None)
+	// Under a fade or a cutscene he gets no say; the rest of the world
+	// carries on around him.
+	if (m_Fade == Fade::None && !m_Cutscene.IsPlaying())
 	{
 		ctx.input = input;
+		// The mouse is read against the window; the world may be zoomed.
+		ctx.input.aimX /= m_Zoom;
+		ctx.input.aimY /= m_Zoom;
 	}
 
 	{
 		ProfileScope scope("update");
 		m_Graph.Update(ctx);
 	}
+	// Again now that he has moved, so the frame is drawn with him at its
+	// centre rather than where he stood a moment ago.
+	SettleCamera();
 
 	float waystoneCol, waystoneRow;
 	WaystoneTile(waystoneCol, waystoneRow);
@@ -630,6 +721,13 @@ void Scene::DrawFade(Renderer* renderer) const
 
 void Scene::RenderText(TextRenderer* text) const
 {
+	// A cutscene has the screen to itself: its caption and nothing else.
+	if (m_Cutscene.IsPlaying())
+	{
+		m_Cutscene.RenderText(text, m_WindowSizeX, m_WindowSizeY);
+		return;
+	}
+
 	float top = m_WindowSizeY / 2.f;
 	float bottom = -m_WindowSizeY / 2.f;
 
@@ -768,13 +866,16 @@ void Scene::Render(Renderer* renderer, PlayerStatus& status)
 
 	{
 		ProfileScope scope("submit");
+		renderer->SetWorldZoom(m_Zoom);
 		m_DrawList.Submit(renderer);
+		renderer->SetWorldZoom(1.f);
 	}
 
 	// Over the world only; the HUD drawn after it stays readable, so the
 	// health bar can be seen refilling.
 	DrawErosionTint(renderer, status);
 	DrawFade(renderer);
+	m_Cutscene.Render(renderer, m_WindowSizeX, m_WindowSizeY);
 
 	Profiler::Get().SetGauge("world_quads", (int)m_DrawList.Count());
 }

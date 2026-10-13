@@ -48,6 +48,8 @@ namespace InputMap
 	const int kTogglePostProcess = GLUT_KEY_F1;
 	const int kToggleOutline = GLUT_KEY_F2;
 	const int kToggleEffects = GLUT_KEY_F3;
+	// Debug: the test cutscene, to see the camera, bars and washes at work.
+	const int kDebugCutscene = GLUT_KEY_F5;
 
 	// Moving between choices and through the log, besides W and S.
 	const int kMenuUp = GLUT_KEY_UP;

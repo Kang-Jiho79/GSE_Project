@@ -7,6 +7,7 @@
 #include "Settlement.h"
 #include "Prologue.h"
 #include "StoryEvents.h"
+#include "Cutscene.h"
 
 class Renderer;
 class TextRenderer;
@@ -19,8 +20,8 @@ struct Progress;
 // The region he is in. Builds its actor tree from the region's entry in the
 // table, hands it the frame, and turns what it collected into draw calls.
 // All the world's behaviour lives in the actors; this owns only the layout,
-// the camera, travel between regions, the fades that cover it and death, and
-// the asking for a king's duel.
+// the camera (and the cutscenes that take it over), travel between regions,
+// the fades that cover it and death, and the asking for a king's duel.
 class Scene
 {
 public:
@@ -59,8 +60,15 @@ public:
 	int TakeConversation();
 	// An ending the story has reached (a Dialogue::EndingId), or -1. Taken once.
 	int TakeEnding();
-	// The last fight is under way or over: nothing should be saved.
+	// The last fight is under way or over, or a cutscene is playing: nothing
+	// should be saved.
 	bool HoldsSave() const;
+
+	// Plays a cutscene anchored at this region's waystone. Ignored during a
+	// fade, a duel or another cutscene. While it plays he has no say, the
+	// HUD is hidden and nothing can hurt him.
+	void PlayCutscene(int id);
+	bool IsInCutscene() const;
 
 	// Fades out, builds the region, and fades back in with him at its waystone.
 	// Ignored during a fade or a duel.
@@ -108,6 +116,10 @@ private:
 	bool IsNear(float col, float row, float reach) const;
 
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
+	// What a cutscene's shot asks for as it begins.
+	void PlayCue(int cue);
+	// The camera onto him at no zoom, or wherever a playing cutscene has it.
+	void SettleCamera();
 	void RecordPopulation();
 
 	void UpdateFade(float deltaTime, PlayerStatus& status);
@@ -147,6 +159,13 @@ private:
 	Prologue m_Prologue;
 	StoryEvents m_Events;
 	int m_Conversation = -1;
+
+	Cutscene m_Cutscene;
+	// Where the camera looks and how close: on him at no zoom, unless a
+	// cutscene has it. Settled each update, before anything is drawn.
+	float m_CamX = 0.f;
+	float m_CamY = 0.f;
+	float m_Zoom = 1.f;
 
 	// The capital's king, if this is a capital. Owned by the graph; a king is
 	// never destroyed, so this stays good until the region is left.

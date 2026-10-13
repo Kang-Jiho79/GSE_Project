@@ -29,6 +29,9 @@ struct InputState
 
 	float aimX = 0.f; // mouse relative to the window center
 	float aimY = 0.f;
+
+	// Held: F, Space or Enter, for skipping a cutscene.
+	bool skip = false;
 };
 
 // Everything an actor is allowed to know about the frame it is being updated
@@ -43,6 +46,8 @@ struct ActorContext
 	float playerX = 0.f;
 	float playerY = 0.f;
 
+	// How much of the world the window shows, in world pixels: the window
+	// itself, unless a cutscene's camera has closed in or drawn back.
 	int windowSizeX = 0;
 	int windowSizeY = 0;
 
