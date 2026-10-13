@@ -135,9 +135,6 @@
     <ClInclude Include="BossActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MutantActor.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="GodPieceActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -264,6 +261,24 @@
     <ClInclude Include="BurstActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="TaintedPieceActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TaintedPawnActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TaintedBishopActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TaintedRookActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PawnSoldierActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ArenaStoneActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="GodMarkActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -321,9 +336,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BossActor.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="MutantActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GodPieceActor.cpp">
@@ -432,6 +444,24 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BurstActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TaintedPieceActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TaintedPawnActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TaintedBishopActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TaintedRookActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="PawnSoldierActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ArenaStoneActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GodMarkActor.cpp">

@@ -18,4 +18,10 @@ namespace Bosses
 	// Where a region's boss waits in the open - its arena - in tiles. The
 	// same spot in every region, kept clear of anything that would wall it in.
 	void Arena(int region, float& col, float& row);
+
+	// Whether a region's arena is laid out as a board - wherever one of the
+	// god's pieces, whole or tainted, waits - and the tile at its centre.
+	// The board runs Tuning::TaintedPiece::kBoardHalf squares each way.
+	bool HasBoard(int region);
+	void BoardCenter(int region, int& col, int& row);
 }

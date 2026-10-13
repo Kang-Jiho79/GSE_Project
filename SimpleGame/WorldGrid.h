@@ -50,6 +50,9 @@ namespace WorldGrid
 	// region is entered and filled by whatever stands in it.
 	void ClearBlockers();
 	void AddBlocker(float minCol, float minRow, float maxCol, float maxRow);
+	// Takes away a box added earlier with exactly these bounds - something
+	// standing that has since been broken.
+	void RemoveBlocker(float minCol, float minRow, float maxCol, float maxRow);
 	// Whether something of ordinary size standing here would be inside one.
 	bool IsBlocked(float col, float row);
 	// Whether a shot flying low over this point has hit something standing:

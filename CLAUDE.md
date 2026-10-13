@@ -54,8 +54,11 @@ SimpleGame/
 ├─ 보스
 │  ├─ EnemyActor           공격이 닿는 모든 적의 공통 틀 (TakeHit, Shove, Pierce, BodyRadius) — 몬스터와 보스
 │  ├─ BossActor            보스 공통: 잠듦/깨어남, 원위치 복귀, 광폭화, 막힘 먼지, 처치 처리(Defeated), 길이 막히면 옆으로 돌아감(StepAlong)
-│  ├─ Bosses               지역별 보스 배치 표, 보스 자리(Arena — 변이체·신의 말·키니스 공용)
-│  ├─ MutantActor          잿빛 변이체 (빛/어둠/섞임)
+│  ├─ Bosses               지역별 보스 배치 표, 보스 자리(Arena — 잠식된 말·신의 말·키니스 공용), 체스판이 새겨진 보스 자리(HasBoard/BoardCenter, 9×9칸)
+│  ├─ TaintedPieceActor    잠식된 신의 말 공통: 흑백 돌·균열 모델 문법(받침대+기둥+머리), 판 칸 판정·범위 표시, 넘어져 구르는 최후, 소속별 보상
+│  ├─ TaintedPawnActor     잠식된 폰 (전진·앞 대각선 공격·막아서기·승격) + PawnSoldierActor (졸병 폰)
+│  ├─ TaintedBishopActor   잠식된 비숍 (대각선 순간이동, 칸 색별 빛 광선/어둠 구체, 직선 한 칸으로 색 바꾸기, 대각선 격자 공격)
+│  ├─ TaintedRookActor     잠식된 룩 (가로·세로 돌진, 성벽 세우기, 기둥에 부딪히면 기절) + ArenaStoneActor (돌기둥·성벽)
 │  ├─ GodPieceActor        신의 말 (룩/나이트, 결계)
 │  ├─ KingActor            왕 공통: 결투 신청·폼 고정·패배 시 살려 줌·도망·항복·축복·대사 (자동 벨룸 송환은 없음 — 추궁 시 신의 개입은 `Scene`)
 │  ├─ LuciusActor          빛의 왕 (창 연사, 심판, 빛의 고리, 성역 방벽)
@@ -177,8 +180,9 @@ SimpleGame/
   - **스킬 위력 = 기본 위력 × (1 + 해당 힘 누적치 × 1%)** (빛 공격은 `PlayerStatus::lightTotal`, 어둠 공격은 `PlayerStatus::darkTotal` 참조. 그릇 값은 강화 때 비워지므로 쓰지 않음). 계산은 `Combat`의 피해량 함수에서만
   - **필살기(R)**: 별도 게이지가 차면 발동(수치는 `Tuning::Limit`). `Scene::BeginLimit`이 게이지를 쓰고 조준 방향을 저장한 뒤 폼별 컷인 컷신을 틀고, 마지막 신호 `CueLimit`에서 `PlayerStatus::limitRelease` → `PlayerActor`가 `FormMoves::Limit` 호출. 필살기의 모든 타격은 `Combat::BeginLimitBlow(번호)`~`EndLimitBlow` 사이에서 쳐서 게이지를 다시 채우지 않고, 보스(`BossActor::TakeHit`)는 같은 번호로 받은 피해를 최대 체력 20%에서 자름
   - **회피(우클릭)**: 처음엔 구르기(폼 공용), 강화 1부터 빛폼 섬광 이동 / 어둠폼 그림자 돌진. 무적 시간·쿨타임은 데이터로 관리
-- **보스 유형**: 모두 `BossActor`를 상속 — 잿빛 변이체(`MutantActor`) / 신의 말(`GodPieceActor`) / 왕(`KingActor` → `LuciusActor`·`NoctisActor`) / 키니스(`KinisActor`) / 신(`GodActor`)
-  - 변이체: 몬스터 데이터와 같이 `m_Alignment`을 가지며 처치 시 해당 힘 대량 흡수
+- **보스 유형**: 모두 `BossActor`를 상속 — 잠식된 신의 말(`TaintedPieceActor` → 폰·비숍·룩) / 신의 말(`GodPieceActor`) / 왕(`KingActor` → `LuciusActor`·`NoctisActor`) / 키니스(`KinisActor`) / 신(`GodActor`)
+  - 잠식된 말: 원래 소속(`TaintedPieceActor::Origin` — 흰 말 빛 / 검은 말 어둠 / 섞임)을 가지며 처치 시 해당 힘 대량 흡수(섞임은 반반). 체스 이동 규칙이 패턴의 문법. 수치는 `Tuning::TaintedPiece`/`TaintedPawn`/`TaintedBishop`/`TaintedRook`
+  - 보스 자리 바닥: `Bosses::HasBoard` 지역은 `TerrainActor::SetBoard`로 9×9 체스판 무늬(지형색에 섞음). 판 위에서만 움직이는 패턴은 `TaintedPieceActor::ClampToBoard`/`IsOnBoard`
   - 신의 말: 3장에서 빛/어둠 각각 1체. 처치 시 빛과 어둠이 **같은 양** 증가 (그릇과 누적치 모두, 소속 무관). 누적치 차이가 그대로라 균형도에는 영향 없음
 - **왕과의 결투**: 결투 중에는 한쪽 폼으로 고정 → 폼 전환 입력(Space) 차단, 빛의 왕전은 빛폼, 어둠의 왕전은 어둠폼
   - 승리 조건: 결투에서 이기면 인정 (GDD 4.4, 힘 수치 비교는 따로 하지 않음)
@@ -285,4 +289,5 @@ SimpleGame/
 - A단계 (v1.1): 문서 정리, 기운 감지 설계 제거, 이명 체계(`Titles` — 시작 이명·왕별 이명·영향 이탈 시 교체, `TitleChosenByGod` 삭제, `HasTitle` → `HasKingRecognition`), 판을 벗어난 자 = 침식 제한 해제, 스테이터스 창(Tab)
 - A2단계 (v1.1): 공통 컷신 시스템 — 월드 줌, 컷신 카메라, 레터박스, 번짐(검게/하얗게), 자막, 세계 시간 제어, 신호(cue)·대화 대기, 길게 눌러 넘기기(남은 신호는 모두 처리, 대화는 건너뛰지 않음), 재생 중 입력 차단·HUD 숨김·무적·저장 안 함. F5 시험 컷신
 - B단계 (v1.1): 결투 승리 후 자동 텔레포트 삭제, 왕 추궁 시 신의 개입(흰 표식·하얗게 번짐·벨룸 이동·"……뭐지?"), 잿빛 수락 시 빛·어둠 상실(잿빛폼 고정, 균형 해제, HUD 잿빛 표시), 잿빛폼 개편(4단 낫 콤보·대시 베기·흘려 베기·고정 위력, 파문·교대 스킬 삭제), 신 리디자인(흰 거인·얼굴의 흰 표식·흑백 체스판과 벽·월드 줌 0.8), 신 전투 재설계(빛→어둠→흰 결계, 핵을 E로 깨면 8초 틈, 흰 힘 `Alignment::Divine`, 잿빛 공격 제거)
+- C단계 (v1.1): 필드 보스를 잠식된 신의 말로 통일 — 잿빛 변이체(`MutantActor`) 삭제, 잠식된 폰(프롤로그, 졸병 2체·막아서기·승격)·비숍(크레푸스, 칸 색·대각선 격자)·룩(디비시오, 돌진·성벽·기둥 기절), 보스 자리 체스판 무늬, 넘어져 구르는 최후. 블로커 제거(`WorldGrid::RemoveBlocker`)
 - B2단계 (v1.1): 폼별 필살기(R) — 게이지(`PlayerStatus::limit`, 준 피해·받은 피해로 충전, 저장), 컷신 시스템을 쓴 약 1초 컷인(세계 정지, 레터박스, 검게 번짐, 코드로 그린 두 눈의 얼굴 띠, 잿빛은 흑백), 빛 기둥 폭격 / 붙잡아 연타 후 폭발(피흡 2배) / 흑백 정지 베기, 보스 상한 최대 체력 20%, HUD R 마름모

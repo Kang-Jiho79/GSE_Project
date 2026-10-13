@@ -19,15 +19,21 @@ namespace
 	}
 }
 
-TerrainActor::TerrainActor()
+namespace
 {
+	// A board worked into ordinary ground: this much of its squares' colour
+	// over the ground's own.
+	const float kPatternShare = 0.45f;
 }
 
-TerrainActor::TerrainActor(int boardCol, int boardRow)
-	: m_Board(true)
-	, m_BoardCol(boardCol)
-	, m_BoardRow(boardRow)
+void TerrainActor::SetBoard(int centerCol, int centerRow, int from, int to, bool whole)
 {
+	m_Board = true;
+	m_Whole = whole;
+	m_BoardCol = centerCol;
+	m_BoardRow = centerRow;
+	m_From = from;
+	m_To = to;
 }
 
 void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
@@ -97,14 +103,26 @@ void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 			{
 				int fromCol = col - m_BoardCol;
 				int fromRow = row - m_BoardRow;
-				bool onBoard = fromCol >= Tuning::God::kBoardFrom && fromCol <= Tuning::God::kBoardTo
-					&& fromRow >= Tuning::God::kBoardFrom && fromRow <= Tuning::God::kBoardTo;
-				const Palette::Color& square = !onBoard ? Palette::kBoardVoid
-					: (((fromCol + fromRow) % 2 + 2) % 2 == 0 ? Palette::kBoardPale : Palette::kBoardDark);
-				out.AddDiamond(depth, x, topY, WorldGrid::kTileWidth - 1.f, WorldGrid::kTileHeight - 1.f,
-					square.r, square.g, square.b, 1.f);
-				out.SetGround(false);
-				continue;
+				bool onBoard = fromCol >= m_From && fromCol <= m_To && fromRow >= m_From && fromRow <= m_To;
+				if (onBoard || m_Whole)
+				{
+					const Palette::Color& square = !onBoard ? Palette::kBoardVoid
+						: (((fromCol + fromRow) % 2 + 2) % 2 == 0 ? Palette::kBoardPale : Palette::kBoardDark);
+					float r = square.r;
+					float g = square.g;
+					float b = square.b;
+					if (!m_Whole)
+					{
+						float ground = shade * SurfaceLight::kTop;
+						r = ground + (r - ground) * kPatternShare;
+						g = ground + (g - ground) * kPatternShare;
+						b = ground * 1.06f + (b - ground * 1.06f) * kPatternShare;
+					}
+					out.AddDiamond(depth, x, topY, WorldGrid::kTileWidth - 1.f, WorldGrid::kTileHeight - 1.f,
+						r, g, b, 1.f);
+					out.SetGround(false);
+					continue;
+				}
 			}
 
 			out.AddDiamond(depth, x, topY, WorldGrid::kTileWidth - 1.f, WorldGrid::kTileHeight - 1.f,

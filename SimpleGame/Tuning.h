@@ -528,50 +528,126 @@ namespace Tuning
 		const float kFuryShake = 4.f;
 	}
 
-	// A body the gray swallowed whole: huge, many-armed, slow, and every blow
-	// shown on the ground before it falls.
-	namespace Mutant
+	// The tainted pieces (잠식된 신의 말): pieces from the god's board the
+	// gray has eaten into, waiting at the far end of the field regions. Each
+	// keeps its own piece's way of moving as the grammar of its fight.
+	namespace TaintedPiece
 	{
 		const float kWakeRange = 7.f;
 		const float kLeashRange = 16.f;
-		const float kBodyRadius = 1.1f;
-		const float kFuryTime = 180.f;
-
-		const float kSpeed = 1.6f;          // tiles per second
-		const float kKeepRange = 1.8f;      // stops closing in this near
-		const float kCooldown = 1.4f;       // between blows
-		const float kRecover = 0.6f;
-
-		// Below this share of its health it rages: faster, quicker blows, and
-		// it calls eroded soldiers to it once.
-		const float kRageShare = 0.5f;
-		const float kRageSpeedScale = 1.3f;
-		const float kRageWindupScale = 0.75f;
-		const float kRageCooldownScale = 0.7f;
-		const int kGuards = 2;
-
-		// Slam: a circle marked under him, then struck.
-		const float kSlamWindup = 1.f;
-		const float kSlamRadius = 1.6f;
-		const float kSlamDamage = 22.f;
-		const float kSlamShake = 5.f;
-
-		// Sweep: everything in a half circle in front of it, when he is close.
-		const float kSweepRange = 3.2f;
-		const float kSweepWindup = 0.7f;
-		const float kSweepDamage = 16.f;
-
-		// Burst: a ring of gray spat out in every direction, every third blow.
-		const float kBurstWindup = 0.8f;
-		const int kBurstCount = 8;
-		const int kRageBurstCount = 12;
-		const float kBurstSpeed = 4.5f;
-		const float kBurstLifetime = 2.6f;
-		const float kBurstDamage = 10.f;
-
+		const float kBodyRadius = 0.9f;
+		// Its board: this many squares each way from the arena's centre.
+		const int kBoardHalf = 4;
+		// Beaten, it topples onto the board and rolls before it is gone.
+		const float kToppleTime = 1.1f;
 		// What it leaves: this many motes of what it was - split evenly if it
 		// was of both.
 		const int kRewardMotes = 20;
+	}
+
+	// The prologue's: a black pawn, with two of its soldiers beside it. They
+	// step forward a square at a time toward the far rank and take only on
+	// the forward diagonals; stand square in front of it and it cannot step.
+	// At the far rank - or once half its life is gone - it is promoted.
+	namespace TaintedPawn
+	{
+		const float kMaxHealth = 320.f;
+		const float kFuryTime = 240.f;
+
+		const float kTurnTime = 2.f;       // between its moves
+		const float kStepTime = 0.25f;
+		const float kStrikeReach = 3.f;    // he is this near: it strikes rather than steps
+		const float kStrikeWindup = 0.8f;
+		const float kStrikeRadius = 1.f;   // round each forward-diagonal square
+		const float kStrikeDamage = 20.f;
+		const float kBlockReach = 0.8f;    // he stands this near the square ahead: it cannot step
+
+		const float kPromoteShare = 0.5f;
+		const float kPromoteHeal = 0.2f;   // of its whole life, if it reached the far rank
+		const float kPromotedScale = 1.3f;
+		const float kPromotedWindupScale = 0.8f;
+		// Promoted: it slides along the eight lines like a queen.
+		const float kSlideWindup = 0.7f;
+		const float kSlideMax = 7.f;
+		const float kSlideWidth = 1.2f;
+		const float kSlideTime = 0.3f;
+		const float kSlideDamage = 24.f;
+		const float kCooldown = 1.f;
+
+		// Its soldiers: weak, stepping with it; one that reaches the far rank
+		// gives itself to the pawn, mending it.
+		const int kSoldiers = 2;
+		const float kSoldierSpread = 2.f;  // squares to either side
+		const float kSoldierHealth = 60.f;
+		const float kSoldierRadius = 0.5f;
+		const float kSoldierTurn = 2.4f;
+		const float kSoldierStrikeReach = 2.2f;
+		const float kSoldierWindup = 0.8f;
+		const float kSoldierDamage = 12.f;
+		const float kSoldierHeal = 0.1f;   // of the pawn's whole life
+	}
+
+	// The first chapter's: a white bishop. It moves only on diagonals and
+	// strikes along them - light beams from a pale square, slow dark orbs from
+	// a dark one - and now and then breaks the rules with a straight step to
+	// change its colour. Past half its life, all but every third diagonal of
+	// one direction strikes at once: the safe ground is a lattice.
+	namespace TaintedBishop
+	{
+		const float kMaxHealth = 520.f;
+		const float kFuryTime = 240.f;
+		const float kCooldown = 1.1f;
+		const float kRecover = 0.6f;
+
+		const float kBlinkWindup = 0.5f;
+		const int kBlinkReach = 4;         // squares along a diagonal
+		const float kBeamWindup = 0.9f;
+		const float kBeamLength = 9.f;
+		const float kBeamWidth = 0.8f;
+		const float kBeamDamage = 20.f;
+		const float kOrbWindup = 0.7f;
+		const float kOrbSpeed = 3.f;
+		const float kOrbLifetime = 4.f;
+		const float kOrbDamage = 16.f;
+		const int kShiftEvery = 4;         // every fourth move, a straight step onto the other colour
+		const float kShiftWindup = 0.4f;
+
+		const float kLatticeShare = 0.5f;
+		const int kLatticeEvery = 3;
+		const int kLatticeSpacing = 3;     // one diagonal in this many is safe
+		const float kLatticeWindup = 1.3f;
+		const float kLatticeDamage = 24.f;
+	}
+
+	// The fourth chapter's: a rook of both colours at the front. It charges
+	// straight along the board's lines and raises walls to pen him in. Four
+	// pillars stand on its board; charging into one breaks it and leaves the
+	// rook stunned, open to heavier blows. Its own walls only crumble.
+	namespace TaintedRook
+	{
+		const float kMaxHealth = 950.f;
+		const float kFuryTime = 300.f;
+		const float kCooldown = 1.2f;
+		const float kRecover = 0.7f;
+
+		const float kChargeWindup = 0.9f;
+		const float kChargeMax = 10.f;
+		const float kChargeSpeed = 9.f;    // tiles per second
+		const float kChargeWidth = 1.2f;
+		const float kChargeDamage = 26.f;
+		const float kChargeShake = 7.f;
+
+		const float kStunTime = 3.f;
+		const float kStunScale = 1.5f;     // what it takes while stunned
+
+		const float kPillarOffset = 2.f;   // from the centre along both axes, four of them
+		const float kPillarRadius = 0.45f; // tiles, what a charge strikes and what blocks him
+
+		const int kWallEvery = 3;
+		const float kWallWindup = 0.8f;
+		const int kWallLength = 5;
+		const float kWallBehind = 1.5f;    // tiles past him, away from the rook
+		const float kWallTime = 6.f;
 	}
 
 	// A piece the god set on its board to guard the way to each king. It moves

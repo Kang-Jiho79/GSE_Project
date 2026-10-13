@@ -4,7 +4,11 @@
 #include "Progress.h"
 #include "SceneGraph.h"
 #include "WorldGrid.h"
-#include "MutantActor.h"
+#include <cmath>
+#include "TaintedPawnActor.h"
+#include "TaintedBishopActor.h"
+#include "TaintedRookActor.h"
+#include "Tuning.h"
 #include "GodPieceActor.h"
 #include "LuciusActor.h"
 #include "NoctisActor.h"
@@ -40,6 +44,20 @@ void Bosses::Arena(int region, float& col, float& row)
 	row = size * kArenaRow;
 }
 
+bool Bosses::HasBoard(int region)
+{
+	return region == Regions::LiminaWoods || region == Regions::Crepus || region == Regions::Divisio
+		|| region == Regions::LightGate || region == Regions::DarkGate;
+}
+
+void Bosses::BoardCenter(int region, int& col, int& row)
+{
+	float arenaCol, arenaRow;
+	Arena(region, arenaCol, arenaRow);
+	col = (int)floorf(arenaCol + 0.5f);
+	row = (int)floorf(arenaRow + 0.5f);
+}
+
 BossActor* Bosses::Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph)
 {
 	// The kings, waiting at the ends of their carpets whether he has beaten
@@ -58,21 +76,24 @@ BossActor* Bosses::Spawn(int region, const Progress& progress, const Settlement:
 		return nullptr;
 	}
 
-	// The gray's mutants: the one that drove him from home, the one of both
-	// powers on the border, and the one at the front where the two still clash.
+	// The tainted pieces: the black pawn that drove him from home, starting on
+	// its board's back rank; the white bishop on the border; and the rook of
+	// both colours at the front where the two still clash.
 	switch (region)
 	{
 	case Regions::LiminaWoods:
 	{
-		return Place(graph, new MutantActor(region, MutantActor::Origin::Dark, 300.f), region);
+		int col, row;
+		BoardCenter(region, col, row);
+		return PlaceAt(graph, new TaintedPawnActor(region), (float)col, (float)(row - Tuning::TaintedPiece::kBoardHalf));
 	}
 	case Regions::Crepus:
 	{
-		return Place(graph, new MutantActor(region, MutantActor::Origin::Mixed, 500.f), region);
+		return Place(graph, new TaintedBishopActor(region), region);
 	}
 	case Regions::Divisio:
 	{
-		return Place(graph, new MutantActor(region, MutantActor::Origin::Light, 900.f), region);
+		return Place(graph, new TaintedRookActor(region), region);
 	}
 
 	// The god's pieces, one on the road to each king.

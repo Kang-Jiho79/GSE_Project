@@ -197,7 +197,6 @@
     <ClInclude Include="EnemyActor.h" />
     <ClInclude Include="Progress.h" />
     <ClInclude Include="BossActor.h" />
-    <ClInclude Include="MutantActor.h" />
     <ClInclude Include="GodPieceActor.h" />
     <ClInclude Include="KingActor.h" />
     <ClInclude Include="LuciusActor.h" />
@@ -240,6 +239,12 @@
     <ClInclude Include="LightFormMoves.h" />
     <ClInclude Include="DarkFormMoves.h" />
     <ClInclude Include="BurstActor.h" />
+    <ClInclude Include="TaintedPieceActor.h" />
+    <ClInclude Include="TaintedPawnActor.h" />
+    <ClInclude Include="TaintedBishopActor.h" />
+    <ClInclude Include="TaintedRookActor.h" />
+    <ClInclude Include="PawnSoldierActor.h" />
+    <ClInclude Include="ArenaStoneActor.h" />
     <ClInclude Include="GodMarkActor.h" />
     <ClInclude Include="WardCoreActor.h" />
     <ClInclude Include="Cooldown.h" />
@@ -280,7 +285,6 @@
     <ClCompile Include="TemplePanel.cpp" />
     <ClCompile Include="EnemyActor.cpp" />
     <ClCompile Include="BossActor.cpp" />
-    <ClCompile Include="MutantActor.cpp" />
     <ClCompile Include="GodPieceActor.cpp" />
     <ClCompile Include="KingActor.cpp" />
     <ClCompile Include="LuciusActor.cpp" />
@@ -317,6 +321,12 @@
     <ClCompile Include="LightFormMoves.cpp" />
     <ClCompile Include="DarkFormMoves.cpp" />
     <ClCompile Include="BurstActor.cpp" />
+    <ClCompile Include="TaintedPieceActor.cpp" />
+    <ClCompile Include="TaintedPawnActor.cpp" />
+    <ClCompile Include="TaintedBishopActor.cpp" />
+    <ClCompile Include="TaintedRookActor.cpp" />
+    <ClCompile Include="PawnSoldierActor.cpp" />
+    <ClCompile Include="ArenaStoneActor.cpp" />
     <ClCompile Include="GodMarkActor.cpp" />
     <ClCompile Include="WardCoreActor.cpp" />
     <ClCompile Include="BeamActor.cpp" />

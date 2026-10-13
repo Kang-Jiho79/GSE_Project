@@ -417,11 +417,12 @@ void Scene::EnterRegion(int region)
 	// things living on it. Everything spawned later joins the second one.
 	Actor* environment = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
 	// The god's place is its board, walled round: nothing past the squares.
+	std::unique_ptr<TerrainActor> terrain(new TerrainActor());
 	if (region == Regions::Realm)
 	{
 		int boardCol = (int)waystoneCol;
 		int boardRow = (int)waystoneRow;
-		environment->AddChild(std::unique_ptr<Actor>(new TerrainActor(boardCol, boardRow)));
+		terrain->SetBoard(boardCol, boardRow, Tuning::God::kBoardFrom, Tuning::God::kBoardTo, true);
 		float from = Tuning::God::kBoardFrom - 0.5f;
 		float to = Tuning::God::kBoardTo + 0.5f;
 		float edge = (float)info.size;
@@ -430,10 +431,15 @@ void Scene::EnterRegion(int region)
 		WorldGrid::AddBlocker(-1.f, -1.f, edge, boardRow + from);
 		WorldGrid::AddBlocker(-1.f, boardRow + to, edge, edge);
 	}
-	else
+	// Where one of the god's pieces waits, its board is worked into the ground.
+	else if (Bosses::HasBoard(region))
 	{
-		environment->AddChild(std::unique_ptr<Actor>(new TerrainActor()));
+		int boardCol, boardRow;
+		Bosses::BoardCenter(region, boardCol, boardRow);
+		int half = Tuning::TaintedPiece::kBoardHalf;
+		terrain->SetBoard(boardCol, boardRow, -half, half, false);
 	}
+	environment->AddChild(std::move(terrain));
 	BuildSettlement(info, environment);
 
 	// Nothing wild grows inside a settlement, only round its edges.

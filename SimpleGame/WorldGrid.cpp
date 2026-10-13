@@ -195,6 +195,19 @@ namespace WorldGrid
 		s_Blockers.push_back(blocker);
 	}
 
+	void RemoveBlocker(float minCol, float minRow, float maxCol, float maxRow)
+	{
+		for (size_t i = 0; i < s_Blockers.size(); i++)
+		{
+			const Blocker& b = s_Blockers[i];
+			if (b.minCol == minCol && b.minRow == minRow && b.maxCol == maxCol && b.maxRow == maxRow)
+			{
+				s_Blockers.erase(s_Blockers.begin() + i);
+				return;
+			}
+		}
+	}
+
 	bool IsBlocked(float col, float row)
 	{
 		for (size_t i = 0; i < s_Blockers.size(); i++)
