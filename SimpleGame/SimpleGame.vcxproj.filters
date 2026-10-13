@@ -264,6 +264,12 @@
     <ClInclude Include="BurstActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="GodMarkActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WardCoreActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Cooldown.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -426,6 +432,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BurstActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GodMarkActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WardCoreActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BeamActor.cpp">

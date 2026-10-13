@@ -40,6 +40,11 @@ void PlayerStatus::Tick(float deltaTime)
 	darkSpecial.Tick(deltaTime);
 	ashSkill.Tick(deltaTime);
 	ashSpecial.Tick(deltaTime);
+	ashParry.Tick(deltaTime);
+	if (parryTimer > 0.f)
+	{
+		parryTimer -= deltaTime;
+	}
 
 	if (!IsEroding())
 	{
@@ -135,6 +140,12 @@ void PlayerStatus::SpendIfBothFull()
 
 bool PlayerStatus::TryDamage(float amount)
 {
+	if (parryTimer > 0.f)
+	{
+		parryTimer = 0.f;
+		parried = true;
+		return false;
+	}
 	if (m_InvulnTimer > 0.f)
 	{
 		return false;
@@ -189,35 +200,20 @@ void PlayerStatus::Revive()
 	darkSpecial = Cooldown();
 	ashSkill = Cooldown();
 	ashSpecial = Cooldown();
+	ashParry = Cooldown();
+	parryTimer = 0.f;
+	parried = false;
 	GrantInvuln(Tuning::Death::kReviveInvuln);
 }
 
 bool PlayerStatus::TrySwitchForm()
 {
-	if (formCooldown > 0.f || formLocked)
+	if (formCooldown > 0.f || formLocked || ashUnlocked)
 	{
 		return false;
 	}
 
-	// Light, dark, and then the gray if he holds it, round again.
-	switch (form)
-	{
-	case Form::Light:
-	{
-		form = Form::Dark;
-		break;
-	}
-	case Form::Dark:
-	{
-		form = ashUnlocked ? Form::Ash : Form::Light;
-		break;
-	}
-	default:
-	{
-		form = Form::Light;
-		break;
-	}
-	}
+	form = (form == Form::Light) ? Form::Dark : Form::Light;
 	formCooldown = Tuning::FormSwitch::kSwitchCooldown;
 	return true;
 }

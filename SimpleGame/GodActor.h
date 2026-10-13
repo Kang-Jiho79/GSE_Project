@@ -2,19 +2,28 @@
 
 #include "BossActor.h"
 
-// The god (「   」), as he finally meets it: an empty place torn in the sky -
-// neither light nor dark, only nothing - and two hands circling its rim,
-// coming down onto the board the way a player moves its pieces.
+class WardCoreActor;
+
+// The god (「   」), as he finally meets it: a giant white outline of a man,
+// standing beyond the far corner of its own board and leaning over it, the
+// pale mark of every altar turning slowly where its face should be. Only its
+// two hands come down onto the board, the way a player moves its pieces.
 //
-// Three wards in turn, one for each power he holds, in the order he came by
-// them: first only light reaches it, then only darkness, and last only the
-// gray. Each third of its life is behind one ward; a blow can never carry it
-// past the next one. The hands slam down where he stands and sweep across the
-// board; from the second ward on, the board's squares themselves strike; under
-// the last, the empty place spits rings of shot.
+// It fights with what it made: first light, then darkness, and last the two
+// made white - never the gray, which it did not make and cannot touch. Each
+// third of its life is behind a ward of one of them. While a ward stands
+// nothing reaches it; the ward's cores stand on the board, and only the
+// gray's unravelling (E) undoes one. With all of them gone it bows its face
+// to the board for a while, and he can cut it; then the ward rises again,
+// until that third of its life is spent and the next ward goes up. A blow can
+// never carry it past the next ward.
+//
+// The hands slam down where he stands and sweep across the board, and its
+// face throws its power at him; from the second ward the board's squares
+// strike and curses are laid round him; under the last, rings of shot.
 //
 // Untouchable until it has spoken; beaten, it does not simply vanish but
-// breaks, for its last words.
+// slumps over the board, for its last words.
 class GodActor : public BossActor
 {
 public:
@@ -49,29 +58,45 @@ private:
 
 	enum class Blow
 	{
-		Place, // a hand comes down where he stands
-		Sweep, // a hand sweeps a line across the board
-		Board, // every other square strikes
-		Ring,  // shot from the empty place, all round
+		Place,  // a hand comes down where he stands
+		Sweep,  // a hand sweeps a line across the board
+		Volley, // a fan of its power thrown from its face
+		Board,  // every other square strikes
+		Mire,   // curses laid round him
+		Ring,   // shot from its face, all round
 	};
 
 	static const int kHands = 2;
+	static const int kMaxCores = 4;
 
 	// 0, 1, 2: which ward is up, by how much of its life is left.
 	int PhaseFor(float healthFraction) const;
-	Form WardForm() const;
+	// The power of the ward that is up: light, dark, then the god's white.
 	Alignment WardAlignment() const;
+	bool IsGapOpen() const;
+
+	// The middle of its place, and where its bowed face meets the board.
+	void CenterTile(float& col, float& row) const;
+	void FacePoint(float& x, float& y) const;
+
+	// The ward's cores set out on the board, or cleared from it.
+	void RaiseWard(const ActorContext& ctx);
+	void ClearCores();
+	int CoresLeft() const;
+	void OpenGap(const ActorContext& ctx);
 
 	void Choose(const ActorContext& ctx);
 	void Start(Blow blow, float windup);
 	void Release(const ActorContext& ctx);
-	// Where a hand floats while it waits, circling the empty place.
+	// Where a hand waits, either side of the board's far corner.
 	void RestingPlace(int hand, float& col, float& row) const;
 	void UpdateHands(float deltaTime);
 
 	void DrawTelegraph(DrawList& out, const ActorContext& ctx) const;
-	void DrawVoid(DrawList& out, float depth, float x, float groundY) const;
+	void DrawBody(DrawList& out, const ActorContext& ctx) const;
 	void DrawHand(DrawList& out, const ActorContext& ctx, int hand) const;
+	// The hand's wrist on screen, where its arm meets it.
+	void HandScreen(const ActorContext& ctx, int hand, float& x, float& y, float& depth) const;
 
 	bool m_Provoked = false;
 	bool m_Fallen = false;
@@ -87,6 +112,15 @@ private:
 	int m_BlowCount = 0;
 	int m_ActiveHand = 0;
 	float m_StrikeFlash = 0.f;
+
+	// The ward: whether one is up, its cores (owned by the graph; only this
+	// clears them), and how long the gap stays open once they are gone.
+	bool m_WardUp = false;
+	WardCoreActor* m_Cores[kMaxCores] = {};
+	int m_CoreCount = 0;
+	float m_GapTimer = 0.f;
+	// 0 standing over the board, 1 bowed to it.
+	float m_Bow = 0.f;
 
 	// The blow under way, fixed when it starts: where, and which way a sweep
 	// runs; the board's centre square and which colour of square it strikes.

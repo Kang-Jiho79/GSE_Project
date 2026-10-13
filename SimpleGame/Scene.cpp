@@ -30,7 +30,7 @@
 #include "Story.h"
 #include "Titles.h"
 #include "Cutscenes.h"
-#include "SparkActor.h"
+#include "GodMarkActor.h"
 
 namespace
 {
@@ -186,14 +186,28 @@ bool Scene::HoldsSave() const
 
 void Scene::PlayCutscene(int id)
 {
+	float col, row, x, y;
+	WaystoneTile(col, row);
+	WorldGrid::IsoPosition(col, row, x, y);
+	PlayCutscene(id, x, y);
+}
+
+void Scene::PlayCutscene(int id, float anchorX, float anchorY)
+{
 	if (m_Fade != Fade::None || m_Cutscene.IsPlaying() || (m_King != nullptr && m_King->IsDueling()))
 	{
 		return;
 	}
-	float col, row, x, y;
-	WaystoneTile(col, row);
-	WorldGrid::IsoPosition(col, row, x, y);
-	m_Cutscene.Play(id, x, y, m_Player->LocalX(), m_Player->LocalY());
+	m_Cutscene.Play(id, anchorX, anchorY, m_Player->LocalX(), m_Player->LocalY());
+}
+
+bool Scene::AskedKing() const
+{
+	if (m_King == nullptr)
+	{
+		return false;
+	}
+	return m_Progress.Has((m_King->Power() == Form::Light) ? Story::AskedLucius : Story::AskedNoctis);
 }
 
 bool Scene::IsInCutscene() const
@@ -214,7 +228,8 @@ void Scene::SettleCamera()
 	}
 	m_CamX = m_Player->LocalX();
 	m_CamY = m_Player->LocalY();
-	m_Zoom = 1.f;
+	// Drawn back in the god's place, so the giant fits on screen.
+	m_Zoom = (m_Region == Regions::Realm) ? Tuning::God::kRealmZoom : 1.f;
 }
 
 void Scene::PlayCue(int cue)
@@ -227,6 +242,21 @@ void Scene::PlayCue(int cue)
 		WaystoneTile(col, row);
 		WorldGrid::IsoPosition(col, row, x, y);
 		SparkActor::Burst(m_Graph, x, y, SparkActor::Style::Light, kCueSparks, kCueSparkSpeed, kCueSparkLift);
+		break;
+	}
+	case Cutscenes::CueGodMark:
+	{
+		if (m_King != nullptr)
+		{
+			std::unique_ptr<GodMarkActor> mark(new GodMarkActor(Tuning::Cutscene::kMarkLift, Tuning::Cutscene::kMarkSize));
+			mark->SetLocalPosition(m_King->WorldX(), m_King->WorldY());
+			m_Graph.Spawn(std::move(mark));
+		}
+		break;
+	}
+	case Cutscenes::CueIntervene:
+	{
+		m_Intervening = true;
 		break;
 	}
 	default:
@@ -349,7 +379,24 @@ void Scene::EnterRegion(int region)
 	// Two groups under the root: the ground the region is made of, and the
 	// things living on it. Everything spawned later joins the second one.
 	Actor* environment = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
-	environment->AddChild(std::unique_ptr<Actor>(new TerrainActor()));
+	// The god's place is its board, walled round: nothing past the squares.
+	if (region == Regions::Realm)
+	{
+		int boardCol = (int)waystoneCol;
+		int boardRow = (int)waystoneRow;
+		environment->AddChild(std::unique_ptr<Actor>(new TerrainActor(boardCol, boardRow)));
+		float from = Tuning::God::kBoardFrom - 0.5f;
+		float to = Tuning::God::kBoardTo + 0.5f;
+		float edge = (float)info.size;
+		WorldGrid::AddBlocker(-1.f, -1.f, boardCol + from, edge);
+		WorldGrid::AddBlocker(boardCol + to, -1.f, edge, edge);
+		WorldGrid::AddBlocker(-1.f, -1.f, edge, boardRow + from);
+		WorldGrid::AddBlocker(-1.f, boardRow + to, edge, edge);
+	}
+	else
+	{
+		environment->AddChild(std::unique_ptr<Actor>(new TerrainActor()));
+	}
 	BuildSettlement(info, environment);
 
 	// Nothing wild grows inside a settlement, only round its edges.
@@ -391,6 +438,8 @@ void Scene::EnterRegion(int region)
 
 	m_Events.Enter(region, m_Progress, m_Settlement, m_Graph, waystoneCol, waystoneRow);
 	m_AtKingToTalk = false;
+	m_AskedKing = AskedKing();
+	m_Intervening = false;
 
 	if (region == Regions::Limina && !m_Progress.Has(Story::VillageRaided))
 	{
@@ -486,6 +535,16 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	{
 		PlayCue(cue);
 	}
+	// Under the white, the old battlefield is built and he comes to there.
+	if (m_Intervening)
+	{
+		m_Intervening = false;
+		EnterRegion(Regions::Bellum);
+		float col, row, x, y;
+		WaystoneTile(col, row);
+		WorldGrid::IsoPosition(col, row, x, y);
+		m_Cutscene.Play(Cutscenes::Intervened, x, y, m_Player->LocalX(), m_Player->LocalY());
+	}
 	int scripted = m_Cutscene.TakeConversation();
 	if (scripted >= 0)
 	{
@@ -554,13 +613,18 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		m_Conversation = m_Events.Update(m_Graph, m_Progress, status, m_Player->WorldX(), m_Player->WorldY());
 	}
 
-	// Having taken up the gray, he holds it.
+	// Having taken up the gray, he holds it - and nothing else.
 	if (m_Progress.Has(Story::AcceptAsh))
 	{
 		status.ashUnlocked = true;
 	}
-	// Off the board, the balance no longer binds him.
-	status.balanceUnbound = Titles::IsUnbound(m_Progress);
+	if (status.ashUnlocked)
+	{
+		status.form = Form::Ash;
+	}
+	// Off the board, or with light and dark given up, the balance no longer
+	// binds him.
+	status.balanceUnbound = Titles::IsUnbound(m_Progress) || status.ashUnlocked;
 
 	// The story moving him on by itself - into the god's place.
 	int destination = m_Events.TakeTravel();
@@ -587,11 +651,15 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		}
 	});
 
-	// A king that has yielded sends him on, to the old battlefield.
-	if (m_King != nullptr && m_King->TakeSendOff())
+	// The collusion put to a king - the conversation just over - and before
+	// it can answer, the god does: its mark over the king, and the world
+	// washing white.
+	bool asked = AskedKing();
+	if (asked && !m_AskedKing && m_King != nullptr)
 	{
-		BeginTravel(Regions::Bellum);
+		PlayCutscene(Cutscenes::Intervention, m_King->WorldX(), m_King->WorldY());
 	}
+	m_AskedKing = asked;
 
 	RecordPopulation();
 }

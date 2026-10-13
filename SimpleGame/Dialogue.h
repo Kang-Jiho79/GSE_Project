@@ -85,13 +85,15 @@ namespace Dialogue
 		KinisFirst,
 
 		// A king who has yielded to him, spoken to again - and asked about
-		// the collusion, which he cannot hear.
+		// the collusion, which he cannot hear. Before it can answer, the god
+		// does, and he comes to on the old battlefield none the wiser.
 		KingLucius,
 		KingLuciusAsk,
 		KingLuciusError,
 		KingNoctis,
 		KingNoctisAsk,
 		KingNoctisError,
+		Intervened,
 
 		// Near the gray's heart: one of each side saved, and the prayer each
 		// says afterward - word for word the same.

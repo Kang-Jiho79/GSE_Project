@@ -13,6 +13,11 @@ namespace Cutscenes
 	enum Id
 	{
 		Test, // tried from a debug key: every kind of shot once
+		// A king asked about the collusion: the pale mark over it, the
+		// world washing white - and, anchored at Bellum's waystone, him
+		// coming to there.
+		Intervention,
+		Intervened,
 
 		Count,
 	};
@@ -22,6 +27,8 @@ namespace Cutscenes
 	{
 		NoCue = -1,
 		CueTestBurst, // a spray of light at the anchor
+		CueGodMark,   // the pale mark over the king
+		CueIntervene, // the world gone white: on to Bellum
 	};
 
 	// Where the camera looks over the shot.

@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "GodActor.h"
+#include "GodMarkActor.h"
+#include "WardCoreActor.h"
 #include "EnemyProjectileActor.h"
+#include "CurseFieldActor.h"
 #include "SparkActor.h"
 #include "SceneGraph.h"
 #include "DrawList.h"
@@ -8,6 +11,7 @@
 #include "Combat.h"
 #include "Impact.h"
 #include "Palette.h"
+#include "Random.h"
 #include "Tuning.h"
 #include <cmath>
 #include <cstdlib>
@@ -15,24 +19,40 @@
 namespace
 {
 	const float kPi = 3.14159265f;
+	const float kDegToRad = kPi / 180.f;
 
 	const float kStrikeShowTime = 0.3f;
 	const float kFallTime = 1.2f;
 
-	// The empty place hangs this high over the ground it guards.
-	const float kVoidHeight = 190.f;
-	const float kVoidRadius = 95.f;    // pixels, the dark of it
-	const float kVoidRim = 2.3f;       // tiles, the ring round it
+	// The giant: a body rising from beyond the board's far corner, sunk a
+	// little below it, its top dropping forward as it bows; shoulders, a
+	// head, and the mark turning where its face should be.
+	const float kTorsoSink = 30.f;
+	const float kTorsoHeight = 210.f;
+	const float kTorsoCols = 3.2f;
+	const float kTorsoRows = 2.f;
+	const float kTorsoFlare = 1.3f;
+	const float kBowDrop = 70.f;        // pixels its shoulders come down, bowed
+	const float kShoulderSpan = 62.f;   // pixels either side, where the arms hang from
+	const float kHeadHeight = 64.f;
+	const float kHeadFoot = 1.3f;
+	const float kMarkSize = 30.f;
+	const float kMarkSpin = 0.6f;       // radians a second
+	const float kArmShoulder = 22.f;    // pixels wide at the shoulder
+	const float kArmWrist = 12.f;
+	const float kBodyShine = 0.08f;
+	const float kWardAura = 140.f;
 
-	// The hands: how far round the empty place they circle, how fast, how
-	// high they float, and how quickly they move to where they are going.
-	const float kHandOrbit = 4.f;
-	const float kHandOrbitRate = 0.5f;
+	// The hands: either side of the far corner, swaying, and how high they
+	// float, and how quickly they move to where they are going.
+	const float kHandSway = 0.6f;
+	const float kHandSwayRate = 0.6f;
 	const float kHandRestLift = 70.f;
 	const float kHandRaisedLift = 120.f;
 	const float kHandSweepLift = 16.f;
 	const float kHandChase = 6.f;      // share of the way per second
 	const float kSweepTravel = 9.f;    // tiles a sweeping hand carries on after striking
+	const float kHandRest[2][2] = { { -4.5f, 0.5f }, { 0.5f, -4.5f } }; // tiles from the centre
 
 	const float kTelegraphLift = 2.f;
 	const float kTelegraphBase = 0.14f;
@@ -40,28 +60,26 @@ namespace
 	const float kTelegraphEdge = 0.5f;
 	const float kTelegraphEdgeWidth = 0.08f;
 	const int kTelegraphSegments = 24;
+	const float kVolleyLineLength = 10.f;
+	const float kVolleyLineWidth = 0.3f;
 
 	const int kShiftSparks = 24;
 	const float kShiftSparkSpeed = 240.f;
 	const float kSparkLift = 60.f;
 
+	// What it throws at him, ward by ward - growing with each.
+	const int kWardBlows0[] = { 0, 1, 2 };          // Place, Sweep, Volley
+	const int kWardBlows1[] = { 0, 3, 1, 4, 2 };    // Place, Board, Sweep, Mire, Volley
+	const int kWardBlows2[] = { 5, 0, 3, 1, 2, 4 }; // Ring, Place, Board, Sweep, Volley, Mire
+
 	SparkActor::Style SparkStyleFor(Alignment alignment)
 	{
-		switch (alignment)
-		{
-		case Alignment::Light:
-		{
-			return SparkActor::Style::Light;
-		}
-		case Alignment::Dark:
-		{
-			return SparkActor::Style::Dark;
-		}
-		default:
-		{
-			return SparkActor::Style::Dust;
-		}
-		}
+		return (alignment == Alignment::Dark) ? SparkActor::Style::Dark : SparkActor::Style::Light;
+	}
+
+	float Smooth(float t)
+	{
+		return t * t * (3.f - 2.f * t);
 	}
 }
 
@@ -87,19 +105,27 @@ float GodActor::TakeHit(float damage)
 
 const char* GodActor::Hint() const
 {
+	if (m_State == State::Shift)
+	{
+		return "결계가 바뀐다";
+	}
+	if (IsGapOpen())
+	{
+		return "틈이 열렸다 · 숙인 얼굴을 베어라";
+	}
 	switch (m_Phase)
 	{
 	case 0:
 	{
-		return "빛만이 닿는다";
+		return "빛의 결계 · 핵을 풀어내라 (E)";
 	}
 	case 1:
 	{
-		return "어둠만이 닿는다";
+		return "어둠의 결계 · 핵을 풀어내라 (E)";
 	}
 	default:
 	{
-		return "잿빛만이 닿는다";
+		return "흰 결계 · 핵을 풀어내라 (E)";
 	}
 	}
 }
@@ -128,27 +154,39 @@ int GodActor::PhaseFor(float healthFraction) const
 	return 2;
 }
 
-Form GodActor::WardForm() const
-{
-	return (m_Phase == 0) ? Form::Light : ((m_Phase == 1) ? Form::Dark : Form::Ash);
-}
-
 Alignment GodActor::WardAlignment() const
 {
-	return FormAlignment(WardForm());
+	return (m_Phase == 0) ? Alignment::Light : ((m_Phase == 1) ? Alignment::Dark : Alignment::Divine);
+}
+
+bool GodActor::IsGapOpen() const
+{
+	return m_GapTimer > 0.f;
+}
+
+void GodActor::CenterTile(float& col, float& row) const
+{
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+	col -= Tuning::God::kStandOffset;
+	row -= Tuning::God::kStandOffset;
+}
+
+void GodActor::FacePoint(float& x, float& y) const
+{
+	float col, row;
+	CenterTile(col, row);
+	WorldGrid::IsoPosition(col + Tuning::God::kFaceOffset, row + Tuning::God::kFaceOffset, x, y);
 }
 
 float GodActor::Resist(float damage)
 {
-	// Only the power its ward is open to reaches it, and never while the ward
-	// is turning over.
-	if (m_State == State::Shift || PlayerForm() != WardForm())
+	// Nothing reaches it while its ward stands, nor while it turns over.
+	if (!IsGapOpen() || m_State == State::Shift)
 	{
 		return 0.f;
 	}
 
-	// And no blow carries it past the next ward: that one has to be opened
-	// with its own power.
+	// And no blow carries it past the next ward.
 	if (m_Phase < 2)
 	{
 		float health = HealthFraction() * Tuning::God::kMaxHealth;
@@ -161,10 +199,80 @@ float GodActor::Resist(float damage)
 	return damage;
 }
 
+void GodActor::RaiseWard(const ActorContext& ctx)
+{
+	ClearCores();
+	float centerCol, centerRow;
+	CenterTile(centerCol, centerRow);
+
+	int first = 0;
+	for (int i = 0; i < m_Phase; i++)
+	{
+		first += Tuning::God::kCoresPerWard[i];
+	}
+	m_CoreCount = Tuning::God::kCoresPerWard[m_Phase];
+	for (int i = 0; i < m_CoreCount && i < kMaxCores; i++)
+	{
+		const float* spot = Tuning::God::kCoreSpots[first + i];
+		float x, y;
+		WorldGrid::IsoPosition(centerCol + spot[0], centerRow + spot[1], x, y);
+		std::unique_ptr<WardCoreActor> core(new WardCoreActor(WardAlignment()));
+		core->SetLocalPosition(x, y);
+		m_Cores[i] = core.get();
+		ctx.graph->Spawn(std::move(core));
+	}
+	m_WardUp = true;
+}
+
+void GodActor::ClearCores()
+{
+	for (int i = 0; i < kMaxCores; i++)
+	{
+		if (m_Cores[i] != nullptr)
+		{
+			m_Cores[i]->Destroy();
+			m_Cores[i] = nullptr;
+		}
+	}
+	m_CoreCount = 0;
+	m_WardUp = false;
+}
+
+int GodActor::CoresLeft() const
+{
+	int left = 0;
+	for (int i = 0; i < m_CoreCount; i++)
+	{
+		if (m_Cores[i] != nullptr && !m_Cores[i]->IsBroken())
+		{
+			left++;
+		}
+	}
+	return left;
+}
+
+void GodActor::OpenGap(const ActorContext& ctx)
+{
+	ClearCores();
+	m_GapTimer = Tuning::God::kGapTime;
+	m_State = State::Hover;
+	m_StateTime = 0.f;
+	ctx.impact->Shake(Tuning::God::kGapShake);
+	float x, y;
+	FacePoint(x, y);
+	SparkActor::Burst(*ctx.graph, x, y, SparkStyleFor(WardAlignment()), kShiftSparks, kShiftSparkSpeed, kSparkLift);
+}
+
 void GodActor::OnUpdate(const ActorContext& ctx)
 {
 	m_Clock += ctx.deltaTime;
 	UpdateHands(ctx.deltaTime);
+
+	// Bowed while its ward is broken, and slumped over the board once beaten.
+	float bowGoal = (IsGapOpen() || m_Fallen) ? 1.f : 0.f;
+	float step = Tuning::God::kBowRate * ctx.deltaTime;
+	m_Bow = (m_Bow < bowGoal) ? ((m_Bow + step > bowGoal) ? bowGoal : m_Bow + step)
+		: ((m_Bow - step < bowGoal) ? bowGoal : m_Bow - step);
 
 	if (m_Fallen)
 	{
@@ -180,6 +288,8 @@ void GodActor::OnUpdate(const ActorContext& ctx)
 
 void GodActor::Defeated(const ActorContext& ctx)
 {
+	ClearCores();
+	m_GapTimer = 0.f;
 	m_Fallen = true;
 	m_FallenTime = 0.f;
 	ctx.impact->HitStop(Tuning::Boss::kDefeatStop);
@@ -192,6 +302,8 @@ void GodActor::Reward(const ActorContext& ctx)
 
 void GodActor::OnReset(const ActorContext& ctx)
 {
+	ClearCores();
+	m_GapTimer = 0.f;
 	m_State = State::Hover;
 	m_StateTime = 0.f;
 	m_Cooldown = 1.5f;
@@ -202,11 +314,11 @@ void GodActor::OnReset(const ActorContext& ctx)
 
 void GodActor::RestingPlace(int hand, float& col, float& row) const
 {
-	float coreCol, coreRow;
-	WorldGrid::InverseIso(WorldX(), WorldY(), coreCol, coreRow);
-	float angle = m_Clock * kHandOrbitRate + hand * kPi;
-	col = coreCol + cosf(angle) * kHandOrbit;
-	row = coreRow + sinf(angle) * kHandOrbit;
+	float centerCol, centerRow;
+	CenterTile(centerCol, centerRow);
+	float sway = sinf(m_Clock * kHandSwayRate + hand * kPi) * kHandSway;
+	col = centerCol + kHandRest[hand][0] + sway;
+	row = centerRow + kHandRest[hand][1] + sway;
 }
 
 void GodActor::UpdateHands(float deltaTime)
@@ -215,9 +327,10 @@ void GodActor::UpdateHands(float deltaTime)
 	{
 		float goalCol, goalRow;
 		RestingPlace(hand, goalCol, goalRow);
-		float goalLift = kHandRestLift;
+		// Bowed, its palms rest flat on the board.
+		float goalLift = IsGapOpen() ? 0.f : kHandRestLift;
 
-		bool active = (hand == m_ActiveHand) && !m_Fallen && m_Provoked;
+		bool active = (hand == m_ActiveHand) && !m_Fallen && m_Provoked && !IsGapOpen();
 		if (active && (m_Blow == Blow::Place || m_Blow == Blow::Sweep))
 		{
 			if (m_State == State::Windup)
@@ -281,16 +394,52 @@ void GodActor::Fight(const ActorContext& ctx)
 		m_StrikeFlash -= ctx.deltaTime / kStrikeShowTime;
 	}
 
-	// A ward broken: it turns over to the next power before anything else.
+	// That third of its life spent: the ward turns over to the next power
+	// before anything else.
 	int phase = PhaseFor(HealthFraction());
 	if (phase != m_Phase)
 	{
 		m_Phase = phase;
+		m_GapTimer = 0.f;
+		ClearCores();
 		m_State = State::Shift;
 		m_StateTime = 0.f;
 		ctx.impact->Shake(Tuning::God::kShiftShake);
 		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkStyleFor(WardAlignment()), kShiftSparks, kShiftSparkSpeed,
 			kSparkLift);
+		return;
+	}
+
+	if (m_State == State::Shift)
+	{
+		if (m_StateTime >= Tuning::God::kShiftTime)
+		{
+			m_State = State::Hover;
+			m_StateTime = 0.f;
+			m_Cooldown = Tuning::God::kCooldown;
+			RaiseWard(ctx);
+		}
+		return;
+	}
+
+	// Bowed to the board, it does nothing but wait for the gap to close.
+	if (IsGapOpen())
+	{
+		m_GapTimer -= ctx.deltaTime;
+		if (!IsGapOpen())
+		{
+			RaiseWard(ctx);
+			m_Cooldown = Tuning::God::kCooldown;
+		}
+		return;
+	}
+	if (!m_WardUp)
+	{
+		RaiseWard(ctx);
+	}
+	else if (CoresLeft() == 0)
+	{
+		OpenGap(ctx);
 		return;
 	}
 
@@ -321,14 +470,8 @@ void GodActor::Fight(const ActorContext& ctx)
 		}
 		break;
 	}
-	case State::Shift:
+	default:
 	{
-		if (m_StateTime >= Tuning::God::kShiftTime)
-		{
-			m_State = State::Hover;
-			m_StateTime = 0.f;
-			m_Cooldown = Tuning::God::kCooldown;
-		}
 		break;
 	}
 	}
@@ -342,30 +485,31 @@ void GodActor::Choose(const ActorContext& ctx)
 	m_TargetRow = playerRow;
 	m_ActiveHand = m_BlowCount % kHands;
 
-	// What it reaches for grows with each ward: the hands alone, then the
-	// board, then the empty place itself.
-	int step = m_BlowCount % 4;
-	if (step == 3 && m_Phase >= 1)
+	const int* blows = kWardBlows0;
+	int count = sizeof(kWardBlows0) / sizeof(kWardBlows0[0]);
+	if (m_Phase == 1)
 	{
-		m_BoardCol = (int)floorf(playerCol + 0.5f);
-		m_BoardRow = (int)floorf(playerRow + 0.5f);
-		m_BoardParity = m_BlowCount % 2;
-		Start(Blow::Board, Tuning::God::kBoardWindup);
-		return;
+		blows = kWardBlows1;
+		count = sizeof(kWardBlows1) / sizeof(kWardBlows1[0]);
 	}
-	if (step == 2 && m_Phase >= 2)
+	else if (m_Phase == 2)
 	{
-		Start(Blow::Ring, Tuning::God::kRingWindup);
-		return;
+		blows = kWardBlows2;
+		count = sizeof(kWardBlows2) / sizeof(kWardBlows2[0]);
 	}
-	if (step % 2 == 1)
+	Blow blow = (Blow)blows[m_BlowCount % count];
+
+	switch (blow)
 	{
-		// Across the line from the empty place to him, so stepping back from
-		// it does not help.
-		float coreCol, coreRow;
-		WorldGrid::InverseIso(WorldX(), WorldY(), coreCol, coreRow);
-		float toCol = playerCol - coreCol;
-		float toRow = playerRow - coreRow;
+	case Blow::Sweep:
+	{
+		// Across the line from its face to him, so stepping back from it
+		// does not help.
+		float faceX, faceY, faceCol, faceRow;
+		FacePoint(faceX, faceY);
+		WorldGrid::InverseIso(faceX, faceY, faceCol, faceRow);
+		float toCol = playerCol - faceCol;
+		float toRow = playerRow - faceRow;
 		float length = sqrtf(toCol * toCol + toRow * toRow);
 		if (length < 0.001f)
 		{
@@ -375,9 +519,37 @@ void GodActor::Choose(const ActorContext& ctx)
 		m_SweepCol = -toRow / length;
 		m_SweepRow = toCol / length;
 		Start(Blow::Sweep, Tuning::God::kSweepWindup);
-		return;
+		break;
 	}
-	Start(Blow::Place, Tuning::God::kPlaceWindup);
+	case Blow::Volley:
+	{
+		Start(Blow::Volley, Tuning::God::kVolleyWindup);
+		break;
+	}
+	case Blow::Board:
+	{
+		m_BoardCol = (int)floorf(playerCol + 0.5f);
+		m_BoardRow = (int)floorf(playerRow + 0.5f);
+		m_BoardParity = m_BlowCount % 2;
+		Start(Blow::Board, Tuning::God::kBoardWindup);
+		break;
+	}
+	case Blow::Mire:
+	{
+		Start(Blow::Mire, Tuning::God::kMireWindup);
+		break;
+	}
+	case Blow::Ring:
+	{
+		Start(Blow::Ring, Tuning::God::kRingWindup);
+		break;
+	}
+	default:
+	{
+		Start(Blow::Place, Tuning::God::kPlaceWindup);
+		break;
+	}
+	}
 }
 
 void GodActor::Start(Blow blow, float windup)
@@ -394,6 +566,9 @@ void GodActor::Start(Blow blow, float windup)
 
 void GodActor::Release(const ActorContext& ctx)
 {
+	float faceX, faceY;
+	FacePoint(faceX, faceY);
+
 	switch (m_Blow)
 	{
 	case Blow::Place:
@@ -413,6 +588,25 @@ void GodActor::Release(const ActorContext& ctx)
 			Tuning::God::kSweepWidth, Tuning::God::kSweepDamage * FuryDamage());
 		break;
 	}
+	case Blow::Volley:
+	{
+		// A fan of its ward's power from its face, centred on where he stood.
+		float faceCol, faceRow;
+		WorldGrid::InverseIso(faceX, faceY, faceCol, faceRow);
+		float center = atan2f(m_TargetRow - faceRow, m_TargetCol - faceCol);
+		int count = Tuning::God::kVolleyCount;
+		float spread = Tuning::God::kVolleySpread * kDegToRad;
+		for (int i = 0; i < count; i++)
+		{
+			float angle = center - spread * 0.5f + spread * i / (count - 1);
+			std::unique_ptr<EnemyProjectileActor> shot(new EnemyProjectileActor(WardAlignment(), cosf(angle), sinf(angle),
+				Tuning::God::kVolleySpeed * FurySpeed(), 0.f, Tuning::God::kVolleyLifetime,
+				Tuning::God::kVolleyDamage * FuryDamage()));
+			shot->SetLocalPosition(faceX, faceY);
+			ctx.graph->Spawn(std::move(shot));
+		}
+		break;
+	}
 	case Blow::Board:
 	{
 		// Every square of one colour round where he stood strikes at once.
@@ -429,19 +623,40 @@ void GodActor::Release(const ActorContext& ctx)
 		ctx.impact->Shake(Tuning::God::kPlaceShake);
 		break;
 	}
+	case Blow::Mire:
+	{
+		// Curses round where he stood: one under him, the rest about it.
+		for (int i = 0; i < Tuning::God::kMireCount; i++)
+		{
+			float col = m_TargetCol;
+			float row = m_TargetRow;
+			if (i > 0)
+			{
+				float angle = Random::Angle();
+				col += cosf(angle) * Tuning::God::kMireSpread;
+				row += sinf(angle) * Tuning::God::kMireSpread;
+			}
+			float x, y;
+			WorldGrid::IsoPosition(col, row, x, y);
+			std::unique_ptr<CurseFieldActor> field(new CurseFieldActor());
+			field->SetLocalPosition(x, y);
+			ctx.graph->Spawn(std::move(field));
+		}
+		break;
+	}
 	case Blow::Ring:
 	{
-		// Light, dark and the gray by turns: everything on the board is its.
+		// Light, dark and its own white by turns - never the gray.
 		int count = Tuning::God::kRingCount;
-		float offset = (m_BlowCount % 8 < 4) ? 0.f : 0.5f;
+		float offset = (m_BlowCount % 2 == 0) ? 0.f : 0.5f;
 		for (int i = 0; i < count; i++)
 		{
 			float angle = (i + offset) * 2.f * kPi / count;
-			Alignment alignment = (i % 3 == 0) ? Alignment::Light : ((i % 3 == 1) ? Alignment::Dark : Alignment::Ashen);
+			Alignment alignment = (i % 3 == 0) ? Alignment::Light : ((i % 3 == 1) ? Alignment::Dark : Alignment::Divine);
 			std::unique_ptr<EnemyProjectileActor> shot(new EnemyProjectileActor(alignment, cosf(angle), sinf(angle),
 				Tuning::God::kRingSpeed * FurySpeed(), 0.f, Tuning::God::kRingLifetime,
 				Tuning::God::kRingDamage * FuryDamage()));
-			shot->SetLocalPosition(WorldX(), WorldY());
+			shot->SetLocalPosition(faceX, faceY);
 			ctx.graph->Spawn(std::move(shot));
 		}
 		break;
@@ -471,11 +686,17 @@ void GodActor::DrawTelegraph(DrawList& out, const ActorContext& ctx) const
 	ctx.ToScreen(targetX, targetY, screenX, screenY);
 	screenY += WorldGrid::GroundHeightAt(targetX, targetY) + kTelegraphLift;
 
+	float faceX, faceY, faceScreenX, faceScreenY;
+	FacePoint(faceX, faceY);
+	ctx.ToScreen(faceX, faceY, faceScreenX, faceScreenY);
+	faceScreenY += WorldGrid::GroundHeightAt(faceX, faceY) + kTelegraphLift;
+
 	switch (m_Blow)
 	{
 	case Blow::Place:
+	case Blow::Mire:
 	{
-		float radius = Tuning::God::kPlaceRadius;
+		float radius = (m_Blow == Blow::Place) ? Tuning::God::kPlaceRadius : Tuning::God::kMireSpread;
 		out.AddGroundArc(targetX, targetY, screenX, screenY, 0.f, radius, 0.f, 2.f * kPi, kTelegraphSegments,
 			r, g, b, kTelegraphBase);
 		out.AddGroundArc(targetX, targetY, screenX, screenY, 0.f, radius * progress, 0.f, 2.f * kPi, kTelegraphSegments,
@@ -496,6 +717,22 @@ void GodActor::DrawTelegraph(DrawList& out, const ActorContext& ctx) const
 			Tuning::God::kSweepWidth, r, g, b, kTelegraphBase);
 		out.AddGroundStrip(startX, startY, startScreenX, startScreenY, m_SweepCol, m_SweepRow, 0.f, length * progress,
 			Tuning::God::kSweepWidth, r, g, b, kTelegraphFill);
+		break;
+	}
+	case Blow::Volley:
+	{
+		// Thin lines from its face along each shot's way.
+		float faceCol, faceRow;
+		WorldGrid::InverseIso(faceX, faceY, faceCol, faceRow);
+		float center = atan2f(m_TargetRow - faceRow, m_TargetCol - faceCol);
+		int count = Tuning::God::kVolleyCount;
+		float spread = Tuning::God::kVolleySpread * kDegToRad;
+		for (int i = 0; i < count; i++)
+		{
+			float angle = center - spread * 0.5f + spread * i / (count - 1);
+			out.AddGroundStrip(faceX, faceY, faceScreenX, faceScreenY, cosf(angle), sinf(angle), 0.f,
+				kVolleyLineLength * progress, kVolleyLineWidth, r, g, b, kTelegraphFill);
+		}
 		break;
 	}
 	case Blow::Board:
@@ -521,42 +758,22 @@ void GodActor::DrawTelegraph(DrawList& out, const ActorContext& ctx) const
 	}
 	default:
 	{
-		float x, y;
-		ctx.ToScreen(WorldX(), WorldY(), x, y);
-		float groundY = y + WorldGrid::GroundHeightAt(WorldX(), WorldY()) + kTelegraphLift;
-		float radius = Tuning::God::kBodyRadius + progress * 2.f;
-		out.AddGroundArc(WorldX(), WorldY(), x, groundY, radius - 0.15f, radius, 0.f, 2.f * kPi, kTelegraphSegments,
-			r, g, b, 0.45f * progress);
+		// The ring: gathering round its face.
+		float radius = 0.5f + progress * 2.f;
+		out.AddGroundArc(faceX, faceY, faceScreenX, faceScreenY, radius - 0.15f, radius, 0.f, 2.f * kPi,
+			kTelegraphSegments, r, g, b, 0.45f * progress);
 		break;
 	}
 	}
 }
 
-void GodActor::DrawVoid(DrawList& out, float depth, float x, float groundY) const
+void GodActor::HandScreen(const ActorContext& ctx, int hand, float& x, float& y, float& depth) const
 {
-	float fall = m_Fallen ? ((m_FallenTime < kFallTime) ? m_FallenTime / kFallTime : 1.f) : 0.f;
-	float pulse = 0.85f + 0.15f * sinf(m_Clock * 1.3f);
-	bool shifting = (m_State == State::Shift) && !m_Fallen;
-	float flicker = shifting ? 0.5f + 0.5f * sinf(m_Clock * 30.f) : 1.f;
-	float voidY = groundY + kVoidHeight;
-
-	// The empty place: a hole of nothing in the sky, darkening what is
-	// behind it, closing as it falls.
-	float size = 1.f - fall;
-	out.AddGlow(depth + 2.f, x, voidY, kVoidRadius * size * pulse, Palette::kVoid.r, Palette::kVoid.g, Palette::kVoid.b, 1.f);
-	out.AddGlow(depth + 2.01f, x, voidY, kVoidRadius * 0.55f * size, 0.f, 0.f, 0.f, 1.f);
-
-	// Its rim, and the ring on the ground under it where it can be struck,
-	// both in the colour of the one power its ward lets through.
-	float r, g, b;
-	AlignmentColor::Core(WardAlignment(), r, g, b);
-	float rimAlpha = 0.8f * flicker * size;
-	out.SetGlow(WardAlignment() == Alignment::Dark ? 0.f : 0.8f);
-	out.AddGroundArc(WorldX(), WorldY(), x, voidY, kVoidRim * size, (kVoidRim + 0.15f) * size, 0.f, 2.f * kPi,
-		kTelegraphSegments, r, g, b, rimAlpha);
-	out.AddGroundArc(WorldX(), WorldY(), x, groundY + kTelegraphLift, Tuning::God::kBodyRadius - 0.1f,
-		Tuning::God::kBodyRadius, 0.f, 2.f * kPi, kTelegraphSegments, r, g, b, 0.6f * flicker * size);
-	out.SetGlow(0.f);
+	float worldX, worldY;
+	WorldGrid::IsoPosition(m_HandCol[hand], m_HandRow[hand], worldX, worldY);
+	ctx.ToScreen(worldX, worldY, x, y);
+	y += WorldGrid::GroundHeightAt(worldX, worldY) + m_HandLift[hand];
+	depth = WorldGrid::TileDepth(worldX, worldY) + 0.6f;
 }
 
 void GodActor::DrawHand(DrawList& out, const ActorContext& ctx, int hand) const
@@ -580,6 +797,7 @@ void GodActor::DrawHand(DrawList& out, const ActorContext& ctx, int hand) const
 
 	// A palm turned down, four long fingers and a thumb hanging from it.
 	out.SetFigure(true);
+	out.SetGlow(kBodyShine);
 	float palmY = groundY + lift + 14.f;
 	float side = (hand == 0) ? -1.f : 1.f;
 	out.AddTaperedBox(depth, x, palmY, 0.5f, 0.32f, 14.f, 0.85f, 0.f, 0.f, skin.r, skin.g, skin.b);
@@ -591,7 +809,90 @@ void GodActor::DrawHand(DrawList& out, const ActorContext& ctx, int hand) const
 	}
 	out.AddTaperedBox(depth + 0.005f, x + side * 15.f, palmY - 4.f, 0.07f, 0.07f, 10.f, 0.6f, side * 3.f, 0.f,
 		skin.r * 0.95f, skin.g * 0.95f, skin.b * 0.95f);
+	out.SetGlow(0.f);
 	out.SetFigure(false);
+}
+
+void GodActor::DrawBody(DrawList& out, const ActorContext& ctx) const
+{
+	float x, y;
+	ctx.ToScreen(WorldX(), WorldY(), x, y);
+	float groundY = y + WorldGrid::GroundHeightAt(WorldX(), WorldY());
+	float depth = WorldGrid::TileDepth(WorldX(), WorldY()) + 0.6f;
+
+	float faceX, faceY, faceScreenX, faceScreenY;
+	FacePoint(faceX, faceY);
+	ctx.ToScreen(faceX, faceY, faceScreenX, faceScreenY);
+	faceScreenY += WorldGrid::GroundHeightAt(faceX, faceY);
+	float faceDepth = WorldGrid::TileDepth(faceX, faceY) + 0.7f;
+
+	float bow = Smooth(m_Bow);
+	float fall = m_Fallen ? ((m_FallenTime < kFallTime) ? m_FallenTime / kFallTime : 1.f) : 0.f;
+	bool shifting = (m_State == State::Shift) && !m_Fallen;
+	float flicker = shifting ? 0.5f + 0.5f * sinf(m_Clock * 30.f) : 1.f;
+	const Palette::Color& body = Palette::kGodHand;
+
+	// The power of its ward, hanging about it while the ward stands.
+	if (m_WardUp && !m_Fallen)
+	{
+		float glowR, glowG, glowB;
+		AlignmentColor::Glow(WardAlignment(), glowR, glowG, glowB);
+		out.AddGlow(depth - 0.01f, x, groundY + kTorsoHeight * 0.6f, kWardAura, glowR, glowG, glowB, 0.6f * flicker);
+	}
+
+	// The torso, flaring to the shoulders, its top coming forward and down
+	// as it bows.
+	out.SetFigure(true);
+	out.SetGlow(kBodyShine);
+	float base = groundY - kTorsoSink;
+	float drop = bow * kBowDrop;
+	out.AddTaperedBox(depth, x, base, kTorsoCols, kTorsoRows, kTorsoHeight, kTorsoFlare, 0.f, -drop,
+		body.r * 0.92f, body.g * 0.92f, body.b * 0.95f);
+	float shoulderY = base + kTorsoHeight - drop;
+	out.AddTaperedBox(depth + 0.01f, x, shoulderY - 16.f, kTorsoCols * 1.4f, kTorsoRows * 1.1f, 22.f, 0.7f, 0.f, 0.f,
+		body.r, body.g, body.b);
+
+	// The arms, down from its shoulders to its hands on the board - over
+	// the squares between, under the hands themselves.
+	for (int hand = 0; hand < kHands; hand++)
+	{
+		float handX, handY, handDepth;
+		HandScreen(ctx, hand, handX, handY, handDepth);
+		float shoulderX = x + ((hand == 0) ? -kShoulderSpan : kShoulderSpan);
+		float wristY = handY + 26.f;
+		float dx = handX - shoulderX;
+		float dy = wristY - shoulderY;
+		float length = sqrtf(dx * dx + dy * dy);
+		if (length < 0.001f)
+		{
+			continue;
+		}
+		float sideX = -dy / length * 0.5f;
+		float sideY = dx / length * 0.5f;
+		float arm[8] =
+		{
+			shoulderX - sideX * kArmShoulder, shoulderY - sideY * kArmShoulder,
+			handX - sideX * kArmWrist, wristY - sideY * kArmWrist,
+			handX + sideX * kArmWrist, wristY + sideY * kArmWrist,
+			shoulderX + sideX * kArmShoulder, shoulderY + sideY * kArmShoulder,
+		};
+		out.AddCorners(handDepth - 0.02f, arm, body.r * 0.85f, body.g * 0.85f, body.b * 0.88f, 1.f);
+	}
+
+	// The head: over its shoulders while it stands, down at the board's
+	// corner when it bows.
+	float headBase = shoulderY + 6.f + (faceScreenY + 6.f - shoulderY - 6.f) * bow;
+	float headX = x + (faceScreenX - x) * bow;
+	float headDepth = depth + 0.02f + (faceDepth - depth - 0.02f) * bow;
+	out.AddTaperedBox(headDepth, headX, headBase, kHeadFoot, kHeadFoot, kHeadHeight, 0.85f, 0.f, 0.f,
+		body.r, body.g, body.b);
+	out.SetGlow(0.f);
+	out.SetFigure(false);
+
+	// Where its face should be, the altars' mark, turning - guttering as
+	// the ward turns over, and going out as it falls.
+	GodMarkActor::DrawMark(out, headDepth + 0.01f, headX, headBase + kHeadHeight * 0.55f, kMarkSize,
+		m_Clock * kMarkSpin, flicker * (1.f - fall));
 }
 
 void GodActor::OnDraw(DrawList& out, const ActorContext& ctx) const
@@ -601,7 +902,7 @@ void GodActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float groundY = y + WorldGrid::GroundHeightAt(WorldX(), WorldY());
 	float depth = WorldGrid::TileDepth(WorldX(), WorldY()) + 0.6f;
 
-	if (m_Provoked && !m_Fallen && IsAwake() && m_State == State::Windup)
+	if (m_Provoked && !m_Fallen && IsAwake() && m_State == State::Windup && !IsGapOpen())
 	{
 		DrawTelegraph(out, ctx);
 	}
@@ -611,7 +912,7 @@ void GodActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		out.SetFlash(HitFlash() * 0.5f);
 	}
 	DrawFury(out, depth - 0.005f, x, groundY, 110.f);
-	DrawVoid(out, depth, x, groundY);
+	DrawBody(out, ctx);
 	out.SetFlash(0.f);
 
 	for (int hand = 0; hand < kHands; hand++)

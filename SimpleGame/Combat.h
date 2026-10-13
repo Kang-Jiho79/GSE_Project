@@ -9,7 +9,8 @@ struct ActorContext;
 //
 // Each is its base value scaled by everything he has absorbed of that power:
 // light attacks by his lifetime light, dark attacks by his lifetime dark.
-// Feeding only one side leaves the other form's attacks behind.
+// Feeding only one side leaves the other form's attacks behind. The gray's
+// alone are fixed: taking it up, he gave the other two away.
 namespace Combat
 {
 	float BoltDamage(const PlayerStatus& status);
@@ -24,12 +25,16 @@ namespace Combat
 	float ShadowDashDamage(const PlayerStatus& status);
 	float DarkBurstDamage(const PlayerStatus& status);
 
-	// The gray's, scaled by both lifetime totals together (their average),
-	// since it is both powers at once.
-	float AshWaveDamage(const PlayerStatus& status);
-	float VeilDamage(const PlayerStatus& status);
-	float UnravelDamage(const PlayerStatus& status);
-	float EraseDamage(const PlayerStatus& status);
+	// The gray's: the scythe's cuts and the last cut's trail bursting again,
+	// the dash cut and the blast where it left, the counter (reached: it
+	// found someone to cut, rather than lashing out all round), E and Q.
+	float ScytheDamage(int comboStep);
+	float ScytheEchoDamage();
+	float DashCutDamage();
+	float DashBlastDamage();
+	float CounterDamage(bool reached);
+	float UnravelDamage();
+	float EraseDamage();
 
 	// Health returned for melee damage that landed. scale raises the usual
 	// share for moves that feed it harder.

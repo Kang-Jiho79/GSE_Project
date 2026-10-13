@@ -46,7 +46,19 @@ namespace
 	const float kSweepTime = 0.26f;
 	const float kFinisherTime = 0.3f;
 	const float kThrustTime = 0.22f;
+	const float kSpinTime = 0.3f;
 	const float kSwapTime = 0.3f;
+
+	// The gray's scythe: a haft from below his hand up past it, and the blade
+	// curling off its head. Flashed along in this many pieces.
+	const float kHaftLength = 30.f;
+	const float kHaftBack = 8.f;
+	const float kHaftWidth = 2.f;
+	const int kScytheSegments = 5;
+	const float kScytheSegment = 5.5f;
+	const float kScytheWidth = 4.5f;
+	const float kScytheCurl = 1.2f;     // radians the blade bends back along its length
+	const int kFlashSteps = 8;
 
 	// Arms as limbs from shoulder to hand, wide at the shoulder.
 	const float kShoulderWidth = 5.f;
@@ -171,6 +183,14 @@ namespace
 		{
 			return kThrustTime;
 		}
+		case PlayerActor::Action::Spin:
+		{
+			return kSpinTime;
+		}
+		case PlayerActor::Action::Guard:
+		{
+			return Tuning::AshForm::kParryWindow;
+		}
 		default:
 		{
 			return kSwapTime;
@@ -222,6 +242,56 @@ namespace
 			handX + sideX, handY + sideY,
 		};
 		out.AddCorners(depth, corners, c.r, c.g, c.b, 1.f);
+	}
+
+	// The gray's scythe from the hand, its haft along an angle on screen and
+	// its blade curling off the head to one side (curl: +1 or -1).
+	void Scythe(DrawList& out, float depth, float handX, float handY, float angle, float curl, float alpha)
+	{
+		float dirX = cosf(angle);
+		float dirY = sinf(angle) * 0.75f;
+		float headX = handX + dirX * kHaftLength;
+		float headY = handY + dirY * kHaftLength;
+		Limb(out, depth, handX - dirX * kHaftBack, handY - dirY * kHaftBack, headX, headY, kHaftWidth, kHaftWidth,
+			Palette::kShade);
+
+		float r, g, b;
+		AlignmentColor::Core(Alignment::Ashen, r, g, b);
+		float x = headX;
+		float y = headY;
+		for (int i = 0; i < kScytheSegments; i++)
+		{
+			float t0 = i / (float)kScytheSegments;
+			float t1 = (i + 1) / (float)kScytheSegments;
+			float a = angle + curl * (kPi * 0.5f + kScytheCurl * t0);
+			float nextX = x + cosf(a) * kScytheSegment;
+			float nextY = y + sinf(a) * kScytheSegment * 0.75f;
+			float w0 = kScytheWidth * (1.f - t0 * 0.85f);
+			float w1 = kScytheWidth * (1.f - t1 * 0.85f);
+			// The blade's back toward the haft's foot, its edge away.
+			float sideX = -sinf(a) * curl;
+			float sideY = cosf(a) * curl * 0.75f;
+			float corners[8] =
+			{
+				x, y,
+				nextX, nextY,
+				nextX + sideX * w1, nextY + sideY * w1,
+				x + sideX * w0, y + sideY * w0,
+			};
+			out.AddCorners(depth + 0.001f, corners, r, g, b, alpha);
+			float edge[8] =
+			{
+				x, y,
+				nextX, nextY,
+				nextX + sideX * 0.8f, nextY + sideY * 0.8f,
+				x + sideX * 0.8f, y + sideY * 0.8f,
+			};
+			out.SetGlow(0.6f);
+			out.AddCorners(depth + 0.002f, edge, 1.f, 1.f, 1.f, alpha * 0.9f);
+			out.SetGlow(0.f);
+			x = nextX;
+			y = nextY;
+		}
 	}
 
 	// Drains a colour toward a flat gray of the same brightness - how the
@@ -290,6 +360,15 @@ void PlayerActor::Lunge(float dirCol, float dirRow, float tiles, float seconds, 
 	m_LungeTrail = trail;
 }
 
+void PlayerActor::Flash(float dirCol, float dirRow, float tiles)
+{
+	float step = tiles / kFlashSteps;
+	for (int i = 0; i < kFlashSteps; i++)
+	{
+		StepOnGrid(dirCol, dirRow, step);
+	}
+}
+
 void PlayerActor::Act(Action action, float aimX, float aimY)
 {
 	float length = sqrtf(aimX * aimX + aimY * aimY);
@@ -331,7 +410,15 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	{
 		m_DodgeCooldown -= ctx.deltaTime;
 	}
-	if (ctx.input.dodge && !IsTravelling() && m_DodgeCooldown <= 0.f)
+	// With only the gray left, right click is its dash cut instead.
+	if (ctx.status->ashUnlocked)
+	{
+		if (ctx.input.dodge && !IsTravelling())
+		{
+			m_AshMoves.DashCut(ctx, *this);
+		}
+	}
+	else if (ctx.input.dodge && !IsTravelling() && m_DodgeCooldown <= 0.f)
 	{
 		StartDodge(ctx);
 	}
@@ -426,7 +513,12 @@ void PlayerActor::OnUpdate(const ActorContext& ctx)
 	m_DarkMoves.Update(ctx, *this);
 	m_AshMoves.Update(ctx, *this);
 
-	if (ctx.input.switchForm)
+	// And Space its parry: there is nothing left to switch to.
+	if (ctx.input.switchForm && ctx.status->ashUnlocked)
+	{
+		m_AshMoves.Parry(ctx, *this);
+	}
+	else if (ctx.input.switchForm)
 	{
 		Form leaving = ctx.status->form;
 		if (ctx.status->TrySwitchForm())
@@ -647,14 +739,16 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	// As the gray creeps in, the powers he carries gutter out.
 	float ash = ctx.status->WarningLevel();
 	float glowStrength = 1.f - ash * kAshGlowLoss;
+	// With the gray taken up, light and dark are gone from him altogether.
+	float vesselGlow = ctx.status->ashUnlocked ? 0.f : glowStrength;
 
 	out.AddGlow(depth - 0.02f, x, groundY, kGlowRadius, lightGlowR, lightGlowG, lightGlowB,
-		ctx.status->light / ctx.status->capacity * glowStrength);
+		ctx.status->light / ctx.status->capacity * vesselGlow);
 
 	float darkGlowR, darkGlowG, darkGlowB;
 	AlignmentColor::Glow(Alignment::Dark, darkGlowR, darkGlowG, darkGlowB);
 	out.AddGlow(depth - 0.02f, x, groundY, kGlowRadius, darkGlowR, darkGlowG, darkGlowB,
-		ctx.status->dark / ctx.status->capacity * glowStrength);
+		ctx.status->dark / ctx.status->capacity * vesselGlow);
 
 	// The aura of his form: gold that blazes, violet that smoulders over a
 	// darkened ground, or the gray's dull haze - fading as the gray creeps in.
@@ -853,6 +947,26 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 			rightReachY = aimY * 6.f * swell + 7.f * swell;
 			break;
 		}
+		case Action::Spin:
+		{
+			// The hand carried all the way round him with the blade.
+			float round = atan2f(aimY, aimX) + m_SlashSide * kTwoPi * act;
+			squash *= 1.f - 0.06f * swell;
+			rightReachX = cosf(round) * 9.f * swell;
+			rightReachY = sinf(round) * 4.f * swell + 5.f * swell;
+			break;
+		}
+		case Action::Guard:
+		{
+			// Both hands up on the haft, held across him.
+			squash *= 1.f - 0.06f * hold;
+			lean -= aimX * 2.f * hold;
+			rightReachX = aimX * 5.f * hold;
+			rightReachY = 11.f * hold;
+			leftReachX = aimX * 1.f * hold;
+			leftReachY = 11.f * hold;
+			break;
+		}
 		default:
 		{
 			// Flung wide as the power turns over in him.
@@ -933,8 +1047,9 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float lightFaceR = 0.24f + 0.66f * lightStrength;
 	float lightFaceG = 0.21f + 0.48f * lightStrength;
 	float lightFaceB = 0.18f + 0.10f * lightStrength;
-	Ashen(ash, darkFaceR, darkFaceG, darkFaceB);
-	Ashen(ash, lightFaceR, lightFaceG, lightFaceB);
+	float hemAsh = ctx.status->ashUnlocked ? 1.f : ash;
+	Ashen(hemAsh, darkFaceR, darkFaceG, darkFaceB);
+	Ashen(hemAsh, lightFaceR, lightFaceG, lightFaceB);
 	float hemBand = kCloakHem;
 	float bandHalf = hemHalf - (hemHalf - topHalf) * hemBand / (shoulderY - hemY);
 	float darkHem[8] =
@@ -1139,12 +1254,53 @@ void PlayerActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	}
 	default:
 	{
-		out.SetFigure(false);
-		float ashR, ashG, ashB;
-		AlignmentColor::Core(Alignment::Ashen, ashR, ashG, ashB);
-		out.AddGlow(depth + weaponDepth, frontHandX, handY + 1.f, 9.f, ashR, ashG, ashB, 0.6f);
-		out.AddDiamond(depth + weaponDepth + 0.01f, frontHandX, handY + 1.f, 4.f, 6.f, ashR, ashG, ashB, 1.f);
-		out.SetFigure(true);
+		// The gray's scythe. Swung, it follows the cut with two fading
+		// copies behind it; held across him for a parry; otherwise carried
+		// upright, the blade forward.
+		float aim = atan2f(m_ActionY, m_ActionX);
+		float ease = 1.f - (1.f - act) * (1.f - act) * (1.f - act);
+		bool swinging = (m_Action == Action::Slash || m_Action == Action::Sweep || m_Action == Action::Finisher
+			|| m_Action == Action::Thrust || m_Action == Action::Spin);
+		if (swinging)
+		{
+			float angle = aim;
+			float trailing = m_SlashSide;
+			if (m_Action == Action::Slash)
+			{
+				angle = aim + m_SlashSide * (1.3f - 2.6f * ease);
+			}
+			else if (m_Action == Action::Sweep)
+			{
+				angle = aim + m_SlashSide * (2.f - 4.f * ease);
+			}
+			else if (m_Action == Action::Finisher)
+			{
+				angle = (kPi * 0.5f + 0.4f) + (aim - kPi * 0.5f - 0.4f) * ease;
+				trailing = -1.f;
+			}
+			else if (m_Action == Action::Spin)
+			{
+				angle = aim + m_SlashSide * kTwoPi * ease;
+				trailing = -m_SlashSide;
+			}
+			for (int ghost = 2; ghost >= 0; ghost--)
+			{
+				float back = (m_Action == Action::Thrust) ? 0.f : ghost * 0.3f * trailing;
+				float alpha = (ghost == 0) ? 1.f : 0.35f / ghost;
+				Scythe(out, depth + weaponDepth - ghost * 0.003f, frontHandX, handY, angle + back,
+					-m_SlashSide, alpha);
+			}
+		}
+		else if (m_Action == Action::Guard)
+		{
+			float across = (m_ActionX >= 0.f) ? 0.35f : kPi - 0.35f;
+			Scythe(out, depth + weaponDepth, frontHandX, handY, across, (m_ActionX >= 0.f) ? 1.f : -1.f, 1.f);
+		}
+		else
+		{
+			Scythe(out, depth + weaponDepth, frontHandX, handY, kPi * 0.5f - side * 0.35f,
+				(side >= 0.f) ? -1.f : 1.f, 1.f);
+		}
 		break;
 	}
 	}

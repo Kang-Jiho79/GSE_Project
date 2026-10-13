@@ -11,8 +11,11 @@ struct PlayerStatus;
 // Beaten, he is not killed: the king lowers its weapon, leaves him a little
 // health, and he may ask again. Walk far enough away and the duel is simply
 // over. Win, and the king yields - kneels, acknowledges him, blesses him -
-// and a moment later he is sent on to Bellum. From then on the king only
-// stands at its palace.
+// and once it is down on one knee it will talk to him. From then on the king
+// only stands at its palace.
+//
+// Asked the one question it cannot hear, it does not answer: the god answers
+// for it (Scene, Cutscenes::Intervention).
 class KingActor : public BossActor
 {
 public:
@@ -41,7 +44,8 @@ public:
 	// The form the duel holds him to.
 	Form Power() const;
 	bool CanChallenge() const;
-	// Having acknowledged him on an earlier visit, it will talk instead.
+	// Having acknowledged him - on an earlier visit, or just now and down on
+	// one knee - it will talk instead.
 	bool CanTalk() const;
 	int Conversation() const;
 	bool IsDueling() const;
@@ -49,9 +53,6 @@ public:
 	// He has asked: he is made whole and held to its power, and it wakes.
 	// His form must already be its power.
 	void BeginDuel(PlayerStatus& status);
-
-	// True once, a while after it yields: time to send him on.
-	bool TakeSendOff();
 
 	// Its last words while they are still shown - nullptr once they fade -
 	// and what is written under them.
@@ -81,8 +82,6 @@ private:
 
 	bool m_Yielded = false;
 	float m_YieldTime = 0.f;
-	bool m_SendOffPending = false;
-	bool m_SentOff = false;
 
 	const char* m_Remark = nullptr;
 	const char* m_Aside = nullptr;

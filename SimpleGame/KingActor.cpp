@@ -41,7 +41,7 @@ bool KingActor::CanChallenge() const
 
 bool KingActor::CanTalk() const
 {
-	return m_Recognized;
+	return m_Recognized || (m_Yielded && m_YieldTime >= kKneelTime);
 }
 
 int KingActor::Conversation() const
@@ -83,17 +83,6 @@ void KingActor::EndDuel(PlayerStatus& status)
 {
 	m_Dueling = false;
 	status.formLocked = false;
-}
-
-bool KingActor::TakeSendOff()
-{
-	if (!m_SendOffPending)
-	{
-		return false;
-	}
-	m_SendOffPending = false;
-	m_SentOff = true;
-	return true;
 }
 
 void KingActor::Say(const char* line, const char* aside)
@@ -175,8 +164,4 @@ void KingActor::Defeated(const ActorContext& ctx)
 	}
 
 	m_YieldTime += ctx.deltaTime;
-	if (!m_SentOff && m_YieldTime >= Tuning::Duel::kSendOffDelay)
-	{
-		m_SendOffPending = true;
-	}
 }

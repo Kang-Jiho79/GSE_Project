@@ -79,8 +79,17 @@ void Hud::Render(Renderer* renderer, TextRenderer* text, const PlayerStatus& sta
 	float vesselCenterX = left + 74.f;
 	float vesselCenterY = top - 78.f;
 
-	DrawVessel(renderer, status, vesselCenterX, vesselCenterY);
-	DrawBalance(renderer, status, vesselCenterX, vesselCenterY);
+	// With light and dark given up there is no vessel to fill and no
+	// balance to keep: only the gray, whole.
+	if (status.ashUnlocked)
+	{
+		DrawAshVessel(renderer, vesselCenterX, vesselCenterY);
+	}
+	else
+	{
+		DrawVessel(renderer, status, vesselCenterX, vesselCenterY);
+		DrawBalance(renderer, status, vesselCenterX, vesselCenterY);
+	}
 	DrawHealth(renderer, text, status, left + 132.f, vesselCenterY + 20.f);
 	DrawUpgradePips(renderer, status, left + 132.f, vesselCenterY - 12.f);
 	DrawForm(renderer, status, left + 132.f, vesselCenterY - 38.f);
@@ -156,6 +165,18 @@ void Hud::DrawVessel(Renderer* renderer, const PlayerStatus& status, float cente
 	renderer->ClearClip();
 
 	renderer->DrawSolidRect(centerX, centerY, 1.5f, kVesselHeight, Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+}
+
+void Hud::DrawAshVessel(Renderer* renderer, float centerX, float centerY)
+{
+	float r, g, b;
+	AlignmentColor::Core(Alignment::Ashen, r, g, b);
+	renderer->DrawSolidDiamond(centerX, centerY,
+		kVesselWidth + kVesselBorder * 2.f, kVesselHeight + kVesselBorder * 2.f,
+		Palette::kUiFrame.r, Palette::kUiFrame.g, Palette::kUiFrame.b, 1.f);
+	renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth, kVesselHeight, r, g, b, 1.f);
+	renderer->DrawSolidDiamond(centerX, centerY, kVesselWidth * 0.4f, kVesselHeight * 0.4f,
+		Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
 }
 
 void Hud::DrawBalance(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY)
@@ -246,11 +267,16 @@ void Hud::DrawForm(Renderer* renderer, const PlayerStatus& status, float left, f
 	renderer->DrawSolidDiamond(markX, centerY, kFormMarkWidth, kFormMarkHeight, r, g, b, 1.f);
 
 	// Refills while the switch cools down; full means Space will work. Held
-	// to one form, it stays empty.
+	// to one form, it stays empty. With only the gray, Space is its parry,
+	// and this is how soon it is ready.
 	float ready = 1.f - Clamp01(status.formCooldown / Tuning::FormSwitch::kSwitchCooldown);
 	if (status.formLocked)
 	{
 		ready = 0.f;
+	}
+	if (status.ashUnlocked)
+	{
+		ready = Clamp01(status.ashParry.Progress());
 	}
 	float barLeft = left + kFormMarkWidth + 8.f;
 	float fillWidth = kFormBarWidth * ready;

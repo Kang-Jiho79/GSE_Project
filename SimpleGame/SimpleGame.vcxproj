@@ -240,6 +240,8 @@
     <ClInclude Include="LightFormMoves.h" />
     <ClInclude Include="DarkFormMoves.h" />
     <ClInclude Include="BurstActor.h" />
+    <ClInclude Include="GodMarkActor.h" />
+    <ClInclude Include="WardCoreActor.h" />
     <ClInclude Include="Cooldown.h" />
     <ClInclude Include="BeamActor.h" />
     <ClInclude Include="LightningActor.h" />
@@ -315,6 +317,8 @@
     <ClCompile Include="LightFormMoves.cpp" />
     <ClCompile Include="DarkFormMoves.cpp" />
     <ClCompile Include="BurstActor.cpp" />
+    <ClCompile Include="GodMarkActor.cpp" />
+    <ClCompile Include="WardCoreActor.cpp" />
     <ClCompile Include="BeamActor.cpp" />
     <ClCompile Include="LightningActor.cpp" />
     <ClCompile Include="stdafx.cpp">

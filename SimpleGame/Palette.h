@@ -52,6 +52,10 @@ namespace Palette
 	// and a haze that dulls what is under it rather than lighting it.
 	const Color kAshCore = { 0.74f, 0.74f, 0.77f };
 	const Color kAshGlow = { 0.40f, 0.40f, 0.42f };
+	// The god's own white: light and dark made together, the colour of the
+	// altars' mark - nothing gray in it.
+	const Color kDivineCore = { 0.98f, 0.97f, 0.93f };
+	const Color kDivineGlow = { 0.78f, 0.78f, 0.80f };
 	// What a threat is marked in: the side's own colour, washed most of the
 	// way to this - ground about to be struck, a spell thrown at him.
 	const Color kAshWarning = { 0.75f, 0.73f, 0.72f };
@@ -93,8 +97,12 @@ namespace Palette
 	const Color kEndingTrueDawn = { 0.20f, 0.17f, 0.14f };
 	const Color kEndingTrueName = { 0.96f, 0.90f, 0.78f };
 
-	// The god's hands: pale, smooth, the colour of nothing that lives.
-	const Color kGodHand = { 0.80f, 0.78f, 0.74f };
+	// The god: a white outline of a man, the colour of nothing that lives.
+	const Color kGodHand = { 0.84f, 0.84f, 0.86f };
+	// Its board's squares, pale and dark, and the nothing round it.
+	const Color kBoardPale = { 0.58f, 0.58f, 0.60f };
+	const Color kBoardDark = { 0.11f, 0.11f, 0.13f };
+	const Color kBoardVoid = { 0.035f, 0.035f, 0.045f };
 
 	// The people of each land, in plain clothes: pale linen in the light's
 	// villages, dyed near-black in the dark's, patched brown among the

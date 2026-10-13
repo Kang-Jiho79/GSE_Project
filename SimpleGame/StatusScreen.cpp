@@ -167,7 +167,7 @@ void StatusScreen::Render(Renderer* renderer, TextRenderer* text, const PlayerSt
 
 	if (status.ashUnlocked)
 	{
-		Row(text, y, "잿빛", "받아들임", Palette::kAsh);
+		Row(text, y, "잿빛", "받아들임 · 빛과 어둠을 버림", Palette::kAsh);
 	}
 
 	text->Draw(TextRenderer::Face::Small, "Tab / Esc: 닫기", 0.f, bottom + 16.f, Palette::kUiBone, 0.6f,

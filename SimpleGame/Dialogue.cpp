@@ -195,7 +195,7 @@ namespace
 	const Choice kKingLuciusAskChoices[] =
 	{
 		{ "결탁에 대해 묻는다", Story::AskedLucius, Dialogue::KingLuciusError },
-		{ "아무것도 아니다", Story::NoFlag, kEnd },
+		{ "그만둔다", Story::NoFlag, kEnd },
 	};
 
 	const Line kKingLuciusError[] =
@@ -204,8 +204,7 @@ namespace
 		{ "루키우스", "그대는 이미 인정받았다. 빛의 축복이 그대와 함께하기를.", Style::Error },
 		{ kHero, "결탁에 대해 묻고 있소.", Style::Speech },
 		{ "루키우스", "그대는 이미 인정받았다. 빛의 축복이 그대와 함께하기를.", Style::Error },
-		{ "루키우스", "……같은 말을 되풀이하게 하지 마라! 물러가라!", Style::Speech },
-		{ kHero, "못 알아들은 게 아니다. 내 말이…… 그에게 닿지 않았다.", Style::Thought },
+		{ "루키우스", "……같은 말을 되풀이하게 하지 마라! 그대는 이미[ 인정받았다. 빛의 축복이]", Style::Broken },
 	};
 
 	const Line kKingNoctis[] =
@@ -220,7 +219,7 @@ namespace
 	const Choice kKingNoctisAskChoices[] =
 	{
 		{ "결탁에 대해 묻는다", Story::AskedNoctis, Dialogue::KingNoctisError },
-		{ "아무것도 아니다", Story::NoFlag, kEnd },
+		{ "그만둔다", Story::NoFlag, kEnd },
 	};
 
 	const Line kKingNoctisError[] =
@@ -229,8 +228,14 @@ namespace
 		{ "녹티스", "인정은 이미 했다. 더 볼일이 있나? 내 셈에 없는 일이라면 사양하지.", Style::Error },
 		{ kHero, "결탁에 대해 묻고 있소.", Style::Speech },
 		{ "녹티스", "인정은 이미 했다. 더 볼일이 있나? 내 셈에 없는 일이라면 사양하지.", Style::Error },
-		{ "녹티스", "……같은 말을 하게 만들지 마라. 다음엔 칼로 대답하겠다.", Style::Speech },
-		{ kHero, "그 셈 빠른 왕이, 질문 하나를 듣지 못했다.", Style::Thought },
+		{ "녹티스", "……같은 말을 하게 만들지 마라. 인정은 이미[ 했다. 더 볼일이]", Style::Broken },
+	};
+
+	// Come to on the old battlefield, with no idea how. He must not guess
+	// that anyone stopped him - only that something is wrong.
+	const Line kIntervened[] =
+	{
+		{ kHero, "……뭐지?", Style::Thought },
 	};
 
 	// ---- The rescues ----
@@ -499,6 +504,7 @@ namespace
 		{ kKingNoctis, CountOf(kKingNoctis), nullptr, 0 },
 		{ kKingNoctisAsk, CountOf(kKingNoctisAsk), kKingNoctisAskChoices, CountOf(kKingNoctisAskChoices) },
 		{ kKingNoctisError, CountOf(kKingNoctisError), nullptr, 0 },
+		{ kIntervened, CountOf(kIntervened), nullptr, 0 },
 
 		{ kRescueLight, CountOf(kRescueLight), nullptr, 0 },
 		{ kRescueDark, CountOf(kRescueDark), nullptr, 0 },

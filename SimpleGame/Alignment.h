@@ -4,12 +4,14 @@
 
 // Which of the two primordial powers something belongs to. A gray monster keeps
 // this hidden while it lives; only its death shows it. The gray itself is a
-// third, held only by him at the very end - nothing is ever born to it.
+// third, held only by him at the very end - nothing is ever born to it. And
+// the god's own white is the two made together, wielded by it alone.
 enum class Alignment
 {
 	Light,
 	Dark,
 	Ashen,
+	Divine,
 };
 
 namespace AlignmentColor
@@ -18,7 +20,8 @@ namespace AlignmentColor
 	inline void Core(Alignment alignment, float& r, float& g, float& b)
 	{
 		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightCore
-			: ((alignment == Alignment::Dark) ? Palette::kDarkCore : Palette::kAshCore);
+			: ((alignment == Alignment::Dark) ? Palette::kDarkCore
+			: ((alignment == Alignment::Divine) ? Palette::kDivineCore : Palette::kAshCore));
 		r = c.r;
 		g = c.g;
 		b = c.b;
@@ -29,7 +32,8 @@ namespace AlignmentColor
 	inline void Glow(Alignment alignment, float& r, float& g, float& b)
 	{
 		const Palette::Color& c = (alignment == Alignment::Light) ? Palette::kLightGlow
-			: ((alignment == Alignment::Dark) ? Palette::kDarkGlow : Palette::kAshGlow);
+			: ((alignment == Alignment::Dark) ? Palette::kDarkGlow
+			: ((alignment == Alignment::Divine) ? Palette::kDivineGlow : Palette::kAshGlow));
 		r = c.r;
 		g = c.g;
 		b = c.b;

@@ -27,20 +27,37 @@ void DrawList::SetFlash(float flash)
 	m_Flash = flash;
 }
 
+void DrawList::SetGround(bool ground)
+{
+	m_Ground = ground;
+}
+
 void DrawList::ResetMaterial()
 {
 	m_Glow = 0.f;
 	m_Figure = false;
 	m_Flash = 0.f;
+	m_Ground = false;
 }
 
 void DrawList::Sort()
 {
+	// The flat ground first, in the order it was laid - tiles, then paving,
+	// then a carpet over it; flat things only ever cover each other, never
+	// stand in front - then everything standing on it, by depth.
 	// Stable, so shapes pushed at the same depth keep the order the actors
 	// pushed them in - that is what puts a shadow over its tile and a box over
 	// its own shadow without needing a separate epsilon for each.
 	std::stable_sort(m_Quads.begin(), m_Quads.end(), [](const Quad& a, const Quad& b)
 	{
+		if (a.ground != b.ground)
+		{
+			return a.ground;
+		}
+		if (a.ground)
+		{
+			return false;
+		}
 		return a.depth < b.depth;
 	});
 }
@@ -155,6 +172,7 @@ void DrawList::AddQuad(float depth, float x, float y, float edgeAX, float edgeAY
 	quad.useCorners = false;
 	quad.glow = m_Glow;
 	quad.figure = m_Figure;
+	quad.ground = m_Ground;
 	m_Quads.push_back(quad);
 }
 
@@ -179,6 +197,7 @@ void DrawList::AddCorners(float depth, const float corners[8], float r, float g,
 	quad.useCorners = true;
 	quad.glow = m_Glow;
 	quad.figure = m_Figure;
+	quad.ground = m_Ground;
 	m_Quads.push_back(quad);
 }
 

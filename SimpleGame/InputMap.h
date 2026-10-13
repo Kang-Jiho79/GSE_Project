@@ -34,7 +34,7 @@ namespace InputMap
 	// and a large dose of both powers, to reach the later story quickly.
 	const unsigned char kDebugOpenWorld = '6';
 	const unsigned char kDebugAddBoth = '7';
-	// Debug: the gray held or let go, to try the third form.
+	// Debug: the gray taken up (light and dark given up for it) or not.
 	const unsigned char kDebugAsh = '8';
 	// Debug: straight into the god's place, the gray already taken up.
 	const unsigned char kDebugToRealm = '9';

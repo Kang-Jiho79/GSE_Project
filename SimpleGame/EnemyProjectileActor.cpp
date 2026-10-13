@@ -129,6 +129,16 @@ void EnemyProjectileActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	float r, g, b;
 	AlignmentColor::Core(m_Alignment, r, g, b);
 
+	// The god's white: a bright shard ringed in dark, light and dark at once.
+	if (m_Alignment == Alignment::Divine)
+	{
+		out.AddGlow(depth - 0.01f, x, baseY, 24.f, glowR, glowG, glowB, 0.8f * fade);
+		out.AddDiamond(depth, x, baseY, 15.f, 15.f, Palette::kHostileRim.r, Palette::kHostileRim.g, Palette::kHostileRim.b, fade);
+		out.SetGlow(0.8f);
+		out.AddDiamond(depth + 0.001f, x, baseY, 10.f, 10.f, r, g, b, fade);
+		return;
+	}
+
 	if (m_Alignment == Alignment::Light)
 	{
 		// The player's own light, gone ashen: paler, with a dark rim, so it is

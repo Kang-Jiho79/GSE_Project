@@ -25,11 +25,6 @@ namespace
 		return 1.f + status.darkTotal * Tuning::Power::kScalePerAbsorbed;
 	}
 
-	float AshPower(const PlayerStatus& status)
-	{
-		return 1.f + (status.lightTotal + status.darkTotal) * 0.5f * Tuning::Power::kScalePerAbsorbed;
-	}
-
 	// A blow that gets through to him is felt: the world catches and the
 	// screen jolts.
 	bool HurtPlayer(const ActorContext& ctx, float damage)
@@ -90,24 +85,39 @@ float Combat::DarkBurstDamage(const PlayerStatus& status)
 	return Tuning::SwapSkill::kDarkBurstDamage * DarkPower(status);
 }
 
-float Combat::AshWaveDamage(const PlayerStatus& status)
+float Combat::ScytheDamage(int comboStep)
 {
-	return Tuning::AshForm::kWaveDamage * AshPower(status);
+	return Tuning::AshForm::kCutDamage[comboStep];
 }
 
-float Combat::VeilDamage(const PlayerStatus& status)
+float Combat::ScytheEchoDamage()
 {
-	return Tuning::AshForm::kVeilDamage * AshPower(status);
+	return Tuning::AshForm::kEchoDamage;
 }
 
-float Combat::UnravelDamage(const PlayerStatus& status)
+float Combat::DashCutDamage()
 {
-	return Tuning::AshForm::kUnravelDamage * AshPower(status);
+	return Tuning::AshForm::kDashDamage;
 }
 
-float Combat::EraseDamage(const PlayerStatus& status)
+float Combat::DashBlastDamage()
 {
-	return Tuning::AshForm::kEraseDamage * AshPower(status);
+	return Tuning::AshForm::kDashBlastDamage;
+}
+
+float Combat::CounterDamage(bool reached)
+{
+	return reached ? Tuning::AshForm::kCounterDamage : Tuning::AshForm::kCounterRingDamage;
+}
+
+float Combat::UnravelDamage()
+{
+	return Tuning::AshForm::kUnravelDamage;
+}
+
+float Combat::EraseDamage()
+{
+	return Tuning::AshForm::kEraseDamage;
 }
 
 float Combat::Lifesteal(const PlayerStatus& status, float damageLanded, float scale)

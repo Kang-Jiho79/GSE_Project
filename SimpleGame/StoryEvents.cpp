@@ -30,9 +30,6 @@ namespace
 	const float kReunionRow = -2.f;
 	const float kReunionGap = 1.6f;
 
-	// Where the empty place hangs in the god's realm, from where he arrives.
-	const float kGodCol = -7.f;
-	const float kGodRow = -7.f;
 
 	const int kDustSparks = 16;
 	const float kDustSpeed = 110.f;
@@ -126,7 +123,8 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 	{
 		std::unique_ptr<GodActor> god(new GodActor(region));
 		float x, y;
-		WorldGrid::IsoPosition(centerCol + kGodCol, centerRow + kGodRow, x, y);
+		// Beyond the far corner of its board.
+		WorldGrid::IsoPosition(centerCol + Tuning::God::kStandOffset, centerRow + Tuning::God::kStandOffset, x, y);
 		god->SetLocalPosition(x, y);
 		m_God = god.get();
 		graph.Spawn(std::move(god));

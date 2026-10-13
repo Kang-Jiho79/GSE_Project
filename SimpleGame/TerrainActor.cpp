@@ -2,6 +2,8 @@
 #include "TerrainActor.h"
 #include "DrawList.h"
 #include "WorldGrid.h"
+#include "Palette.h"
+#include "Tuning.h"
 #include <algorithm>
 #include <cmath>
 
@@ -15,6 +17,17 @@ namespace
 		float vMax = (ctx.windowSizeY / 2.f) / (WorldGrid::kTileHeight / 2.f) + 4.f;
 		return (int)std::ceil((uMax + vMax) / 2.f);
 	}
+}
+
+TerrainActor::TerrainActor()
+{
+}
+
+TerrainActor::TerrainActor(int boardCol, int boardRow)
+	: m_Board(true)
+	, m_BoardCol(boardCol)
+	, m_BoardRow(boardRow)
+{
 }
 
 void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
@@ -75,9 +88,29 @@ void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 					shade * SurfaceLight::kLeft * 1.08f, 1.f);
 			}
 
+			// Level ground lies under everything standing. A tile on a cliff's
+			// edge stays among them, sorted by its depth like its walls, so it
+			// still hides what is below and behind it.
+			out.SetGround(rightDrop <= 0.f && leftDrop <= 0.f);
+
+			if (m_Board)
+			{
+				int fromCol = col - m_BoardCol;
+				int fromRow = row - m_BoardRow;
+				bool onBoard = fromCol >= Tuning::God::kBoardFrom && fromCol <= Tuning::God::kBoardTo
+					&& fromRow >= Tuning::God::kBoardFrom && fromRow <= Tuning::God::kBoardTo;
+				const Palette::Color& square = !onBoard ? Palette::kBoardVoid
+					: (((fromCol + fromRow) % 2 + 2) % 2 == 0 ? Palette::kBoardPale : Palette::kBoardDark);
+				out.AddDiamond(depth, x, topY, WorldGrid::kTileWidth - 1.f, WorldGrid::kTileHeight - 1.f,
+					square.r, square.g, square.b, 1.f);
+				out.SetGround(false);
+				continue;
+			}
+
 			out.AddDiamond(depth, x, topY, WorldGrid::kTileWidth - 1.f, WorldGrid::kTileHeight - 1.f,
 				shade * SurfaceLight::kTop, shade * SurfaceLight::kTop * 0.98f,
 				shade * SurfaceLight::kTop * 1.06f, 1.f);
+			out.SetGround(false);
 		}
 	}
 }

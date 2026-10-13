@@ -171,6 +171,8 @@ void SettlementActor::DrawSquare(DrawList& out, const ActorContext& ctx) const
 	int radius = (int)ceilf(m_Layout.squareRadius);
 	int centerCol = (int)(m_Layout.squareCol + 0.5f);
 	int centerRow = (int)(m_Layout.squareRow + 0.5f);
+	// Paving is ground: under the buildings round it and everyone on it.
+	out.SetGround(true);
 
 	for (int row = centerRow - radius; row <= centerRow + radius; row++)
 	{
@@ -206,6 +208,7 @@ void SettlementActor::DrawSquare(DrawList& out, const ActorContext& ctx) const
 				look.paving.r * grain, look.paving.g * grain, look.paving.b * grain, 1.f);
 		}
 	}
+	out.SetGround(false);
 }
 
 void SettlementActor::DrawHouse(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const
@@ -434,10 +437,14 @@ void SettlementActor::DrawCarpet(DrawList& out, const ActorContext& ctx) const
 	Look look = LookFor(m_Style);
 	float length = m_Layout.throneRow - m_Layout.carpetRow + 1.f;
 	float groundY = y + WorldGrid::GroundHeightAt(worldX, worldY) + 1.f;
+	// Laid on the ground, under the palace's door and the king on it - but
+	// over the paving, being pushed after it.
+	out.SetGround(true);
 	out.AddGroundStrip(worldX, worldY, x, groundY, 0.f, 1.f, 0.f, length, 1.6f,
 		look.trim.r * 0.75f, look.trim.g * 0.75f, look.trim.b * 0.75f, 1.f);
 	out.AddGroundStrip(worldX, worldY, x, groundY + 0.5f, 0.f, 1.f, 0.f, length, 1.2f,
 		look.trim.r * 0.4f, look.trim.g * 0.4f, look.trim.b * 0.4f, 1.f);
+	out.SetGround(false);
 }
 
 void SettlementActor::DrawAltar(DrawList& out, const ActorContext& ctx) const

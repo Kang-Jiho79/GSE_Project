@@ -759,18 +759,21 @@ void KeyInput(unsigned char key, int x, int y)
 	}
 	case InputMap::kDebugAsh:
 	{
+		// As if he had taken up the gray - only the gray - or never had.
 		g_Status.ashUnlocked = !g_Status.ashUnlocked;
-		if (!g_Status.ashUnlocked && g_Status.form == Form::Ash)
+		g_Status.form = g_Status.ashUnlocked ? Form::Ash : Form::Light;
+		if (!g_Status.ashUnlocked)
 		{
-			g_Status.form = Form::Light;
+			g_Progress.story[Story::AcceptAsh] = false;
 		}
-		g_Hud.Notify(g_Status.ashUnlocked ? "잿빛폼 켬" : "잿빛폼 끔");
+		g_Hud.Notify(g_Status.ashUnlocked ? "잿빛 수락 켬 (잿빛폼만)" : "잿빛 수락 끔");
 		break;
 	}
 	case InputMap::kDebugToRealm:
 	{
 		g_Progress.Set(Story::AcceptAsh);
 		g_Status.ashUnlocked = true;
+		g_Status.form = Form::Ash;
 		g_Scene.BeginTravel(Regions::Realm);
 		break;
 	}

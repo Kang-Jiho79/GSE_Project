@@ -334,10 +334,15 @@ bool SaveGame::Read(PlayerStatus& status, Progress& progress, int& region)
 	{
 		status.health = status.maxHealth;
 	}
-	// Never left in a form he no longer holds.
+	// Never left in a form he no longer holds - and with the gray, never in
+	// any other.
 	if (status.form == Form::Ash && !status.ashUnlocked)
 	{
 		status.form = Form::Light;
+	}
+	if (status.ashUnlocked)
+	{
+		status.form = Form::Ash;
 	}
 	if (progress.heroName.empty())
 	{

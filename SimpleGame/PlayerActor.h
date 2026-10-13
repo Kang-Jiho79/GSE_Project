@@ -30,6 +30,9 @@ public:
 	// Direction is a unit vector in tiles. He cannot walk, roll or attack
 	// until it ends. trail: his shadow is left behind along the way.
 	void Lunge(float dirCol, float dirRow, float tiles, float seconds, bool trail = true);
+	// Moved there at once, checked in pieces so a wall stops him at it
+	// rather than past it - a flash of the gray's scythe.
+	void Flash(float dirCol, float dirRow, float tiles);
 
 	// What his body does as he fights - called by his forms the moment a
 	// move goes off, so he throws his hand out, swings, or raises it.
@@ -43,6 +46,8 @@ public:
 		Sweep,    // a wide cut back the other way, the whole body turning
 		Finisher, // up and down, with a hop
 		Thrust,   // the blade or the hand straight out
+		Spin,     // the scythe swung all the way round him
+		Guard,    // the scythe held across him, waiting for a blow
 		Swap,     // arms flung wide as the form turns over
 	};
 	// aimX/aimY: toward where, on screen - he turns to it at once. Zero

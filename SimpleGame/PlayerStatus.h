@@ -53,10 +53,18 @@ struct PlayerStatus
 	Cooldown darkSpecial;
 	Cooldown ashSkill;
 	Cooldown ashSpecial;
+	// The gray's Space: the parry.
+	Cooldown ashParry;
 
-	// The gray Kinis left him, taken up: Space then turns through a third
-	// form after the other two.
+	// The gray Kinis left him, taken up - and with it, light and dark given
+	// up for good. He is held in ash form: no switching, no swap skills, and
+	// his balance no longer binds him (the scene sees to that).
 	bool ashUnlocked = false;
+
+	// The gray's parry: while this runs, the next blow that would land does
+	// not, and parried is set for the form to answer it.
+	float parryTimer = 0.f;
+	bool parried = false;
 
 	// Off the board (Titles): however far the totals lean, the gray does not
 	// take him - no warning, no erosion, nothing given back on revival. Set
@@ -86,7 +94,7 @@ struct PlayerStatus
 	// Seconds spent eroding without a break, for anything that pulses with it.
 	float erosionTime = 0.f;
 
-	// Returns whether the hit actually landed.
+	// Returns whether the hit actually landed. A parry takes it instead.
 	bool TryDamage(float amount);
 
 	// Hits are ignored for at least this long. Never shortens a window already
@@ -96,8 +104,8 @@ struct PlayerStatus
 	// Never past max health, and nothing for someone already fallen.
 	void Heal(float amount);
 
-	// Returns whether the form actually changed - false while cooling down or
-	// held to one form.
+	// Returns whether the form actually changed - false while cooling down,
+	// held to one form, or left with only the gray.
 	bool TrySwitchForm();
 
 	// Back to full health after a death, with every skill ready. Absorbed

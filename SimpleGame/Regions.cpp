@@ -101,9 +101,10 @@ const Regions::Atmosphere& Regions::AtmosphereOf(int region)
 	// The heart of the gray: almost no colour left at all, and the dark close.
 	static const Atmosphere kHeart = { { 0.055f, 0.055f, 0.056f }, 120.f, 170.f, 480.f, 0.30f, 0.90f, { 0.96f, 0.96f, 0.97f } };
 
-	// The god's place: the dark pressed close and colour turned up hard, as
-	// if everything were lit for someone watching.
-	static const Atmosphere kRealm = { { 0.018f, 0.018f, 0.024f }, 220.f, 280.f, 620.f, 0.75f, 1.18f, { 1.00f, 1.00f, 1.02f } };
+	// The god's place: colour turned up hard, as if everything were lit for
+	// someone watching - and lit far, so the whole board and the one leaning
+	// over it can be seen.
+	static const Atmosphere kRealm = { { 0.018f, 0.018f, 0.024f }, 420.f, 700.f, 1500.f, 0.75f, 1.18f, { 1.00f, 1.00f, 1.02f } };
 
 	if (region == Kinera)
 	{

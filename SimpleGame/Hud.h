@@ -24,6 +24,8 @@ public:
 
 private:
 	void DrawVessel(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY);
+	// In its place once he holds only the gray.
+	void DrawAshVessel(Renderer* renderer, float centerX, float centerY);
 	void DrawBalance(Renderer* renderer, const PlayerStatus& status, float centerX, float centerY);
 	void DrawHealth(Renderer* renderer, TextRenderer* text, const PlayerStatus& status, float left, float centerY);
 	void DrawUpgradePips(Renderer* renderer, const PlayerStatus& status, float left, float centerY);

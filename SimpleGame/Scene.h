@@ -64,10 +64,11 @@ public:
 	// should be saved.
 	bool HoldsSave() const;
 
-	// Plays a cutscene anchored at this region's waystone. Ignored during a
-	// fade, a duel or another cutscene. While it plays he has no say, the
-	// HUD is hidden and nothing can hurt him.
+	// Plays a cutscene anchored at this region's waystone, or at a given
+	// world point. Ignored during a fade, a duel or another cutscene. While
+	// it plays he has no say, the HUD is hidden and nothing can hurt him.
 	void PlayCutscene(int id);
+	void PlayCutscene(int id, float anchorX, float anchorY);
 	bool IsInCutscene() const;
 
 	// Fades out, builds the region, and fades back in with him at its waystone.
@@ -118,6 +119,8 @@ private:
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
 	// What a cutscene's shot asks for as it begins.
 	void PlayCue(int cue);
+	// Whether he has put the collusion to this region's king.
+	bool AskedKing() const;
 	// The camera onto him at no zoom, or wherever a playing cutscene has it.
 	void SettleCamera();
 	void RecordPopulation();
@@ -155,6 +158,11 @@ private:
 
 	// A king that has acknowledged him, near enough to speak to.
 	bool m_AtKingToTalk = false;
+	// Whether he had already asked this king, as of the last frame: the
+	// moment it changes, the god steps in.
+	bool m_AskedKing = false;
+	// The world has gone white over the king: on to Bellum.
+	bool m_Intervening = false;
 
 	Prologue m_Prologue;
 	StoryEvents m_Events;

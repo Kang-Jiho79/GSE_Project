@@ -165,16 +165,44 @@ namespace Tuning
 		const float kRingDamage = 12.f;
 	}
 
-	// The god (「   」): an empty place in the sky over its own board, and
-	// two hands. Three wards in turn, light, dark, then the gray, each over a
-	// third of its life.
+	// The god (「   」): a white giant leaning over the far corner of its
+	// board, its two hands down on it. Three wards in turn - its light, its
+	// dark, then the two made white - each over a third of its life. While
+	// a ward stands it cannot be touched; its cores, on the board, come
+	// undone only to the gray's unravelling (E). With every core gone it
+	// bows its face to the board for a while, and can be cut.
 	namespace God
 	{
 		const float kMaxHealth = 4500.f;
-		const float kBodyRadius = 1.4f;
+		const float kBodyRadius = 2.f;    // from where it stands to the reach of its bowed face
 		const float kWakeRange = 30.f;
 		const float kLeashRange = 99.f;   // nowhere to run to in its place
-		const float kFuryTime = 300.f;
+		const float kFuryTime = 360.f;
+
+		// The board: its squares run from kBoardFrom to kBoardTo tiles from
+		// the centre of the place on both axes, walled round. The god stands
+		// beyond its far corner, and bows its face down just inside it.
+		const int kBoardFrom = -6;
+		const int kBoardTo = 8;
+		const float kStandOffset = -7.2f;
+		const float kFaceOffset = -5.6f;
+		// Drawn back a little in its place, so the giant fits on screen.
+		const float kRealmZoom = 0.8f;
+
+		// The wards' cores, and where they stand (tiles from the centre):
+		// two for the first ward, three for the second, four for the last.
+		const float kCoreRadius = 0.6f;
+		const int kCoresPerWard[3] = { 2, 3, 4 };
+		const float kCoreSpots[9][2] =
+		{
+			{ -3.f, 3.f }, { 3.f, -3.f },
+			{ -4.f, 1.f }, { 1.f, -4.f }, { 4.f, 4.f },
+			{ -3.f, 5.f }, { 5.f, -3.f }, { 6.f, 2.f }, { 2.f, 6.f },
+		};
+		// How long it stays bowed with its ward broken, before raising it again.
+		const float kGapTime = 8.f;
+		const float kGapShake = 8.f;
+		const float kBowRate = 2.f;       // of the way down or up a second
 
 		const float kCooldown = 1.2f;
 		const float kRecover = 0.6f;
@@ -195,12 +223,25 @@ namespace Tuning
 		const float kSweepWidth = 1.6f;
 		const float kSweepDamage = 22.f;
 
+		// A fan of its ward's power thrown from its face at him.
+		const float kVolleyWindup = 0.9f;
+		const int kVolleyCount = 5;
+		const float kVolleySpread = 50.f; // degrees, edge to edge
+		const float kVolleySpeed = 5.5f;
+		const float kVolleyLifetime = 4.f;
+		const float kVolleyDamage = 12.f;
+
 		// From the second ward: every other square round him strikes.
 		const float kBoardWindup = 1.3f;
 		const int kBoardRadius = 5;
 		const float kBoardDamage = 20.f;
 
-		// Under the last: shot of all three powers, all round.
+		// From the second ward: curses laid round where he stands.
+		const float kMireWindup = 0.6f;
+		const int kMireCount = 3;
+		const float kMireSpread = 2.5f;   // tiles from him
+
+		// Under the last: a ring of shot, light and dark and white, all round.
 		const float kRingWindup = 1.f;
 		const int kRingCount = 18;
 		const float kRingSpeed = 4.2f;
@@ -223,22 +264,53 @@ namespace Tuning
 		const float kSwitchCooldown = 1.f;
 	}
 
-	// The gray, taken up at the very end: neither near nor far, and best at
-	// undoing - shields, wards, and shots in the air.
+	// The gray, taken up at the very end - and then the only power he has.
+	// A scythe: cut, dash, cut again. Every number is fixed, owing nothing to
+	// the light and dark he once absorbed.
 	namespace AshForm
 	{
-		// The wave: a wedge reaching past a blade and short of a bolt, wiping
-		// the shots it passes through out of the air.
-		const float kWaveInterval = 0.32f;
-		const float kWaveRange = 3.8f;
-		const float kWaveArcDegrees = 100.f;
-		const float kWaveDamage = 24.f;
-		// Every third wave in a row rolls out all the way round him, further
-		// and harder. A longer pause than this starts the count over.
-		const int kWaveRingEvery = 3;
-		const float kWaveRingReach = 1.f;   // tiles past an ordinary wave
-		const float kWaveRingScale = 1.6f;  // its damage over an ordinary wave
-		const float kWaveChainTime = 0.8f;
+		// The combo: a rising cut, a wide cut back, a full turn, and a long
+		// cut brought down whose trail bursts again a moment later.
+		const int kComboLength = 4;
+		const float kCutDamage[kComboLength] = { 22.f, 22.f, 26.f, 40.f };
+		const float kCutRange[kComboLength] = { 2.4f, 2.6f, 2.2f, 3.6f };
+		const float kCutArcDegrees[kComboLength] = { 140.f, 200.f, 360.f, 120.f };
+		// Each cut carries him into it, the last furthest.
+		const float kCutStep[kComboLength] = { 0.35f, 0.2f, 0.15f, 0.6f };
+		const float kCutStepTime = 0.08f;
+		const float kCutInterval = 0.26f;    // between cuts while the combo runs
+		const float kLastCutRecovery = 0.5f; // after the last
+		const float kComboWindow = 0.7f;     // a longer pause starts it over
+		// The last cut's trail, bursting again.
+		const float kEchoDelay = 0.35f;
+		const float kEchoDamage = 30.f;
+
+		// Right click, the dash cut: to the far side of the nearest enemy
+		// ahead, cutting it on the way, while an image of him left where he
+		// stood bursts. With no one ahead, a plain dash.
+		const float kDashSearch = 5.f;          // tiles ahead it looks
+		const float kDashSearchDegrees = 90.f;  // how wide
+		const float kDashBehind = 0.8f;         // tiles past the enemy's body
+		const float kDashDistance = 4.f;        // with no one to cut
+		const float kDashCutRadius = 1.3f;
+		const float kDashDamage = 35.f;
+		const float kDashBlastDelay = 0.3f;
+		const float kDashBlastRadius = 1.6f;
+		const float kDashBlastDamage = 30.f;
+		const float kDashInvuln = 0.3f;
+		const float kDashCooldown = 1.2f;
+
+		// Space, the parry: a moment's stance. A blow that lands in it does
+		// not, and he is at once behind the nearest enemy, cutting. With no
+		// one in reach, he lashes out all round instead.
+		const float kParryWindow = 0.5f;
+		const float kParryCooldown = 6.f;
+		const float kParryReach = 6.f;        // tiles to the one he answers
+		const float kCounterRadius = 1.6f;
+		const float kCounterDamage = 80.f;
+		const float kCounterRingRadius = 2.5f;
+		const float kCounterRingDamage = 40.f;
+		const float kCounterInvuln = 0.6f;
 
 		// E, unravel: a line through everything, shields and wards included.
 		const float kUnravelLength = 9.f;
@@ -252,12 +324,6 @@ namespace Tuning
 		const float kEraseDamage = 90.f;
 		const float kEraseInvuln = 0.8f;
 		const float kEraseCooldown = 10.f;
-
-		// Switching in: the shots nearest him wiped away, and a blow to
-		// everything that close.
-		const float kVeilRadius = 3.f;
-		const float kVeilDamage = 25.f;
-		const float kVeilInvuln = 0.3f;
 	}
 
 	namespace SwapSkill
@@ -513,7 +579,6 @@ namespace Tuning
 		const float kLeashRange = 18.f;    // walk this far off and the duel is over
 		const float kSpareHealth = 0.3f;   // beaten, he is left this share of his health
 		const float kSpareInvuln = 2.f;
-		const float kSendOffDelay = 3.f;   // after a king yields, until he is sent to Bellum
 		const float kRemarkTime = 3.5f;    // how long a king's words stay on screen
 
 		// The blessings: worth the fight, never enough to make it necessary.
@@ -778,6 +843,10 @@ namespace Tuning
 		const float kSkipHold = 1.f;
 		// Kept from harm while one plays, a little at a time.
 		const float kShield = 0.1f;
+		// The pale mark over a king asked about the collusion: pixels above
+		// its feet, and its height.
+		const float kMarkLift = 120.f;
+		const float kMarkSize = 26.f;
 	}
 
 	// How hard a blow is felt through the screen.

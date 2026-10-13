@@ -45,6 +45,12 @@ public:
 	// Everything pushed from now on is washed toward white by this much,
 	// 0..1 - the flash of something just struck.
 	void SetFlash(float flash);
+	// Everything pushed from now on lies flat on the ground - level ground,
+	// paving, a carpet - and is drawn before anything that stands, whatever
+	// its depth. Without it, the ground in front of a big building's centre
+	// would be drawn over the building's own foot. Reset after every actor
+	// draws, like the glow.
+	void SetGround(bool ground);
 	// Back to plain: no glow, not a figure, no flash. Done after every actor
 	// draws, so one that forgets cannot leak its state into the next.
 	void ResetMaterial();
@@ -126,6 +132,7 @@ private:
 	float m_Glow = 0.f;
 	bool m_Figure = false;
 	float m_Flash = 0.f;
+	bool m_Ground = false;
 
 	struct Quad
 	{
@@ -138,6 +145,7 @@ private:
 		float r, g, b, a;
 		float glow;
 		bool figure;
+		bool ground;
 	};
 
 	// Kept across frames so collecting does not reallocate every time.

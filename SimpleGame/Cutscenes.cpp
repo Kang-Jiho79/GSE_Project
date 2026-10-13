@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Cutscenes.h"
+#include "Dialogue.h"
 
 namespace
 {
@@ -21,9 +22,32 @@ namespace
 		{ 1.2f,     Aim::Player,  0.f,  0.f,  1.0f, true,  false, Wash::White, 1.f,  0.f,  Clock::Run,   nullptr, nullptr,                               Cutscenes::NoCue,          -1 },
 	};
 
+	// Anchored at the king he has just asked. In on it as its words break
+	// off; the mark comes and turns over it; then everything goes white.
+	const Cutscenes::Shot kIntervention[] =
+	{
+		// seconds  aim           col   row   zoom  cut    bars   wash         from  to    clock         speaker  caption  cue                        conversation
+		{ 0.8f,     Aim::Anchor,  0.f,  0.f,  1.6f, false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr, Cutscenes::CueGodMark,     -1 },
+		{ 1.8f,     Aim::Anchor,  0.f,  0.f,  1.9f, false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          -1 },
+		{ 1.0f,     Aim::Hold,    0.f,  0.f,  2.1f, false, true,  Wash::White, 0.f,  1.f,  Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          -1 },
+		{ 0.4f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::White, 1.f,  1.f,  Clock::Run,   nullptr, nullptr, Cutscenes::CueIntervene,   -1 },
+	};
+
+	// At Bellum, the white thinning off him; he does not know how he came
+	// to be here.
+	const Cutscenes::Shot kIntervened[] =
+	{
+		// seconds  aim           col   row   zoom  cut    bars   wash         from  to    clock         speaker  caption  cue                        conversation
+		{ 1.6f,     Aim::Player,  0.f,  0.f,  1.5f, true,  true,  Wash::White, 1.f,  0.f,  Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          -1 },
+		{ 0.4f,     Aim::Player,  0.f,  0.f,  0.f,  false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          Dialogue::Intervened },
+		{ 0.8f,     Aim::Player,  0.f,  0.f,  1.0f, false, false, Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          -1 },
+	};
+
 	const Cutscenes::Script kScripts[Cutscenes::Count] =
 	{
 		{ kTest, sizeof(kTest) / sizeof(kTest[0]) },
+		{ kIntervention, sizeof(kIntervention) / sizeof(kIntervention[0]) },
+		{ kIntervened, sizeof(kIntervened) / sizeof(kIntervened[0]) },
 	};
 }
 
