@@ -2,6 +2,7 @@
 #include "Props.h"
 #include "WorldGrid.h"
 #include <cmath>
+#include <vector>
 
 namespace
 {
@@ -63,50 +64,84 @@ namespace
 		return dc * dc + dr * dr < radius * radius;
 	}
 
-	// Plain values, so they are set before anything can ask.
-	float s_Density = 0.f;
-	float s_ClearCol = 0.f;
-	float s_ClearRow = 0.f;
-	float s_ClearRadius = 0.f;
-	float s_ArenaCol = 0.f;
-	float s_ArenaRow = 0.f;
-	float s_ArenaRadius = 0.f;
-
-	bool InClearing(int col, int row, float centerCol, float centerRow, float radius)
+	struct Clearing
 	{
-		float fromCol = col - centerCol;
-		float fromRow = row - centerRow;
-		return fromCol * fromCol + fromRow * fromRow < radius * radius;
+		float col;
+		float row;
+		float radius;
+	};
+
+	// Each place's density, and its clearings - kept with the place their
+	// centre lies in, so a tile only checks its own place's.
+	std::vector<float> s_Density;
+	std::vector<std::vector<Clearing>> s_Clearings;
+
+	float DensityAt(int zone)
+	{
+		return (zone >= 0 && zone < (int)s_Density.size()) ? s_Density[zone] : 0.f;
+	}
+
+	bool InClearing(int zone, int col, int row)
+	{
+		if (zone < 0 || zone >= (int)s_Clearings.size())
+		{
+			return false;
+		}
+		const std::vector<Clearing>& clearings = s_Clearings[zone];
+		for (size_t i = 0; i < clearings.size(); i++)
+		{
+			float fromCol = col - clearings[i].col;
+			float fromRow = row - clearings[i].row;
+			if (fromCol * fromCol + fromRow * fromRow < clearings[i].radius * clearings[i].radius)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
-void Props::SetField(float density, float clearCol, float clearRow, float clearRadius)
+void Props::Clear()
 {
-	s_Density = density;
-	s_ClearCol = clearCol;
-	s_ClearRow = clearRow;
-	s_ClearRadius = clearRadius;
-	s_ArenaRadius = 0.f;
+	s_Density.clear();
+	s_Clearings.clear();
 }
 
-void Props::SetArena(float col, float row, float radius)
+void Props::SetDensity(int zone, float density)
 {
-	s_ArenaCol = col;
-	s_ArenaRow = row;
-	s_ArenaRadius = radius;
+	if (zone < 0)
+	{
+		return;
+	}
+	if (zone >= (int)s_Density.size())
+	{
+		s_Density.resize(zone + 1, 0.f);
+	}
+	s_Density[zone] = density;
+}
+
+void Props::AddClearing(float col, float row, float radius)
+{
+	int zone = WorldGrid::ZoneAt((int)floorf(col + 0.5f), (int)floorf(row + 0.5f));
+	if (zone < 0)
+	{
+		return;
+	}
+	if (zone >= (int)s_Clearings.size())
+	{
+		s_Clearings.resize(zone + 1);
+	}
+	Clearing clearing = { col, row, radius };
+	s_Clearings[zone].push_back(clearing);
 }
 
 Props::Kind Props::At(int col, int row, int& variant, float& grain)
 {
 	variant = 0;
 	grain = 0.f;
-	if (s_Density <= 0.f)
-	{
-		return Kind::None;
-	}
-
-	if (InClearing(col, row, s_ClearCol, s_ClearRow, s_ClearRadius)
-		|| InClearing(col, row, s_ArenaCol, s_ArenaRow, s_ArenaRadius))
+	int zone = WorldGrid::ZoneAt(col, row);
+	float density = DensityAt(zone);
+	if (density <= 0.f || InClearing(zone, col, row))
 	{
 		return Kind::None;
 	}
@@ -120,12 +155,12 @@ Props::Kind Props::At(int col, int row, int& variant, float& grain)
 	// Squared so groves have a dense heart and a sparse edge instead of a
 	// hard line.
 	float grove = WorldGrid::Noise((float)col, (float)row, kGroveCell);
-	if (roll < grove * grove * kGroveDensity * s_Density)
+	if (roll < grove * grove * kGroveDensity * density)
 	{
 		return Kind::Tree;
 	}
 
-	if (grove < kClearingLimit && roll2 < kStructureChance * s_Density)
+	if (grove < kClearingLimit && roll2 < kStructureChance * density)
 	{
 		switch (variant % 4)
 		{
@@ -147,11 +182,11 @@ Props::Kind Props::At(int col, int row, int& variant, float& grain)
 		}
 		}
 	}
-	if (roll2 < kBoulderChance * s_Density)
+	if (roll2 < kBoulderChance * density)
 	{
 		return Kind::Boulder;
 	}
-	if (roll2 < kRubbleChance * s_Density)
+	if (roll2 < kRubbleChance * density)
 	{
 		return Kind::Rubble;
 	}
@@ -167,10 +202,6 @@ Props::Kind Props::At(int col, int row)
 
 bool Props::IsSolid(float col, float row, float margin)
 {
-	if (s_Density <= 0.f)
-	{
-		return false;
-	}
 
 	// Anything standing is centred on its tile and no wider than one, so
 	// only the tiles right round the point can reach it.

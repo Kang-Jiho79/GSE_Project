@@ -4,26 +4,33 @@
 #include "TextRenderer.h"
 #include "Palette.h"
 #include <cmath>
+#include <string>
 
 namespace
 {
 	const float kPanelWidth = 780.f;
-	const float kPanelHeight = 520.f;
+	const float kPanelHeight = 560.f;
 	const float kPanelBorder = 4.f;
 	const float kPanelY = 10.f;
 
-	// How far the map's -1..1 spreads across the panel.
-	const float kSpanX = 340.f;
-	const float kSpanY = 200.f;
+	// The board: five squares across and seven down, centred in the panel
+	// a little below its title.
+	const int kColumns = 5;
+	const int kRows = 7;
+	const float kSquareWidth = 120.f;
+	const float kSquareHeight = 58.f;
+	const float kSquareGap = 3.f;
+	const float kBoardDrop = 18.f;
 
-	const float kHitRadius = 16.f;
-	const float kLinkWidth = 2.f;
-	const float kLabelDrop = 24.f;
+	const float kWallWidth = 5.f;
+	const float kFrame = 3.f;          // the ring round where he is, or where the cursor would take him
+	const float kIcon = 9.f;
+	const float kMarker = 12.f;
 
-	// Unknown places are only a faint mark; places within reach are shown,
+	// Unknown places are only a dark square; places within reach are shown,
 	// those he has been to more strongly.
-	const float kUnknownShade = 0.3f;
-	const float kReachableShade = 0.7f;
+	const float kUnknownShade = 0.18f;
+	const float kReachableShade = 0.55f;
 
 	const Palette::Color& StyleColor(Regions::Style style)
 	{
@@ -31,32 +38,49 @@ namespace
 		{
 		case Regions::Style::Light:
 		{
-			return Palette::kVesselLight;
+			return Palette::kMapLight;
 		}
 		case Regions::Style::Dark:
 		{
-			return Palette::kVesselDark;
+			return Palette::kMapDark;
 		}
 		case Regions::Style::Ashen:
 		{
-			return Palette::kAsh;
+			return Palette::kMapAshen;
 		}
 		case Regions::Style::Borderborn:
 		{
-			return Palette::kUiBone;
+			return Palette::kMapBorder;
 		}
 		default:
 		{
-			return Palette::kPipEarned;
+			return Palette::kMapMixed;
 		}
 		}
 	}
+
+	// The place in a square of the board, or -1.
+	int RegionInSquare(int col, int row)
+	{
+		for (int region = 0; region < Regions::Count; region++)
+		{
+			const Regions::Info& info = Regions::Get(region);
+			if (!Regions::IsOffMap(region) && info.cellCol == col && info.cellRow == row)
+			{
+				return region;
+			}
+		}
+		return -1;
+	}
 }
 
-void WorldMapScreen::Open(int currentRegion, const bool* visited)
+void WorldMapScreen::Open(int currentRegion, const bool* visited, float playerCol, float playerRow, bool travel)
 {
 	m_Open = true;
+	m_Travel = travel;
 	m_Current = currentRegion;
+	m_PlayerCol = playerCol;
+	m_PlayerRow = playerRow;
 	for (int i = 0; i < Regions::Count; i++)
 	{
 		m_Visited[i] = visited[i];
@@ -84,7 +108,7 @@ bool WorldMapScreen::IsKnown(int region) const
 
 bool WorldMapScreen::CanTravelTo(int region) const
 {
-	if (Regions::IsOffMap(region))
+	if (!m_Travel || Regions::IsOffMap(region))
 	{
 		return false;
 	}
@@ -94,8 +118,8 @@ bool WorldMapScreen::CanTravelTo(int region) const
 void WorldMapScreen::NodePosition(int region, float& x, float& y) const
 {
 	const Regions::Info& info = Regions::Get(region);
-	x = info.mapX * kSpanX;
-	y = kPanelY + info.mapY * kSpanY;
+	x = (info.cellCol - (kColumns - 1) * 0.5f) * (kSquareWidth + kSquareGap);
+	y = kPanelY - kBoardDrop - (info.cellRow - (kRows - 1) * 0.5f) * (kSquareHeight + kSquareGap);
 }
 
 int WorldMapScreen::RegionAt(float x, float y) const
@@ -109,9 +133,7 @@ int WorldMapScreen::RegionAt(float x, float y) const
 
 		float nodeX, nodeY;
 		NodePosition(region, nodeX, nodeY);
-		float dx = x - nodeX;
-		float dy = y - nodeY;
-		if (dx * dx + dy * dy <= kHitRadius * kHitRadius)
+		if (fabsf(x - nodeX) <= kSquareWidth * 0.5f && fabsf(y - nodeY) <= kSquareHeight * 0.5f)
 		{
 			return region;
 		}
@@ -135,55 +157,32 @@ void WorldMapScreen::Render(Renderer* renderer, TextRenderer* text, int windowSi
 	renderer->DrawSolidRect(0.f, kPanelY, kPanelWidth, kPanelHeight,
 		Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 0.97f);
 
-	for (int i = 0; i < Regions::LinkCount(); i++)
-	{
-		int a, b;
-		Regions::GetLink(i, a, b);
-		DrawLink(renderer, a, b);
-	}
-
 	int hovered = RegionAt(mouseX, mouseY);
 	for (int region = 0; region < Regions::Count; region++)
 	{
 		if (!Regions::IsOffMap(region))
 		{
-			DrawNode(renderer, text, region, region == hovered);
+			DrawSquare(renderer, text, region, region == hovered);
 		}
 	}
+	DrawWalls(renderer);
+	DrawPlayer(renderer);
 
 	float top = kPanelY + kPanelHeight / 2.f;
 	float bottom = kPanelY - kPanelHeight / 2.f;
-	text->Draw(TextRenderer::Face::Title, "세계", 0.f, top - 46.f, Palette::kUiBone, 1.f, TextRenderer::Align::Center);
-	text->Draw(TextRenderer::Face::Small, "클릭: 이동   ·   F / Esc: 닫기", 0.f, bottom + 14.f,
-		Palette::kUiBone, 0.7f, TextRenderer::Align::Center);
+	text->Draw(TextRenderer::Face::Title, "세계", 0.f, top - 34.f, Palette::kUiBone, 1.f, TextRenderer::Align::Center);
+
+	// Where he is, and what he can do here.
+	std::string here = "지금 있는 곳  ·  ";
+	here += Regions::Get(m_Current).name;
+	text->Draw(TextRenderer::Face::Small, here.c_str(), -kPanelWidth / 2.f + 24.f, top - 30.f,
+		Palette::kUiBone, 0.85f, TextRenderer::Align::Left);
+	const char* hint = m_Travel ? "클릭: 이동   ·   M / F / Esc: 닫기"
+		: "M / F / Esc: 닫기   ·   웨이스톤에서 열면 이동할 수 있다";
+	text->Draw(TextRenderer::Face::Small, hint, 0.f, bottom + 12.f, Palette::kUiBone, 0.7f, TextRenderer::Align::Center);
 }
 
-void WorldMapScreen::DrawLink(Renderer* renderer, int a, int b) const
-{
-	float ax, ay, bx, by;
-	NodePosition(a, ax, ay);
-	NodePosition(b, bx, by);
-
-	float dx = bx - ax;
-	float dy = by - ay;
-	float length = sqrtf(dx * dx + dy * dy);
-	if (length < 0.001f)
-	{
-		return;
-	}
-
-	// A road between two places he knows is drawn plainly; one leading into
-	// the unknown only faintly.
-	bool known = IsKnown(a) && IsKnown(b);
-	float shade = known ? 1.6f : 0.9f;
-	float alpha = known ? 1.f : 0.5f;
-
-	renderer->DrawSolidQuad((ax + bx) * 0.5f, (ay + by) * 0.5f, dx, dy,
-		-dy / length * kLinkWidth, dx / length * kLinkWidth,
-		Palette::kUiFrame.r * shade, Palette::kUiFrame.g * shade, Palette::kUiFrame.b * shade, alpha);
-}
-
-void WorldMapScreen::DrawNode(Renderer* renderer, TextRenderer* text, int region, bool hovered) const
+void WorldMapScreen::DrawSquare(Renderer* renderer, TextRenderer* text, int region, bool hovered) const
 {
 	const Regions::Info& info = Regions::Get(region);
 	float x, y;
@@ -191,6 +190,13 @@ void WorldMapScreen::DrawNode(Renderer* renderer, TextRenderer* text, int region
 
 	bool current = (region == m_Current);
 	bool known = IsKnown(region);
+
+	// Where he stands, and where the cursor would take him, are ringed.
+	if (current || hovered)
+	{
+		renderer->DrawSolidRect(x, y, kSquareWidth + kFrame * 2.f, kSquareHeight + kFrame * 2.f,
+			Palette::kUiBone.r, Palette::kUiBone.g, Palette::kUiBone.b, current ? 1.f : 0.6f);
+	}
 
 	float shade = 1.f;
 	if (!known)
@@ -201,48 +207,100 @@ void WorldMapScreen::DrawNode(Renderer* renderer, TextRenderer* text, int region
 	{
 		shade = kReachableShade;
 	}
+	const Palette::Color& ground = StyleColor(info.style);
+	renderer->DrawSolidRect(x, y, kSquareWidth, kSquareHeight, ground.r * shade, ground.g * shade, ground.b * shade, 1.f);
 
-	const Palette::Color& style = StyleColor(info.style);
-	float r = style.r * shade;
-	float g = style.g * shade;
-	float b = style.b * shade;
-
-	// Where he stands, and where the cursor would take him, are ringed.
-	if (current || hovered)
+	if (!known)
 	{
-		renderer->DrawSolidDiamond(x, y, 34.f, 34.f, Palette::kUiBone.r, Palette::kUiBone.g, Palette::kUiBone.b,
-			current ? 1.f : 0.6f);
-		renderer->DrawSolidDiamond(x, y, 29.f, 29.f, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
+		text->Draw(TextRenderer::Face::Small, "?", x, y - 5.f, Palette::kUiBone, 0.35f, TextRenderer::Align::Center);
+		return;
 	}
 
+	// What kind of place it is, in its corner: a village's diamond, a
+	// capital's double one, a gate's bar.
+	float iconX = x - kSquareWidth / 2.f + 10.f;
+	float iconY = y + kSquareHeight / 2.f - 10.f;
+	const Palette::Color& mark = Palette::kUiBone;
 	switch (info.kind)
 	{
 	case Regions::Kind::Village:
 	{
-		renderer->DrawSolidDiamond(x, y, 14.f, 14.f, r, g, b, 1.f);
-		break;
-	}
-	case Regions::Kind::Field:
-	{
-		renderer->DrawSolidRect(x, y, 11.f, 11.f, r, g, b, 1.f);
-		break;
-	}
-	case Regions::Kind::Gate:
-	{
-		renderer->DrawSolidRect(x, y, 7.f, 16.f, r, g, b, 1.f);
+		renderer->DrawSolidDiamond(iconX, iconY, kIcon, kIcon, mark.r, mark.g, mark.b, 0.8f);
 		break;
 	}
 	case Regions::Kind::Capital:
 	{
-		renderer->DrawSolidDiamond(x, y, 22.f, 22.f, r, g, b, 1.f);
-		renderer->DrawSolidDiamond(x, y, 9.f, 9.f, Palette::kUiWell.r, Palette::kUiWell.g, Palette::kUiWell.b, 1.f);
+		renderer->DrawSolidDiamond(iconX, iconY, kIcon * 1.6f, kIcon * 1.6f, mark.r, mark.g, mark.b, 0.9f);
+		renderer->DrawSolidDiamond(iconX, iconY, kIcon * 0.6f, kIcon * 0.6f, Palette::kUiWell.r, Palette::kUiWell.g,
+			Palette::kUiWell.b, 1.f);
+		break;
+	}
+	case Regions::Kind::Gate:
+	{
+		renderer->DrawSolidRect(iconX, iconY, kIcon * 0.5f, kIcon * 1.4f, mark.r, mark.g, mark.b, 0.8f);
+		break;
+	}
+	default:
+	{
 		break;
 	}
 	}
 
-	if (known)
+	text->Draw(TextRenderer::Face::Small, info.name, x, y - 5.f,
+		Palette::kUiBone, (m_Visited[region] || current) ? 1.f : 0.7f, TextRenderer::Align::Center);
+}
+
+void WorldMapScreen::DrawWalls(Renderer* renderer) const
+{
+	// Between neighbouring squares he cannot walk across: a band of fog.
+	for (int row = 0; row < kRows; row++)
 	{
-		text->Draw(TextRenderer::Face::Small, info.name, x, y - kLabelDrop,
-			Palette::kUiBone, (m_Visited[region] || current) ? 1.f : 0.7f, TextRenderer::Align::Center);
+		for (int col = 0; col < kColumns; col++)
+		{
+			int here = RegionInSquare(col, row);
+			if (here < 0)
+			{
+				continue;
+			}
+			float x, y;
+			NodePosition(here, x, y);
+			int east = RegionInSquare(col + 1, row);
+			if (east >= 0 && !Regions::AreLinked(here, east))
+			{
+				renderer->DrawSolidRect(x + (kSquareWidth + kSquareGap) * 0.5f, y, kWallWidth, kSquareHeight + kSquareGap,
+					Palette::kAshVeil.r, Palette::kAshVeil.g, Palette::kAshVeil.b, 1.f);
+			}
+			int south = RegionInSquare(col, row + 1);
+			if (south >= 0 && !Regions::AreLinked(here, south))
+			{
+				renderer->DrawSolidRect(x, y - (kSquareHeight + kSquareGap) * 0.5f, kSquareWidth + kSquareGap, kWallWidth,
+					Palette::kAshVeil.r, Palette::kAshVeil.g, Palette::kAshVeil.b, 1.f);
+			}
+		}
 	}
+}
+
+void WorldMapScreen::DrawPlayer(Renderer* renderer) const
+{
+	if (Regions::IsOffMap(m_Current))
+	{
+		return;
+	}
+
+	// Exactly where in its square he stands.
+	float minCol, minRow, maxCol, maxRow;
+	Regions::Bounds(m_Current, minCol, minRow, maxCol, maxRow);
+	float acrossShare = (m_PlayerCol - minCol) / (maxCol - minCol);
+	float downShare = (m_PlayerRow - minRow) / (maxRow - minRow);
+	acrossShare = (acrossShare < 0.f) ? 0.f : ((acrossShare > 1.f) ? 1.f : acrossShare);
+	downShare = (downShare < 0.f) ? 0.f : ((downShare > 1.f) ? 1.f : downShare);
+
+	float x, y;
+	NodePosition(m_Current, x, y);
+	x += (acrossShare - 0.5f) * kSquareWidth;
+	y -= (downShare - 0.5f) * kSquareHeight;
+
+	renderer->DrawSolidDiamond(x, y, kMarker + 5.f, kMarker + 5.f, Palette::kMapPlayerRim.r, Palette::kMapPlayerRim.g,
+		Palette::kMapPlayerRim.b, 1.f);
+	renderer->DrawSolidDiamond(x, y, kMarker, kMarker, Palette::kMapPlayer.r, Palette::kMapPlayer.g, Palette::kMapPlayer.b, 1.f);
 }

@@ -85,6 +85,16 @@ namespace Tuning
 		// Monsters are not placed within this many tiles of it, so he never
 		// arrives in the middle of a fight.
 		const float kSpawnClearance = 8.f;
+
+		// The world: a place's monsters and boss are set out once he comes
+		// within this many tiles of it, and cleared away once he is further
+		// than the second - to be set out afresh when he comes back.
+		const float kWakeReach = 16.f;
+		const float kForgetReach = 40.f;
+		// Within this many tiles of the next place, its air begins to mix in.
+		const float kBlendReach = 12.f;
+		// No monsters this near a walled board: quiet before the threshold.
+		const float kArenaQuiet = 16.f;
 	}
 
 	// The prologue: a little while of the hidden village at peace, then the

@@ -94,6 +94,7 @@ NpcActor* StoryEvents::SpawnPerson(SceneGraph& graph, NpcActor::Kind kind, Regio
 	float x, y;
 	WorldGrid::IsoPosition(col, row, x, y);
 	person->SetLocalPosition(x, y);
+	person->SetZone(kZone);
 	NpcActor* raw = person.get();
 	graph.Spawn(std::move(person));
 	return raw;
@@ -103,6 +104,23 @@ void StoryEvents::Dissolve(SceneGraph& graph, Actor& actor) const
 {
 	SparkActor::Burst(graph, actor.WorldX(), actor.WorldY(), SparkActor::Style::Dust, kDustSparks, kDustSpeed, kDustLift);
 	actor.Destroy();
+}
+
+void StoryEvents::Leave(SceneGraph& graph)
+{
+	graph.ForEach<Actor>([&](Actor& actor)
+	{
+		if (actor.Zone() == kZone)
+		{
+			actor.Destroy();
+		}
+	});
+	m_Stage = Stage::None;
+	m_Figure = nullptr;
+	m_Second = nullptr;
+	m_Kinis = nullptr;
+	m_God = nullptr;
+	m_Left = 0;
 }
 
 void StoryEvents::Enter(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph,
@@ -126,6 +144,7 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 		// Beyond the far corner of its board.
 		WorldGrid::IsoPosition(centerCol + Tuning::God::kStandOffset, centerRow + Tuning::God::kStandOffset, x, y);
 		god->SetLocalPosition(x, y);
+		god->SetZone(kZone);
 		m_God = god.get();
 		graph.Spawn(std::move(god));
 		m_Stage = Stage::GodWaiting;
@@ -151,6 +170,7 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 		float x, y;
 		WorldGrid::IsoPosition(arenaCol, arenaRow, x, y);
 		kinis->SetLocalPosition(x, y);
+		kinis->SetZone(kZone);
 		m_Kinis = kinis.get();
 		graph.Spawn(std::move(kinis));
 		m_Stage = Stage::KinisWaiting;
@@ -165,6 +185,7 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 		float x, y;
 		WorldGrid::IsoPosition(col, row, x, y);
 		kinis->SetLocalPosition(x, y);
+		kinis->SetZone(kZone);
 		m_Figure = kinis.get();
 		graph.Spawn(std::move(kinis));
 		m_Stage = Stage::Kinis;
@@ -185,6 +206,7 @@ void StoryEvents::Enter(int region, const Progress& progress, const Settlement::
 		float x, y;
 		WorldGrid::IsoPosition(col, row, x, y);
 		victim->SetLocalPosition(x, y);
+		victim->SetZone(kZone);
 		m_Figure = victim.get();
 		graph.Spawn(std::move(victim));
 
@@ -217,6 +239,7 @@ void StoryEvents::SpawnRaiders(SceneGraph& graph, float col, float row) const
 		float x, y;
 		WorldGrid::IsoPosition(raiderCol, raiderRow, x, y);
 		raider->SetLocalPosition(x, y);
+		raider->SetZone(kZone);
 		graph.Spawn(std::move(raider));
 	}
 }

@@ -82,7 +82,7 @@ int Prologue::Update(float deltaTime, SceneGraph& graph, Progress& progress, Imp
 		m_Left = 0;
 		graph.ForEach<MonsterActor>([&](MonsterActor& monster)
 		{
-			if (!monster.IsDestroyed())
+			if (!monster.IsDestroyed() && monster.Zone() == kRaidZone)
 			{
 				m_Left++;
 			}
@@ -134,6 +134,7 @@ void Prologue::SpawnRaiders(SceneGraph& graph, float centerCol, float centerRow)
 		float x, y;
 		WorldGrid::IsoPosition(col, row, x, y);
 		raider->SetLocalPosition(x, y);
+		raider->SetZone(kRaidZone);
 		graph.Spawn(std::move(raider));
 	}
 }

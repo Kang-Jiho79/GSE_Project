@@ -7,6 +7,7 @@
 #include "Palette.h"
 #include "Random.h"
 #include "Tuning.h"
+#include "Bosses.h"
 #include <cmath>
 
 namespace
@@ -48,6 +49,7 @@ GodPieceActor::GodPieceActor(int region, Kind kind, float maxHealth)
 	: BossActor("신의 말", maxHealth, region, Tuning::GodPiece::kWakeRange, Tuning::GodPiece::kLeashRange,
 		Tuning::GodPiece::kFuryTime)
 	, m_Kind(kind)
+	, m_Region(region)
 {
 	m_Ward = (Random::Unit() < 0.5f) ? Alignment::Light : Alignment::Dark;
 	m_WardTimer = Tuning::GodPiece::kWardTime;
@@ -72,6 +74,15 @@ float GodPieceActor::Resist(float damage)
 		return 0.f;
 	}
 	return damage;
+}
+
+void GodPieceActor::ClampToBoard(float& col, float& row) const
+{
+	int centerCol, centerRow;
+	Bosses::BoardCenter(m_Region, centerCol, centerRow);
+	float half = Bosses::WallReach() - 1.f;
+	col = (col < centerCol - half) ? centerCol - half : ((col > centerCol + half) ? centerCol + half : col);
+	row = (row < centerRow - half) ? centerRow - half : ((row > centerRow + half) ? centerRow + half : row);
 }
 
 void GodPieceActor::UpdateWard(float deltaTime)
@@ -209,6 +220,7 @@ void GodPieceActor::ChooseSlide(float toCol, float toRow)
 	m_ToCol = m_FromCol + kLineCol[best] * length;
 	m_ToRow = m_FromRow + kLineRow[best] * length;
 	WorldGrid::ClampToMap(m_ToCol, m_ToRow);
+	ClampToBoard(m_ToCol, m_ToRow);
 	FaceAlong(kLineCol[best], kLineRow[best]);
 }
 
@@ -231,6 +243,7 @@ void GodPieceActor::ChooseLeap(float toCol, float toRow)
 		}
 	}
 	WorldGrid::ClampToMap(m_ToCol, m_ToRow);
+	ClampToBoard(m_ToCol, m_ToRow);
 	FaceAlong(m_ToCol - m_FromCol, m_ToRow - m_FromRow);
 }
 

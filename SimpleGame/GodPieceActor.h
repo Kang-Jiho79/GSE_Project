@@ -48,6 +48,8 @@ private:
 	};
 
 	void UpdateWard(float deltaTime);
+	// Keeps a move on its walled board.
+	void ClampToBoard(float& col, float& row) const;
 	void ChooseSlide(float toCol, float toRow);
 	void ChooseLeap(float toCol, float toRow);
 	void Start(Blow blow, float windup);
@@ -59,6 +61,7 @@ private:
 	void DrawTelegraph(DrawList& out, const ActorContext& ctx, float x, float groundY) const;
 
 	Kind m_Kind;
+	int m_Region;
 	State m_State = State::Wait;
 	Blow m_Blow = Blow::Slide;
 	float m_StateTime = 0.f;

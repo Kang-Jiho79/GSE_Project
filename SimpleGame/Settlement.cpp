@@ -24,6 +24,7 @@ namespace
 
 	const int kVillageHouses = 9;
 	const int kBorderbornHouses = 7;
+	const int kHamletHouses = 3;
 	const int kCapitalHouses = 16;
 	const int kPlacementTries = 300;
 
@@ -127,6 +128,15 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 
 	int houses = capital ? kCapitalHouses
 		: (info.style == Regions::Style::Borderborn ? kBorderbornHouses : kVillageHouses);
+	// A hamlet is a few houses; a ruined altar stands alone.
+	if (info.feature == Regions::Feature::Hamlet)
+	{
+		houses = kHamletHouses;
+	}
+	else if (info.feature == Regions::Feature::RuinedAltar)
+	{
+		houses = 0;
+	}
 	float baseSize = HouseSize(info.style) * (capital ? 1.2f : 1.f);
 
 	int placed = 0;
@@ -140,8 +150,11 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 		Building house = { BuildingType::House,
 			centerCol + cosf(angle) * distance, centerRow + sinf(angle) * distance, size, (int)(random.Next() * 8.f) };
 
+		// Inside its own place, clear of the edge.
 		float half = size * 0.5f + kMapMargin;
-		if (house.col < half || house.row < half || house.col > info.size - half || house.row > info.size - half)
+		float minCol, minRow, maxCol, maxRow;
+		Regions::Bounds(region, minCol, minRow, maxCol, maxRow);
+		if (house.col < minCol + half || house.row < minRow + half || house.col > maxCol - half || house.row > maxRow - half)
 		{
 			continue;
 		}

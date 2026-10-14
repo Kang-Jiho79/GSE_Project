@@ -13,15 +13,18 @@ class Renderer;
 class TextRenderer;
 class PlayerActor;
 class KingActor;
+class ArenaActor;
 class NpcActor;
 struct PlayerStatus;
 struct Progress;
 
-// The region he is in. Builds its actor tree from the region's entry in the
-// table, hands it the frame, and turns what it collected into draw calls.
-// All the world's behaviour lives in the actors; this owns only the layout,
-// the camera (and the cutscenes that take it over), travel between regions,
-// the fades that cover it and death, and the asking for a king's duel.
+// The world he is in. Builds its actor tree - the one world every place on
+// the map lies in, or a place off it with a map of its own - hands it the
+// frame, and turns what it collected into draw calls. All the world's
+// behaviour lives in the actors; this owns only the layout, which place he
+// is in, setting out and clearing away each place's monsters as he comes and
+// goes, the camera (and the cutscenes that take it over), travel, the fades
+// that cover it and death, and the asking for a king's duel.
 class Scene
 {
 public:
@@ -44,10 +47,14 @@ public:
 	void SetEffectsEnabled(bool enabled);
 	bool AreEffectsEnabled() const;
 
+	// The place he is in.
 	int CurrentRegion() const;
-	const Regions::Atmosphere& CurrentAtmosphere() const;
+	// Its air - mixing into the next place's as he nears it.
+	Regions::Atmosphere CurrentAtmosphere() const;
 	// One flag per region: whether he has been there.
 	const bool* VisitedRegions() const;
+	// Where he stands, in tiles.
+	void PlayerTile(float& col, float& row) const;
 	// From the start: the hidden village on its last day. Progress and
 	// status must already be fresh.
 	void NewGame();
@@ -94,8 +101,9 @@ public:
 	// Nothing at all while a duel is under way.
 	Interaction AvailableInteraction() const;
 
-	// Rests at this region's altar: his wounds close, and if he falls he will
-	// rise here, wherever he is when it happens.
+	// Rests at this region's altar: his wounds close, if he falls he will
+	// rise here, wherever he is when it happens - and the world's monsters
+	// all come back.
 	void UseTemple(PlayerStatus& status);
 
 	// Asks the king before him for a duel: he is put in the king's form and
@@ -113,14 +121,35 @@ private:
 		Travel, // out, the next region is built, in
 	};
 
+	// Puts him at a place's waystone: in the world, a step across it - built
+	// first if it is not - or, for a place off the map, its own map built
+	// round him.
 	void EnterRegion(int region);
-	void SpawnMonsters(const Regions::Info& info);
-	void BuildSettlement(const Regions::Info& info, Actor* environment);
+	void BuildWorld();
+	void BuildIsolated(int region);
+	void AddPlayer(float x, float y);
+	void BuildSettlement(int region, Actor* environment);
+	// He has stepped into another place: what the story has there, and its
+	// name shown.
+	void SetCurrent(int region);
+	// Setting out and clearing away the places' monsters and bosses as he
+	// comes and goes; all of them at once, after a rest.
+	void UpdatePlaces();
+	void Activate(int region);
+	void Deactivate(int region);
+	void RefillAll();
+	void SpawnMonsters(int region);
+	// The hidden village shut in while the gray comes for it, and a board
+	// shut while its boss is awake and he is on it.
+	void UpdateSeals();
+	// A boss of the god's pieces awake in a place, if any: its place.
+	int AwakeBossRegion();
+
 	void WaystoneTile(float& col, float& row) const;
-	void ArrivalPoint(float& x, float& y) const;
-	// Where he rises after falling: beside the altar he last rested at if he
-	// is in its region, otherwise beside the waystone.
-	void RespawnPoint(float& x, float& y) const;
+	void ArrivalPoint(int region, float& x, float& y) const;
+	// Where he gets up in a place: beside its altar if that is where he last
+	// rested, otherwise beside its waystone.
+	void RestPoint(int region, float& x, float& y) const;
 	bool IsNear(float col, float row, float reach) const;
 
 	ActorContext MakeContext(float deltaTime, PlayerStatus& status);
@@ -175,6 +204,17 @@ private:
 	StoryEvents m_Events;
 	int m_Conversation = -1;
 
+	// The one world built, rather than a place off the map; which places'
+	// monsters are set out; each place's settlement (empty where there is
+	// none) and walled board. The boards are owned by the graph and last as
+	// long as the world does.
+	bool m_InWorld = false;
+	bool m_Active[Regions::Count] = {};
+	Settlement::Layout m_Settlements[Regions::Count];
+	ArenaActor* m_Arenas[Regions::Count] = {};
+	bool m_LiminaSealed = false;
+	float m_LiminaSeal[4][4] = {};
+
 	Cutscene m_Cutscene;
 	// Where the camera looks and how close: on him at no zoom, unless a
 	// cutscene has it. Settled each update, before anything is drawn.
@@ -186,7 +226,6 @@ private:
 	// never destroyed, so this stays good until the region is left.
 	KingActor* m_King = nullptr;
 
-	Settlement::Layout m_Settlement;
 	float m_BannerTimer = 0.f; // the region's name, shown as he arrives
 
 	Fade m_Fade = Fade::None;

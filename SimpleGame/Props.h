@@ -1,10 +1,10 @@
 #pragma once
 
-// What stands on each tile of the current region: dead trees in groves,
-// boulders, rubble, and the broken stonework of whatever stood here before.
-// Nothing is stored - it is worked out from the tile and the region's seed
-// the same way every time, so what is drawn and what blocks the way always
-// agree.
+// What stands on each tile of the map: dead trees in groves, boulders,
+// rubble, and the broken stonework of whatever stood here before. Nothing is
+// stored - it is worked out from the tile and the map's seed the same way
+// every time, so what is drawn and what blocks the way always agree. How
+// thickly things stand is each place's own (WorldGrid::ZoneAt).
 namespace Props
 {
 	enum class Kind
@@ -19,13 +19,13 @@ namespace Props
 		House,
 	};
 
-	// The region's field: how thickly things stand, 1 being an ordinary
-	// field, and a clearing round a point - a waystone, a village - where
-	// nothing does.
-	void SetField(float density, float clearCol, float clearRow, float clearRadius);
-	// A second clearing, round where a boss waits, so nothing walls it in
-	// or stands between it and him. Cleared again by SetField.
-	void SetArena(float col, float row, float radius);
+	// Nothing standing anywhere, and no clearings.
+	void Clear();
+	// How thickly things stand in a place, 1 being an ordinary field.
+	void SetDensity(int zone, float density);
+	// A clearing round a point where nothing stands - a waystone, a village,
+	// where a boss waits.
+	void AddClearing(float col, float row, float radius);
 
 	// What stands on a tile. variant and grain vary its look.
 	Kind At(int col, int row, int& variant, float& grain);

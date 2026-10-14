@@ -261,6 +261,12 @@
     <ClInclude Include="BurstActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="LandmarkActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ArenaActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="TaintedPieceActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -444,6 +450,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BurstActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="LandmarkActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ArenaActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TaintedPieceActor.cpp">

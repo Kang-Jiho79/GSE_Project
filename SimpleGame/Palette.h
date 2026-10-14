@@ -150,6 +150,15 @@ namespace Palette
 
 	const Color kMapWell = { 0.08f, 0.075f, 0.095f };
 	const Color kMapEnemy = { 0.74f, 0.22f, 0.20f };
+	// The minimap's ground, by whose land it is, and what stands on it.
+	const Color kMapLight = { 0.42f, 0.37f, 0.22f };
+	const Color kMapDark = { 0.25f, 0.19f, 0.35f };
+	const Color kMapAshen = { 0.29f, 0.29f, 0.30f };
+	const Color kMapMixed = { 0.28f, 0.27f, 0.23f };
+	const Color kMapBorder = { 0.21f, 0.28f, 0.20f };
+	const Color kMapBuilding = { 0.10f, 0.09f, 0.10f };
+	const Color kMapWall = { 0.55f, 0.55f, 0.57f };
+	const Color kMapPerson = { 0.55f, 0.75f, 0.85f };
 	const Color kMapPlayerRim = { 0.30f, 0.30f, 0.34f };
 	const Color kMapPlayer = { 0.94f, 0.92f, 0.88f };
 }

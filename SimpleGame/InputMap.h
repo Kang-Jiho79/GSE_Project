@@ -18,6 +18,8 @@ namespace InputMap
 	const unsigned char kLimit = 'r';
 	const unsigned char kInteract = 'f';
 	const unsigned char kDialogueLog = 'l';
+	// The world map, to look at anywhere; at a waystone F opens it to travel.
+	const unsigned char kWorldMap = 'm';
 	const unsigned char kStatus = 9; // Tab
 	// Going on in a conversation, besides F.
 	const unsigned char kConfirm = 13; // Enter

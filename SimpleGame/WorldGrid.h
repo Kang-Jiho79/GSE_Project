@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 // The isometric grid the whole world is laid out on: how a (col, row) cell maps
 // onto the screen, which cell a loose world position belongs to, and how high
 // the terraced ground stands there.
@@ -18,6 +20,15 @@ namespace WorldGrid
 	void SetMap(int cols, int rows, unsigned int seed, int terraceLevels);
 	int MapCols();
 	int MapRows();
+
+	// The places the map is laid out in: which place each coarse cell of
+	// cellSize tiles belongs to - -1 for the cliffs and fog between them,
+	// which nobody walks or shoots across - and each place's terrace levels.
+	// Without them (ClearZones, and SetMap clears them) the whole map is one
+	// place, place 0, at the levels SetMap gave it.
+	void SetZones(const std::vector<int>& cells, int cellsPerSide, int cellSize, const std::vector<int>& levels);
+	void ClearZones();
+	int ZoneAt(int col, int row);
 
 	unsigned int Hash(int col, int row);
 

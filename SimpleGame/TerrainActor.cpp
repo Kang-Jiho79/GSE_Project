@@ -26,14 +26,11 @@ namespace
 	const float kPatternShare = 0.45f;
 }
 
-void TerrainActor::SetBoard(int centerCol, int centerRow, int from, int to, bool whole)
+void TerrainActor::AddBoard(int centerCol, int centerRow, int fromCol, int toCol, int fromRow, int toRow, bool whole)
 {
-	m_Board = true;
-	m_Whole = whole;
-	m_BoardCol = centerCol;
-	m_BoardRow = centerRow;
-	m_From = from;
-	m_To = to;
+	Board board = { centerCol, centerRow, fromCol, toCol, fromRow, toRow };
+	m_Boards.push_back(board);
+	m_Whole = m_Whole || whole;
 }
 
 void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
@@ -51,6 +48,12 @@ void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	{
 		for (int col = colMin; col <= colMax; col++)
 		{
+			// Nothing between the places: only fog.
+			if (WorldGrid::ZoneAt(col, row) < 0)
+			{
+				continue;
+			}
+
 			float worldX, worldY;
 			WorldGrid::IsoPosition((float)col, (float)row, worldX, worldY);
 
@@ -99,11 +102,19 @@ void TerrainActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 			// still hides what is below and behind it.
 			out.SetGround(rightDrop <= 0.f && leftDrop <= 0.f);
 
-			if (m_Board)
+			if (!m_Boards.empty())
 			{
-				int fromCol = col - m_BoardCol;
-				int fromRow = row - m_BoardRow;
-				bool onBoard = fromCol >= m_From && fromCol <= m_To && fromRow >= m_From && fromRow <= m_To;
+				int fromCol = 0;
+				int fromRow = 0;
+				bool onBoard = false;
+				for (size_t i = 0; i < m_Boards.size() && !onBoard; i++)
+				{
+					const Board& board = m_Boards[i];
+					fromCol = col - board.centerCol;
+					fromRow = row - board.centerRow;
+					onBoard = fromCol >= board.fromCol && fromCol <= board.toCol
+						&& fromRow >= board.fromRow && fromRow <= board.toRow;
+				}
 				if (onBoard || m_Whole)
 				{
 					const Palette::Color& square = !onBoard ? Palette::kBoardVoid

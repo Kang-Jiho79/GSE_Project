@@ -86,6 +86,12 @@ public:
 	void Destroy();
 	bool IsDestroyed() const;
 
+	// The place it belongs to, so it can be cleared away with that place -
+	// a place's monsters once he is far from it, say (Scene). -1 for
+	// anything that belongs to none.
+	void SetZone(int zone);
+	int Zone() const;
+
 	void UpdateTree(const ActorContext& ctx, float parentWorldX, float parentWorldY);
 	void DrawTree(DrawList& out, const ActorContext& ctx, float parentWorldX, float parentWorldY) const;
 	void PruneDestroyed();
@@ -122,6 +128,7 @@ private:
 	mutable float m_WorldY = 0.f;
 
 	bool m_Destroyed = false;
+	int m_Zone = -1;
 
 	std::vector<std::unique_ptr<Actor>> m_Children;
 };

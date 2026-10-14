@@ -351,6 +351,12 @@ void OverlayKey(int lowered)
 		return;
 	}
 
+	if (g_WorldMap.IsOpen() && lowered == InputMap::kWorldMap)
+	{
+		g_WorldMap.Close();
+		return;
+	}
+
 	if (lowered == InputMap::kInteract || lowered == InputMap::kQuit)
 	{
 		CloseOverlays();
@@ -378,7 +384,7 @@ void RenderScene(void)
 	g_Renderer->ResetCounts();
 
 	// The region sets the dark behind the world and the grade over it.
-	const Regions::Atmosphere& mood = g_Scene.CurrentAtmosphere();
+	Regions::Atmosphere mood = g_Scene.CurrentAtmosphere();
 	PostProcess::Grade grade;
 	// A cut-in may drain the colour out of everything.
 	grade.saturation = mood.saturation * (1.f - g_Scene.Desaturation());
@@ -513,7 +519,9 @@ void Idle(void)
 			{
 			case Scene::Interaction::WorldMap:
 			{
-				g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions());
+				float col, row;
+				g_Scene.PlayerTile(col, row);
+				g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions(), col, row, true);
 				g_AttackHeld = false;
 				break;
 			}
@@ -802,6 +810,19 @@ void KeyInput(unsigned char key, int x, int y)
 	{
 		g_DialogueLog.Open();
 		g_AttackHeld = false;
+		break;
+	}
+	case InputMap::kWorldMap:
+	{
+		// Only to look: travelling is for the waystones. Not while a
+		// cutscene has the screen.
+		if (!g_Scene.IsInCutscene())
+		{
+			float col, row;
+			g_Scene.PlayerTile(col, row);
+			g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions(), col, row, false);
+			g_AttackHeld = false;
+		}
 		break;
 	}
 	case InputMap::kStatus:

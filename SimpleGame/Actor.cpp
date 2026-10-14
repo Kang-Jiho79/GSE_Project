@@ -73,6 +73,16 @@ bool Actor::IsDestroyed() const
 	return m_Destroyed;
 }
 
+void Actor::SetZone(int zone)
+{
+	m_Zone = zone;
+}
+
+int Actor::Zone() const
+{
+	return m_Zone;
+}
+
 void Actor::UpdateTree(const ActorContext& ctx, float parentWorldX, float parentWorldY)
 {
 	if (m_Destroyed)

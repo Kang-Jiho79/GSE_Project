@@ -15,6 +15,10 @@ struct Progress;
 class Prologue
 {
 public:
+	// The raid's gray are tagged with this (Actor::SetZone), to be told
+	// apart from anything wandering in from the woods.
+	static const int kRaidZone = -3;
+
 	// The village as it was, from the top.
 	void Begin();
 	// Not here, or already over.

@@ -35,8 +35,16 @@ struct PlayerStatus;
 class StoryEvents
 {
 public:
+	// Everything it puts in the world is tagged with this (Actor::SetZone),
+	// so it can all be cleared at once.
+	static const int kZone = -2;
+
+	// He has come into a place: whatever the story has for him there.
 	void Enter(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph,
 		float centerCol, float centerRow);
+	// He has left it: whatever it put there is cleared away, to be set out
+	// again as it stands if he comes back.
+	void Leave(SceneGraph& graph);
 
 	// Moves it on. Returns a conversation to start now, or -1.
 	int Update(SceneGraph& graph, Progress& progress, const PlayerStatus& status, float playerX, float playerY);

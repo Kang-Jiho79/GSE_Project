@@ -14,6 +14,12 @@ namespace
 	unsigned int s_Seed = 0;
 	int s_TerraceLevels = 4;
 
+	// The places, when the map has more than one.
+	const std::vector<int>* s_ZoneCells = nullptr;
+	int s_ZoneSide = 0;
+	int s_ZoneCell = 1;
+	std::vector<int> s_ZoneLevels;
+
 	struct Blocker
 	{
 		float minCol;
@@ -54,6 +60,41 @@ namespace WorldGrid
 		s_MapRows = rows;
 		s_Seed = seed;
 		s_TerraceLevels = (terraceLevels < 1) ? 1 : terraceLevels;
+		ClearZones();
+	}
+
+	void SetZones(const std::vector<int>& cells, int cellsPerSide, int cellSize, const std::vector<int>& levels)
+	{
+		s_ZoneCells = &cells;
+		s_ZoneSide = cellsPerSide;
+		s_ZoneCell = (cellSize < 1) ? 1 : cellSize;
+		s_ZoneLevels = levels;
+	}
+
+	void ClearZones()
+	{
+		s_ZoneCells = nullptr;
+		s_ZoneSide = 0;
+		s_ZoneLevels.clear();
+	}
+
+	int ZoneAt(int col, int row)
+	{
+		if (s_ZoneCells == nullptr)
+		{
+			return 0;
+		}
+		if (col < 0 || row < 0)
+		{
+			return -1;
+		}
+		int i = col / s_ZoneCell;
+		int j = row / s_ZoneCell;
+		if (i >= s_ZoneSide || j >= s_ZoneSide)
+		{
+			return -1;
+		}
+		return (*s_ZoneCells)[j * s_ZoneSide + i];
 	}
 
 	int MapCols()
@@ -149,16 +190,29 @@ namespace WorldGrid
 	// cliffs instead of per-tile static.
 	float Elevation(int col, int row)
 	{
+		// Each place rises through its own levels; the empty ground between
+		// lies at the bottom.
+		int levels = s_TerraceLevels;
+		if (s_ZoneCells != nullptr)
+		{
+			int zone = ZoneAt(col, row);
+			if (zone < 0 || zone >= (int)s_ZoneLevels.size())
+			{
+				return 0.f;
+			}
+			levels = s_ZoneLevels[zone];
+		}
+
 		float noise = Noise((float)col, (float)row, kNoiseCell);
 
-		int level = (int)(noise * s_TerraceLevels);
+		int level = (int)(noise * levels);
 		if (level < 0)
 		{
 			level = 0;
 		}
-		if (level > s_TerraceLevels - 1)
+		if (level > levels - 1)
 		{
-			level = s_TerraceLevels - 1;
+			level = levels - 1;
 		}
 		return level * kTerraceStep;
 	}
@@ -210,6 +264,11 @@ namespace WorldGrid
 
 	bool IsBlocked(float col, float row)
 	{
+		// The cliffs and fog between places.
+		if (ZoneAt((int)floorf(col + 0.5f), (int)floorf(row + 0.5f)) < 0)
+		{
+			return true;
+		}
 		for (size_t i = 0; i < s_Blockers.size(); i++)
 		{
 			const Blocker& b = s_Blockers[i];
@@ -225,6 +284,10 @@ namespace WorldGrid
 
 	bool BlocksShot(float col, float row)
 	{
+		if (ZoneAt((int)floorf(col + 0.5f), (int)floorf(row + 0.5f)) < 0)
+		{
+			return true;
+		}
 		for (size_t i = 0; i < s_Blockers.size(); i++)
 		{
 			const Blocker& b = s_Blockers[i];

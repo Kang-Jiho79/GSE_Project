@@ -102,6 +102,7 @@ void TaintedPawnActor::SpawnSoldiers(const ActorContext& ctx)
 		std::unique_ptr<PawnSoldierActor> soldier(new PawnSoldierActor(centerCol + side * spread * (i / 2 + 1),
 			centerRow - half, centerRow + half));
 		m_Soldiers[i] = soldier.get();
+		soldier->SetZone(Zone());
 		ctx.graph->Spawn(std::move(soldier));
 	}
 	m_SoldiersOut = true;

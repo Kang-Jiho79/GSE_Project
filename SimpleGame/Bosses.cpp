@@ -20,6 +20,11 @@ namespace
 	const float kArenaCol = 0.82f;
 	const float kArenaRow = 0.22f;
 
+	// The arena's walls, squares out from the board's centre, and its
+	// threshold, past the opening.
+	const int kWallReach = 6;
+	const float kThresholdReach = 8.5f;
+
 	BossActor* PlaceAt(SceneGraph& graph, BossActor* boss, float col, float row)
 	{
 		float x, y;
@@ -39,9 +44,45 @@ namespace
 
 void Bosses::Arena(int region, float& col, float& row)
 {
+	float minCol, minRow, maxCol, maxRow;
+	Regions::Bounds(region, minCol, minRow, maxCol, maxRow);
 	float size = (float)Regions::Get(region).size;
-	col = size * kArenaCol;
-	row = size * kArenaRow;
+	col = minCol + size * kArenaCol;
+	row = minRow + size * kArenaRow;
+}
+
+int Bosses::WallReach()
+{
+	return kWallReach;
+}
+
+void Bosses::Opening(int region, int& dirCol, int& dirRow)
+{
+	int col, row;
+	BoardCenter(region, col, row);
+	float waystoneCol, waystoneRow;
+	Regions::Center(region, waystoneCol, waystoneRow);
+	float dc = waystoneCol - col;
+	float dr = waystoneRow - row;
+	dirCol = 0;
+	dirRow = 0;
+	if (fabsf(dc) >= fabsf(dr))
+	{
+		dirCol = (dc >= 0.f) ? 1 : -1;
+	}
+	else
+	{
+		dirRow = (dr >= 0.f) ? 1 : -1;
+	}
+}
+
+void Bosses::Threshold(int region, float& col, float& row)
+{
+	int centerCol, centerRow, dirCol, dirRow;
+	BoardCenter(region, centerCol, centerRow);
+	Opening(region, dirCol, dirRow);
+	col = centerCol + dirCol * kThresholdReach;
+	row = centerRow + dirRow * kThresholdReach;
 }
 
 bool Bosses::HasBoard(int region)

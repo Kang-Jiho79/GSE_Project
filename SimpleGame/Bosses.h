@@ -24,4 +24,13 @@ namespace Bosses
 	// The board runs Tuning::TaintedPiece::kBoardHalf squares each way.
 	bool HasBoard(int region);
 	void BoardCenter(int region, int& col, int& row);
+
+	// The walled ground round a board (ArenaActor): its walls run this many
+	// squares out from the centre, with one opening, on the side facing the
+	// region's waystone - along one of the grid's two axes. Past the opening
+	// lie its threshold, where he gets up again after falling to its boss,
+	// and the approach, lined with statues.
+	int WallReach();
+	void Opening(int region, int& dirCol, int& dirRow);
+	void Threshold(int region, float& col, float& row);
 }

@@ -239,6 +239,8 @@
     <ClInclude Include="LightFormMoves.h" />
     <ClInclude Include="DarkFormMoves.h" />
     <ClInclude Include="BurstActor.h" />
+    <ClInclude Include="LandmarkActor.h" />
+    <ClInclude Include="ArenaActor.h" />
     <ClInclude Include="TaintedPieceActor.h" />
     <ClInclude Include="TaintedPawnActor.h" />
     <ClInclude Include="TaintedBishopActor.h" />
@@ -321,6 +323,8 @@
     <ClCompile Include="LightFormMoves.cpp" />
     <ClCompile Include="DarkFormMoves.cpp" />
     <ClCompile Include="BurstActor.cpp" />
+    <ClCompile Include="LandmarkActor.cpp" />
+    <ClCompile Include="ArenaActor.cpp" />
     <ClCompile Include="TaintedPieceActor.cpp" />
     <ClCompile Include="TaintedPawnActor.cpp" />
     <ClCompile Include="TaintedBishopActor.cpp" />

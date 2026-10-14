@@ -1,10 +1,17 @@
 #pragma once
 
+#include <vector>
 #include "Palette.h"
 
-// Every place the player can be, and how they join up. Each region is its own
-// map, generated from its seed when he enters it; nothing about a region is
-// kept once he leaves, so its monsters are back the next time he comes.
+// Every place the player can be, and how they join up. All but the god's own
+// place lie together in one world he walks across: squares of ground the
+// same size, set edge to edge on a grid five across and seven deep - the
+// light's land down the west side, the dark's down the east, the gray's
+// heartland at the top between them, the battlefield below it, and the
+// border and the hidden village at the bottom - with small places, some
+// without names, in the squares between. He walks from any square into the
+// next, but for the gray's heartland, walled round with cliffs and fog
+// except where it meets its own march. The god's place has a map of its own.
 namespace Regions
 {
 	enum Id
@@ -35,7 +42,38 @@ namespace Regions
 		Kinera,       // the heart of the gray
 		Realm,        // the god's own place, reached only at the very end
 
+		// The squares between: the villages that grew up along the roads,
+		// and places with no name of their own.
+		Vespera,      // the border's resting place
+		Treuga,       // the outpost on the battlefield, where every road meets
+		Candida,      // pilgrims' village on the light's side
+		Obscura,      // pilgrims' village on the dark's side
+		Refugium,     // the last refuge before the gray
+		AshRift,
+		FallenKing,
+		Wreckage,
+		LightHamlet,
+		WayfarerCamp,
+		DarkHamlet,
+		RuinedAltar,
+		Hideout,
+		PilgrimRest,
+
 		Count,
+	};
+
+	// What stands in a square with no name of its own, past its ground.
+	enum class Feature
+	{
+		None,
+		Hamlet,      // a few houses and a small altar
+		Camp,        // a fire and tents
+		FallenKing,  // a great king of stone lying on its side
+		Wreckage,    // the broken weapons and banners of both sides
+		Rift,        // pools of the gray lying on the ground
+		RuinedAltar, // a temple fallen in, its altar still working
+		Hideout,     // where the borderborn used to hide
+		PilgrimRest, // a resting place where both sides sit apart
 	};
 
 	enum class Kind
@@ -72,9 +110,12 @@ namespace Regions
 		float lightShare;   // of its monsters, how many were of the light
 		float mageShare;    // of its monsters, how many are mages
 
-		// Where it sits on the world map, -1..1 across and up.
-		float mapX;
-		float mapY;
+		// Which square of the world it is: across from the west, and down
+		// from the north.
+		int cellCol;
+		int cellRow;
+
+		Feature feature;
 	};
 
 	// How a region feels to stand in: the dark the world fades into at its
@@ -100,8 +141,27 @@ namespace Regions
 	const Atmosphere& AtmosphereOf(int region);
 	unsigned int Seed(int region);
 
-	// Roads run both ways.
+	// Whether he can walk from one place into another: they share an edge,
+	// and it is not walled off.
 	bool AreLinked(int a, int b);
 	int LinkCount();
 	void GetLink(int index, int& a, int& b);
+
+	// The world, in tiles along each side, and the seed its ground grows from.
+	int WorldSize();
+	unsigned int WorldSeed();
+	// Where a place lies: its centre and its square, in tiles. A place off
+	// the map lies at the middle of a map of its own.
+	void Center(int region, float& col, float& row);
+	void Bounds(int region, float& minCol, float& minRow, float& maxCol, float& maxRow);
+	// How far a point lies outside a place's square, in tiles; 0 inside it.
+	float DistanceOutside(int region, float col, float row);
+	// Which place a tile of the world belongs to, or -1 for the cliffs and
+	// fog round the gray's heartland and past the world's edge, where nobody
+	// walks.
+	int RegionAt(int col, int row);
+	// The coarse grid that is worked out from: cellSize tiles to a cell.
+	const std::vector<int>& RegionCells(int& cellsPerSide, int& cellSize);
+	// Where it is drawn on the world map, -1..1 across and up.
+	void MapPosition(int region, float& x, float& y);
 }

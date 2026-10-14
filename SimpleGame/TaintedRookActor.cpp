@@ -88,6 +88,7 @@ void TaintedRookActor::RaisePillars(const ActorContext& ctx)
 		int row = centerRow + ((i < 2) ? -offset : offset);
 		std::unique_ptr<ArenaStoneActor> pillar(new ArenaStoneActor(col, row, true, 0.f));
 		m_Pillar[i] = pillar.get();
+		pillar->SetZone(Zone());
 		ctx.graph->Spawn(std::move(pillar));
 	}
 	m_PillarsRaised = true;
@@ -270,6 +271,7 @@ void TaintedRookActor::RaiseWall(const ActorContext& ctx)
 		}
 		std::unique_ptr<ArenaStoneActor> wall(new ArenaStoneActor(col, row, false, Tuning::TaintedRook::kWallTime));
 		m_Wall[slot] = wall.get();
+		wall->SetZone(Zone());
 		ctx.graph->Spawn(std::move(wall));
 	}
 	ctx.impact->Shake(Tuning::TaintedRook::kChargeShake * 0.5f);

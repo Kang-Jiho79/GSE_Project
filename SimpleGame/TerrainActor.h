@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "Actor.h"
 
 // The terraced ground. One actor for the whole surface rather than one per
@@ -10,20 +11,31 @@
 // squares pale and dark round a centre tile. In the god's own place the
 // board is all there is - its squares in full, and nothing past them;
 // elsewhere they are only a pattern worked into the region's own ground.
+//
+// Between the places of the world there is no ground at all, only the fog
+// the window clears to (WorldGrid::ZoneAt).
 class TerrainActor : public Actor
 {
 public:
-	// from/to: squares from the centre on both axes. whole: the god's place.
-	void SetBoard(int centerCol, int centerRow, int from, int to, bool whole);
+	// A rectangle of squares, from and to squares out from the centre along
+	// each axis; boards sharing a centre share its colouring. whole: the
+	// god's place, where nothing lies past the board.
+	void AddBoard(int centerCol, int centerRow, int fromCol, int toCol, int fromRow, int toRow, bool whole);
 
 protected:
 	void OnDraw(DrawList& out, const ActorContext& ctx) const override;
 
 private:
-	bool m_Board = false;
+	struct Board
+	{
+		int centerCol;
+		int centerRow;
+		int fromCol;
+		int toCol;
+		int fromRow;
+		int toRow;
+	};
+
+	std::vector<Board> m_Boards;
 	bool m_Whole = false;
-	int m_BoardCol = 0;
-	int m_BoardRow = 0;
-	int m_From = 0;
-	int m_To = 0;
 };
