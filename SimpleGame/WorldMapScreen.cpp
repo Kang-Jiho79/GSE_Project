@@ -97,6 +97,15 @@ bool WorldMapScreen::IsOpen() const
 	return m_Open;
 }
 
+void WorldMapScreen::SetGoals(const int* regions, int count)
+{
+	m_GoalCount = (count > 2) ? 2 : count;
+	for (int i = 0; i < m_GoalCount; i++)
+	{
+		m_Goals[i] = regions[i];
+	}
+}
+
 bool WorldMapScreen::IsKnown(int region) const
 {
 	if (Regions::IsOffMap(region))
@@ -190,6 +199,18 @@ void WorldMapScreen::DrawSquare(Renderer* renderer, TextRenderer* text, int regi
 
 	bool current = (region == m_Current);
 	bool known = IsKnown(region);
+	bool goal = false;
+	for (int i = 0; i < m_GoalCount; i++)
+	{
+		goal = goal || (m_Goals[i] == region);
+	}
+
+	// Where the main road leads, ringed in gold - known or not.
+	if (goal)
+	{
+		renderer->DrawSolidRect(x, y, kSquareWidth + kFrame * 2.f, kSquareHeight + kFrame * 2.f,
+			Palette::kMapGoal.r, Palette::kMapGoal.g, Palette::kMapGoal.b, 1.f);
+	}
 
 	// Where he stands, and where the cursor would take him, are ringed.
 	if (current || hovered)
@@ -209,6 +230,11 @@ void WorldMapScreen::DrawSquare(Renderer* renderer, TextRenderer* text, int regi
 	}
 	const Palette::Color& ground = StyleColor(info.style);
 	renderer->DrawSolidRect(x, y, kSquareWidth, kSquareHeight, ground.r * shade, ground.g * shade, ground.b * shade, 1.f);
+	if (goal)
+	{
+		renderer->DrawSolidDiamond(x + kSquareWidth / 2.f - 10.f, y + kSquareHeight / 2.f - 10.f, kIcon * 1.6f, kIcon * 1.6f,
+			Palette::kMapGoal.r, Palette::kMapGoal.g, Palette::kMapGoal.b, 1.f);
+	}
 
 	if (!known)
 	{

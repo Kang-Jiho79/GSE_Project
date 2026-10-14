@@ -181,6 +181,24 @@ bool SaveGame::Write(const PlayerStatus& status, const Progress& progress, int r
 	}
 	Put(out, "story", story);
 
+	// Each request taken: its name, where it stands, and a hunt's count.
+	std::string quests;
+	for (int i = 0; i < Quests::Count; i++)
+	{
+		if (progress.questStage[i] == Quests::Unseen)
+		{
+			continue;
+		}
+		if (!quests.empty())
+		{
+			quests += ',';
+		}
+		quests += std::string(Quests::Get(i).key) + ":" + std::to_string(progress.questStage[i]) + ":"
+			+ std::to_string(progress.questCount[i]);
+	}
+	Put(out, "quests", quests);
+	Put(out, "metEveningKeeper", progress.metEveningKeeper);
+
 	return out.good();
 }
 
@@ -302,6 +320,42 @@ bool SaveGame::Read(PlayerStatus& status, Progress& progress, int& region)
 		{
 			progress.recognizedByNoctis = IsTrue(value);
 		}
+		else if (key == "quests")
+		{
+			// name:stage:count, comma after comma; names it does not know
+			// are passed over.
+			size_t start = 0;
+			while (start < value.size())
+			{
+				size_t end = value.find(',', start);
+				if (end == std::string::npos)
+				{
+					end = value.size();
+				}
+				std::string entry = value.substr(start, end - start);
+				start = end + 1;
+				size_t first = entry.find(':');
+				size_t second = (first == std::string::npos) ? std::string::npos : entry.find(':', first + 1);
+				if (second == std::string::npos)
+				{
+					continue;
+				}
+				std::string name = entry.substr(0, first);
+				for (int i = 0; i < Quests::Count; i++)
+				{
+					if (name == Quests::Get(i).key)
+					{
+						int stage = ToInt(entry.substr(first + 1, second - first - 1));
+						progress.questStage[i] = (stage < Quests::Unseen || stage > Quests::Done) ? Quests::Unseen : stage;
+						progress.questCount[i] = ToInt(entry.substr(second + 1));
+					}
+				}
+			}
+		}
+		else if (key == "metEveningKeeper")
+		{
+			progress.metEveningKeeper = IsTrue(value);
+		}
 		else if (key == "story")
 		{
 			for (int i = 0; i < Story::Count; i++)
@@ -399,5 +453,10 @@ int SaveGame::Milestones(const Progress& progress)
 	}
 	count += progress.recognizedByLucius ? 1 : 0;
 	count += progress.recognizedByNoctis ? 1 : 0;
+	// Each request taken, done and reported.
+	for (int i = 0; i < Quests::Count; i++)
+	{
+		count += progress.questStage[i];
+	}
 	return count;
 }

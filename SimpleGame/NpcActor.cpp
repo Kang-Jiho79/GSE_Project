@@ -5,6 +5,12 @@
 #include "Alignment.h"
 #include "Palette.h"
 #include "Random.h"
+#include "MonsterActor.h"
+#include "SceneGraph.h"
+#include "Dialogue.h"
+#include "Progress.h"
+#include "Quests.h"
+#include "Tuning.h"
 #include <cmath>
 
 namespace
@@ -57,9 +63,41 @@ void NpcActor::SetConversation(int conversation)
 	m_Conversation = conversation;
 }
 
+bool NpcActor::IsReadable() const
+{
+	return m_Kind == Kind::Sign || m_Kind == Kind::Note || m_Kind == Kind::Lantern;
+}
+
 void NpcActor::OnUpdate(const ActorContext& ctx)
 {
 	m_Time += ctx.deltaTime;
+
+	// A lost lantern is gone once it has been found.
+	if (m_Kind == Kind::Lantern && ctx.progress != nullptr
+		&& Quests::StageOf(*ctx.progress, Quests::LostLantern) != Quests::Active)
+	{
+		Destroy();
+		return;
+	}
+	// The peddler begs while any of the gray is still near him.
+	if (m_Kind == Kind::Merchant)
+	{
+		bool besieged = false;
+		float reach = Tuning::Quest::kBesiegeReach;
+		ctx.graph->ForEach<MonsterActor>([&](MonsterActor& monster)
+		{
+			float col, row, monsterCol, monsterRow;
+			WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+			WorldGrid::InverseIso(monster.WorldX(), monster.WorldY(), monsterCol, monsterRow);
+			float dc = monsterCol - col;
+			float dr = monsterRow - row;
+			if (!monster.IsDestroyed() && dc * dc + dr * dr <= reach * reach)
+			{
+				besieged = true;
+			}
+		});
+		m_Conversation = besieged ? Dialogue::MerchantBesieged : Dialogue::MerchantSaved;
+	}
 
 	float col, row, playerCol, playerRow;
 	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
@@ -87,6 +125,11 @@ void NpcActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	if (m_Kind == Kind::Kinis)
 	{
 		DrawKinis(out, depth, x, groundY);
+		return;
+	}
+	if (IsReadable())
+	{
+		DrawThing(out, depth - 0.5f, x, groundY);
 		return;
 	}
 
@@ -184,6 +227,57 @@ void NpcActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 				0.f, 0.f, tr, tg, tb);
 		}
 		out.SetGlow(0.f);
+	}
+
+	// A peddler: a great pack on his back, half pale and half dark.
+	if (m_Kind == Kind::Merchant)
+	{
+		float packX = x - f * 8.f;
+		out.AddBox(depth - 0.02f, packX, shoulderY - 20.f, 0.3f, 0.26f, 18.f,
+			Palette::kClothLight.r, Palette::kClothLight.g, Palette::kClothLight.b);
+		out.AddBox(depth - 0.015f, packX, shoulderY - 2.f, 0.26f, 0.22f, 8.f,
+			Palette::kClothDark.r, Palette::kClothDark.g, Palette::kClothDark.b);
+	}
+}
+
+void NpcActor::DrawThing(DrawList& out, float depth, float x, float groundY) const
+{
+	// Something lying where it was left, its depth that of the ground it is on.
+	switch (m_Kind)
+	{
+	case Kind::Sign:
+	{
+		// A post leaning a little, an arm across its top.
+		out.AddShadow(depth - 0.01f, x, groundY, 18.f, 9.f);
+		out.AddTaperedBox(depth, x, groundY, 0.12f, 0.12f, 30.f, 1.f, 3.f, 0.f, 0.36f, 0.27f, 0.18f);
+		out.AddBox(depth + 0.01f, x + 4.f, groundY + 24.f, 0.5f, 0.08f, 6.f, 0.44f, 0.34f, 0.22f);
+		break;
+	}
+	case Kind::Note:
+	{
+		// A low stone with words cut into its face.
+		out.AddShadow(depth - 0.01f, x, groundY, 22.f, 11.f);
+		out.AddTaperedBox(depth, x, groundY, 0.45f, 0.25f, 12.f, 0.85f, 0.f, 0.f, 0.40f, 0.40f, 0.42f);
+		out.AddRect(depth + 0.01f, x, groundY + 7.f, 10.f, 1.5f, 0.16f, 0.16f, 0.18f, 1.f);
+		out.AddRect(depth + 0.01f, x, groundY + 4.f, 8.f, 1.5f, 0.16f, 0.16f, 0.18f, 1.f);
+		break;
+	}
+	case Kind::Lantern:
+	{
+		// Unlit, with a faint glint so it can be found.
+		float glint = 0.5f + 0.5f * sinf(m_Time * 3.f);
+		out.AddShadow(depth - 0.01f, x, groundY, 14.f, 7.f);
+		out.AddBox(depth, x, groundY, 0.2f, 0.2f, 10.f, 0.16f, 0.13f, 0.20f);
+		out.AddTaperedBox(depth + 0.01f, x, groundY + 10.f, 0.22f, 0.22f, 4.f, 0.3f, 0.f, 0.f, 0.10f, 0.08f, 0.12f);
+		out.SetGlow(0.3f * glint);
+		out.AddRect(depth + 0.02f, x, groundY + 5.f, 3.f, 4.f, 0.58f, 0.40f, 0.88f, 1.f);
+		out.SetGlow(0.f);
+		break;
+	}
+	default:
+	{
+		break;
+	}
 	}
 }
 

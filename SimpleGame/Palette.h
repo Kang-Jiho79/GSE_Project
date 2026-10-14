@@ -161,4 +161,6 @@ namespace Palette
 	const Color kMapPerson = { 0.55f, 0.75f, 0.85f };
 	const Color kMapPlayerRim = { 0.30f, 0.30f, 0.34f };
 	const Color kMapPlayer = { 0.94f, 0.92f, 0.88f };
+	// Where the road leads next, on the minimap and the world map.
+	const Color kMapGoal = { 0.98f, 0.80f, 0.38f };
 }

@@ -20,6 +20,8 @@ public:
 	// playerCol/playerRow: where he stands, in the world's tiles; a place off
 	// the map has no square, and then he is not marked.
 	void Open(int currentRegion, const bool* visited, float playerCol, float playerRow, bool travel);
+	// Where the main road leads next, ringed in gold: up to two places.
+	void SetGoals(const int* regions, int count);
 	void Close();
 	bool IsOpen() const;
 
@@ -46,4 +48,6 @@ private:
 	float m_PlayerCol = 0.f;
 	float m_PlayerRow = 0.f;
 	bool m_Visited[Regions::Count] = {};
+	int m_Goals[2] = {};
+	int m_GoalCount = 0;
 };

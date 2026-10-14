@@ -267,6 +267,15 @@
     <ClInclude Include="ThroneRoomActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Quests.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="QuestBoard.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="QuestLog.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="ArenaActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -459,6 +468,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ThroneRoomActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Quests.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="QuestBoard.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="QuestLog.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ArenaActor.cpp">

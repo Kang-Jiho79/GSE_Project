@@ -18,6 +18,8 @@ namespace InputMap
 	const unsigned char kLimit = 'r';
 	const unsigned char kInteract = 'f';
 	const unsigned char kDialogueLog = 'l';
+	// What he has set out to do: the main road and the requests taken.
+	const unsigned char kQuestLog = 'j';
 	// The world map, to look at anywhere; at a waystone F opens it to travel.
 	const unsigned char kWorldMap = 'm';
 	const unsigned char kStatus = 9; // Tab

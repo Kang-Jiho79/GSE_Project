@@ -2,6 +2,7 @@
 
 #include "Regions.h"
 #include "Story.h"
+#include "Quests.h"
 #include <string>
 
 // What the world remembers of his journey, apart from the man himself: where
@@ -34,6 +35,15 @@ struct Progress
 	std::string heroName = "이름 없는 자";
 
 	bool story[Story::Count] = {};
+
+	// Each notice-board request: where it stands (a Quests::Stage), and how
+	// many of the gray a hunt has counted.
+	int questStage[Quests::Count] = {};
+	int questCount[Quests::Count] = {};
+
+	// Whether the border village's keeper has already told him how the
+	// powers work, so the second time he says something else.
+	bool metEveningKeeper = false;
 
 	bool Has(Story::Flag flag) const
 	{

@@ -25,6 +25,9 @@ but WITHOUT ANY WARRANTY.
 #include "TextRenderer.h"
 #include "WorldMapScreen.h"
 #include "TemplePanel.h"
+#include "QuestBoard.h"
+#include "QuestLog.h"
+#include "Quests.h"
 #include "StatusScreen.h"
 #include "Cutscenes.h"
 #include "DialogueBox.h"
@@ -56,6 +59,8 @@ Hud g_Hud;
 WorldMapScreen g_WorldMap;
 TemplePanel g_TemplePanel;
 StatusScreen g_StatusScreen;
+QuestBoard g_QuestBoard;
+QuestLog g_QuestLog;
 DialogueBox g_Dialogue;
 DialogueLog g_DialogueLog;
 TitleScreen g_Title;
@@ -75,7 +80,7 @@ bool IsInMenu()
 bool IsOverlayOpen()
 {
 	return IsInMenu() || g_WorldMap.IsOpen() || g_TemplePanel.IsOpen() || g_StatusScreen.IsOpen() || g_Dialogue.IsOpen()
-		|| g_DialogueLog.IsOpen();
+		|| g_DialogueLog.IsOpen() || g_QuestBoard.IsOpen() || g_QuestLog.IsOpen();
 }
 
 bool g_MoveUp = false;
@@ -248,6 +253,40 @@ void CloseOverlays()
 	g_TemplePanel.Close();
 	g_StatusScreen.Close();
 	g_DialogueLog.Close();
+	g_QuestBoard.Close();
+	g_QuestLog.Close();
+}
+
+// The world map, opened to look or to travel, with where the main road leads
+// marked on it.
+void OpenWorldMap(bool travel)
+{
+	int where;
+	float col, row;
+	g_Scene.MapLocation(where, col, row);
+	int goals[2];
+	int count = Quests::MainTargets(g_Progress, goals);
+	g_WorldMap.SetGoals(goals, count);
+	g_WorldMap.Open(where, g_Scene.VisitedRegions(), col, row, travel);
+}
+
+// F on the notice board's chosen request: taken up, or reported and paid -
+// and whatever is said in thanks, said.
+void ConfirmQuest()
+{
+	std::string notice;
+	int script, refresh;
+	if (!g_QuestBoard.Confirm(g_Status, g_Progress, notice, script, refresh))
+	{
+		return;
+	}
+	g_Hud.Notify(notice);
+	g_Scene.RefreshRegion(refresh);
+	if (script >= 0)
+	{
+		g_QuestBoard.Close();
+		g_Dialogue.Open(script, g_Progress);
+	}
 }
 
 // Keys while a screen is open. A conversation takes F, Space and Enter to go
@@ -351,6 +390,43 @@ void OverlayKey(int lowered)
 		return;
 	}
 
+	// The board takes F to take up or report, and W/S to choose; only Esc
+	// closes it.
+	if (g_QuestBoard.IsOpen())
+	{
+		switch (lowered)
+		{
+		case InputMap::kMoveUp:
+		{
+			g_QuestBoard.Move(-1);
+			break;
+		}
+		case InputMap::kMoveDown:
+		{
+			g_QuestBoard.Move(1);
+			break;
+		}
+		case InputMap::kInteract:
+		case InputMap::kConfirm:
+		{
+			ConfirmQuest();
+			break;
+		}
+		case InputMap::kQuit:
+		{
+			g_QuestBoard.Close();
+			break;
+		}
+		}
+		return;
+	}
+
+	if (g_QuestLog.IsOpen() && lowered == InputMap::kQuestLog)
+	{
+		g_QuestLog.Close();
+		return;
+	}
+
 	if (g_WorldMap.IsOpen() && lowered == InputMap::kWorldMap)
 	{
 		g_WorldMap.Close();
@@ -421,7 +497,7 @@ void RenderScene(void)
 		if (!cinematic)
 		{
 			g_Text->Draw(TextRenderer::Face::Small,
-				"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 회피 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · Tab 상태 · L 대화 기록",
+				"WASD 이동 · Shift 달리기 · 좌클릭 공격 · 우클릭 회피 · Space 폼 전환 · E/Q 스킬 · F 상호작용 · Tab 상태 · J 의뢰 · L 대화 기록",
 				0.f, -WINDOW_SIZE_Y / 2.f + 12.f, Palette::kUiBone, 0.6f, TextRenderer::Align::Center);
 		}
 	}
@@ -439,6 +515,8 @@ void RenderScene(void)
 			g_WorldMap.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MouseX, g_MouseY);
 			g_TemplePanel.Render(g_Renderer, g_Text, g_Status, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_StatusScreen.Render(g_Renderer, g_Text, g_Status, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_QuestBoard.Render(g_Renderer, g_Text, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+			g_QuestLog.Render(g_Renderer, g_Text, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_Dialogue.Render(g_Renderer, g_Text, g_Progress, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_DialogueLog.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 			g_Title.Render(g_Renderer, g_Text, WINDOW_SIZE_X, WINDOW_SIZE_Y, g_MenuTime);
@@ -493,6 +571,14 @@ void Idle(void)
 
 		g_Scene.Update(input, deltaTime, g_Status);
 
+		// The gray fallen this frame, and anything found or given, counted
+		// toward the requests under way.
+		std::string tally = Quests::Tally(g_Progress);
+		if (!tally.empty())
+		{
+			g_Hud.Notify(tally);
+		}
+
 		// The story has ended.
 		int ending = g_Scene.TakeEnding();
 		if (ending >= 0)
@@ -519,10 +605,13 @@ void Idle(void)
 			{
 			case Scene::Interaction::WorldMap:
 			{
-				int where;
-				float col, row;
-				g_Scene.MapLocation(where, col, row);
-				g_WorldMap.Open(where, g_Scene.VisitedRegions(), col, row, true);
+				OpenWorldMap(true);
+				g_AttackHeld = false;
+				break;
+			}
+			case Scene::Interaction::Board:
+			{
+				g_QuestBoard.Open(g_Scene.CurrentRegion(), g_Progress);
 				g_AttackHeld = false;
 				break;
 			}
@@ -824,10 +913,16 @@ void KeyInput(unsigned char key, int x, int y)
 		// cutscene has the screen.
 		if (!g_Scene.IsInCutscene())
 		{
-			int where;
-			float col, row;
-			g_Scene.MapLocation(where, col, row);
-			g_WorldMap.Open(where, g_Scene.VisitedRegions(), col, row, false);
+			OpenWorldMap(false);
+			g_AttackHeld = false;
+		}
+		break;
+	}
+	case InputMap::kQuestLog:
+	{
+		if (!g_Scene.IsInCutscene())
+		{
+			g_QuestLog.Open();
 			g_AttackHeld = false;
 		}
 		break;

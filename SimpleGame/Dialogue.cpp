@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Dialogue.h"
 #include "Progress.h"
+#include "Quests.h"
 
 namespace
 {
@@ -462,6 +463,182 @@ namespace
 		{ nullptr, "그 집 앞에서, 숲에 버려졌던 아이는 처음으로 아무것도 거두지 않는 하루를 보냈다.", Style::Speech },
 	};
 
+	// ---- The villages between ----
+	// None of them points him at anything that decides how it ends.
+
+	const Line kEveningKeeper[] =
+	{
+		{ "저녁지기", "숲에서 나왔나. 냄새를 보니 경계인이로군. 여긴 그런 걸 묻는 곳이 아니니 안심해.", Style::Speech },
+		{ "저녁지기", "잿빛 놈들을 쓰러뜨리면 그놈이 원래 품었던 빛이나 어둠이 네게 흘러들지. 강해지는 길은 그것뿐이야.", Style::Speech },
+		{ "저녁지기", "다만 한쪽만 받아 마시면 몸이 기울어. 너무 기울면 잿빛이 안에서부터 널 갉아먹는다.", Style::Speech },
+		{ "저녁지기", "기울었다 싶으면 반대쪽 땅으로 가서 싸워. 얼마나 기울었는지는 어느 신전 제단에서든 볼 수 있다.", Style::Speech },
+	};
+
+	const Line kEveningKeeperAgain[] =
+	{
+		{ "저녁지기", "제단 위 흰 마름모, 봤나? 빛의 신전이든 어둠의 신전이든 저 모양만은 똑같지.", Style::Speech },
+		{ "저녁지기", "왜 그런지는 아무도 안 물어. 나도 안 묻고.", Style::Speech },
+	};
+
+	const Line kVesperaChild[] =
+	{
+		{ "아이", "언니가 그러는데, 게시판에 붙은 일을 해 주면 뭔가 준대!", Style::Speech },
+		{ "아이", "나는 아직 글씨를 못 읽어서 몰라.", Style::Speech },
+	};
+
+	const Line kTreugaGuide[] =
+	{
+		{ "길잡이", "트레우가에 온 걸 환영하오. 여기선 빛도 어둠도 칼을 차고 들어오지 않소. 그게 이 마을 이름이오.", Style::Speech },
+		{ "길잡이", "서쪽으로 가면 솔라, 그 끝에 빛의 수도 루멘. 동쪽 너머는 녹스, 그 끝에 어둠의 수도 테네브라에.", Style::Speech },
+		{ "길잡이", "북쪽은 잿빛 변경. 그 위로는…… 돌아온 사람이 많지 않소.", Style::Speech },
+	};
+	const Choice kTreugaGuideChoices[] =
+	{
+		{ "수도에 대해 묻는다", Story::NoFlag, Dialogue::TreugaCapitals },
+		{ "됐다", Story::NoFlag, kEnd },
+	};
+
+	const Line kTreugaCapitals[] =
+	{
+		{ "길잡이", "두 왕 모두 찾아온 자와 겨뤄 준다더군. 이긴 자에게는 축복을 내린다고.", Style::Speech },
+		{ "길잡이", "빛의 왕에게선 빛을 다루는 힘이, 어둠의 왕에게선 상대를 마셔 버리는 힘이 더 강해진다지.", Style::Speech },
+		{ "길잡이", "어느 쪽부터 가든 당신 마음이오. 둘 다 가든, 안 가든.", Style::Speech },
+	};
+
+	const Line kTreugaNeighbours[] =
+	{
+		{ "빛의 주민", "저 어둠 쪽 사람과 같은 우물을 쓴 지 삼 년이오. 아직 이름은 모르오.", Style::Speech },
+		{ "어둠의 주민", "저쪽이 이름을 안 물으니까 나도 안 묻는 거야. 이름을 알면 죽이기 어려워지거든.", Style::Speech },
+	};
+
+	const Line kPilgrimCandida[] =
+	{
+		{ "순례자", "루멘으로 가는 길이오? 우리는 성에 들어가 폐하를 뵙는 것이 평생의 소원이오.", Style::Speech },
+		{ "순례자", "폐하는 겨루는 동안에도 상처를 스스로 감싸신다더군. 빛의 벽 안에 계실 때는 어떤 칼도 닿지 않는다고.", Style::Speech },
+		{ "순례자", "그런데도 꺾은 자가 있다면, 그건 폐하께서 허락하신 거겠지.", Style::Speech },
+	};
+
+	const Line kPilgrimObscura[] =
+	{
+		{ "순례자", "테네브라에에 가? 왕을 뵈러? 웃기는군. 왕이 너를 보는 거야.", Style::Speech },
+		{ "순례자", "그 왕한테 바짝 붙어서 피를 빨 생각이면, 오래 붙어 있을수록 손해야. 그 왕은 기다리는 걸 좋아하거든.", Style::Speech },
+	};
+
+	const Line kRefugeeWidow[] =
+	{
+		{ "피난민", "남편이 잿빛이 됐소. 쓰러뜨려 주시오, 라고 말하고 싶은데…… 그 사람이 아직 날 알아볼 것만 같아서.", Style::Speech },
+		{ "피난민", "잿빛이 된 사람들은 서로 싸우지 않소. 그것 하나만은 부럽더군.", Style::Speech },
+	};
+
+	const Line kRefugeeElder[] =
+	{
+		{ "노인", "빛 쪽에서 왔소, 어둠 쪽에서 왔소? ……아니, 대답하지 마시오. 여기까지 온 자는 다 똑같소.", Style::Speech },
+		{ "노인", "이 위로는 마을이 넷 남았다던데. 둘은 빛의 피난민이, 둘은 어둠의 피난민이 세웠다고.", Style::Speech },
+	};
+
+	// ---- The squares with no name ----
+
+	const Line kHamletMother[] =
+	{
+		{ "마을 사람", "아들이 관문 지키러 나간 지 일 년이오. 편지가 오다 말았소.", Style::Speech },
+		{ "마을 사람", "잿빛이 되면 빛이 다 빠져나간다고들 하지. 그럼 그 빛은 어디로 가는 거요?", Style::Speech },
+	};
+
+	const Line kHamletSmith[] =
+	{
+		{ "대장장이", "칼을 벼리는데 쓸 사람이 없어. 전쟁이 멈춘 건 처음이라 다들 뭘 해야 할지 모르지.", Style::Speech },
+		{ "대장장이", "웃기지? 싸움이 그치니 망해 가는 세상이라니.", Style::Speech },
+	};
+
+	const Line kWayfarer[] =
+	{
+		{ "나그네", "불 쬐고 가. 나는 땅을 따라 걷는 사람이야. 걷다 보니 알게 된 게 하나 있지.", Style::Speech },
+		{ "나그네", "이 세상 땅은 다 반듯한 네모로 잘려 있어. 위에서 보면…… 꼭 무슨 판 같을 거야.", Style::Speech },
+		{ "나그네", "하하, 미친 소리지? 신경 쓰지 마.", Style::Speech },
+	};
+
+	// Two prayers at one stone; only once he knows does he see it.
+	const Line kPilgrimRest[] =
+	{
+		{ "빛의 순례자", "저 비석 앞에서 기도하고 가는 길이오. 빛을 지으신 분께.", Style::Speech },
+		{ "어둠의 순례자", "나도 저 비석에 기도했어. 어둠을 지으신 분께.", Style::Speech },
+	};
+
+	const Line kPilgrimRestKnowing[] =
+	{
+		{ "빛의 순례자", "저 비석 앞에서 기도하고 가는 길이오. 빛을 지으신 분께.", Style::Speech },
+		{ "어둠의 순례자", "나도 저 비석에 기도했어. 어둠을 지으신 분께.", Style::Speech },
+		{ kHero, "……같은 비석이다.", Style::Thought },
+	};
+
+	const Line kHideoutNote[] =
+	{
+		{ "낡은 쪽지", "여기까지 쫓아오진 못할 거다. 빛 쪽 사냥꾼도, 어둠 쪽 사냥꾼도.", Style::Speech },
+		{ "낡은 쪽지", "아이가 또 손에서 빛과 그림자를 같이 냈다. 숨겨야 한다. 저 힘은 어느 쪽에도 들키면 안 된다.", Style::Speech },
+		{ "낡은 쪽지", "리미나로 간다. 숲이 깊다니 거기라면.", Style::Speech },
+	};
+
+	const Line kFallenKingPlaque[] =
+	{
+		{ "비문", "왕은 한 칸씩만 걷는다.", Style::Speech },
+		{ "비문", "그러니 왕을 대신해 싸울 것들이 필요하다.", Style::Speech },
+		{ nullptr, "비문의 나머지는 깎여 나가 읽을 수 없다.", Style::Speech },
+	};
+
+	const Line kRuinedAltarWords[] =
+	{
+		{ "벽의 글귀", "이 신전은 빛의 것이었다가 어둠의 것이었다가 다시 빛의 것이 되었다.", Style::Speech },
+		{ "벽의 글귀", "주인이 바뀔 때마다 벽을 새로 칠했으나 제단은 한 번도 바꾸지 않았다. 바꿀 필요가 없었다.", Style::Speech },
+	};
+
+	// ---- What the notice boards lead to ----
+
+	const Line kSignpost[] =
+	{
+		{ "이정표", "북 — 벨룸. 서 — 베스페라. 동 — (깎여 나감)", Style::Speech },
+		{ kHero, "벨룸까지 길이 곧게 나 있었군. 이제 길을 알겠다.", Style::Thought },
+	};
+
+	const Line kMerchantBesieged[] =
+	{
+		{ "행상", "살려 주시오! 저놈들이 짐 냄새를 맡고 안 떠나오!", Style::Speech },
+	};
+
+	const Line kMerchantSaved[] =
+	{
+		{ "행상", "하아…… 고맙소. 빛 쪽 물건 반, 어둠 쪽 물건 반을 지고 다니다 보니 양쪽에서 다 노리더군.", Style::Speech },
+		{ "행상", "트레우가 게시판에 보답을 맡겨 두겠소. 거기 가서 받으시오.", Style::Speech },
+	};
+
+	const Line kAlbaMother[] =
+	{
+		{ "어머니", "아들이 순례를 떠났어요. 칸디다에 머문다던데.", Style::Speech },
+	};
+
+	const Line kAlbaMotherLetter[] =
+	{
+		{ "어머니", "칸디다에서 온 편지라고요? ……아들 글씨네요.", Style::Speech },
+		{ "어머니", "성에 들어가 폐하를 뵈었다고 쓰여 있어요. 폐하께서 빛의 벽을 두르시면 아무것도 닿지 않지만, 곧게 꿰뚫는 빛만은 그 벽을 깬다고요.", Style::Speech },
+		{ "어머니", "이런 걸 왜 어미한테 쓰는지. ……고마워요. 칸디다에 가거든 잘 받았다고 해 줘요.", Style::Speech },
+	};
+
+	const Line kLostLantern[] =
+	{
+		{ "등불", "꺼진 등불. 손잡이에 오브스쿠라의 표식이 새겨져 있다.", Style::Speech },
+	};
+
+	const Line kLanternOwner[] =
+	{
+		{ "등불 주인", "찾아왔네. 약속대로 하나 알려 주지.", Style::Speech },
+		{ "등불 주인", "녹티스 왕이 자세를 낮추고 가만히 있으면 절대 치지 마. 그건 기다리는 거야. 치는 순간 몇 배로 돌려받지.", Style::Speech },
+		{ "등불 주인", "그리고 왕 주변 땅은 함부로 밟지 마. 그 왕은 싸우기 전에 이미 덫을 깔아 두거든.", Style::Speech },
+	};
+
+	const Line kLetterSender[] =
+	{
+		{ "순례자", "어머니가 잘 받으셨다고요? ……다행이오. 폐하 이야기는 편지에 다 썼으니, 그대도 읽었겠구려.", Style::Speech },
+	};
+
 	// In the order of Dialogue::EndingId.
 	const Dialogue::Ending kEndings[Dialogue::EndingCount] =
 	{
@@ -534,6 +711,35 @@ namespace
 		{ kEndingScheme, CountOf(kEndingScheme), nullptr, 0 },
 		{ kEndingTrue, CountOf(kEndingTrue), nullptr, 0 },
 		{ kEpilogueTrue, CountOf(kEpilogueTrue), nullptr, 0 },
+
+		{ kEveningKeeper, CountOf(kEveningKeeper), nullptr, 0 },
+		{ kEveningKeeperAgain, CountOf(kEveningKeeperAgain), nullptr, 0 },
+		{ kVesperaChild, CountOf(kVesperaChild), nullptr, 0 },
+		{ kTreugaGuide, CountOf(kTreugaGuide), kTreugaGuideChoices, CountOf(kTreugaGuideChoices) },
+		{ kTreugaCapitals, CountOf(kTreugaCapitals), nullptr, 0 },
+		{ kTreugaNeighbours, CountOf(kTreugaNeighbours), nullptr, 0 },
+		{ kPilgrimCandida, CountOf(kPilgrimCandida), nullptr, 0 },
+		{ kPilgrimObscura, CountOf(kPilgrimObscura), nullptr, 0 },
+		{ kRefugeeWidow, CountOf(kRefugeeWidow), nullptr, 0 },
+		{ kRefugeeElder, CountOf(kRefugeeElder), nullptr, 0 },
+
+		{ kHamletMother, CountOf(kHamletMother), nullptr, 0 },
+		{ kHamletSmith, CountOf(kHamletSmith), nullptr, 0 },
+		{ kWayfarer, CountOf(kWayfarer), nullptr, 0 },
+		{ kPilgrimRest, CountOf(kPilgrimRest), nullptr, 0 },
+		{ kPilgrimRestKnowing, CountOf(kPilgrimRestKnowing), nullptr, 0 },
+		{ kHideoutNote, CountOf(kHideoutNote), nullptr, 0 },
+		{ kFallenKingPlaque, CountOf(kFallenKingPlaque), nullptr, 0 },
+		{ kRuinedAltarWords, CountOf(kRuinedAltarWords), nullptr, 0 },
+
+		{ kSignpost, CountOf(kSignpost), nullptr, 0 },
+		{ kMerchantBesieged, CountOf(kMerchantBesieged), nullptr, 0 },
+		{ kMerchantSaved, CountOf(kMerchantSaved), nullptr, 0 },
+		{ kAlbaMother, CountOf(kAlbaMother), nullptr, 0 },
+		{ kAlbaMotherLetter, CountOf(kAlbaMotherLetter), nullptr, 0 },
+		{ kLostLantern, CountOf(kLostLantern), nullptr, 0 },
+		{ kLanternOwner, CountOf(kLanternOwner), nullptr, 0 },
+		{ kLetterSender, CountOf(kLetterSender), nullptr, 0 },
 	};
 }
 
@@ -562,6 +768,29 @@ int Dialogue::Resolve(int id, const Progress& progress)
 	case RumorNoctis:
 	{
 		return progress.recognizedByNoctis ? RecognizedNoctis : RumorNoctis;
+	}
+	// The pilgrims on the roads to the capitals talk as the townsfolk do,
+	// once their king has acknowledged him.
+	case PilgrimCandida:
+	{
+		return progress.recognizedByLucius ? RecognizedLucius : PilgrimCandida;
+	}
+	case PilgrimObscura:
+	{
+		return progress.recognizedByNoctis ? RecognizedNoctis : PilgrimObscura;
+	}
+	case EveningKeeper:
+	{
+		return progress.metEveningKeeper ? EveningKeeperAgain : EveningKeeper;
+	}
+	case PilgrimRest:
+	{
+		return progress.Has(Story::KnowsOneGod) ? PilgrimRestKnowing : PilgrimRest;
+	}
+	case AlbaMother:
+	{
+		bool carrying = Quests::StageOf(progress, Quests::PilgrimLetter) == Quests::Active;
+		return carrying ? AlbaMotherLetter : AlbaMother;
 	}
 	// Only once he has heard of the collusion is there anything to ask.
 	case KingLucius:
@@ -638,6 +867,32 @@ void Dialogue::Finish(int id, Progress& progress)
 	case GodMeeting:
 	{
 		progress.Set(Story::MetTheGod);
+		break;
+	}
+	case EveningKeeper:
+	{
+		progress.metEveningKeeper = true;
+		break;
+	}
+	// The notice boards' requests, done.
+	case Signpost:
+	{
+		Quests::Fulfil(Quests::BrokenSignpost, progress);
+		break;
+	}
+	case MerchantSaved:
+	{
+		Quests::Fulfil(Quests::StrandedMerchant, progress);
+		break;
+	}
+	case AlbaMotherLetter:
+	{
+		Quests::Fulfil(Quests::PilgrimLetter, progress);
+		break;
+	}
+	case LostLantern:
+	{
+		Quests::Fulfil(Quests::LostLantern, progress);
 		break;
 	}
 	default:

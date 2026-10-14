@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "MonsterActor.h"
+#include "Quests.h"
 #include "MonsterModels.h"
 #include "ParticleActor.h"
 #include "EnemyProjectileActor.h"
@@ -194,6 +195,8 @@ void MonsterActor::OnUpdate(const ActorContext& ctx)
 	if (m_Health <= 0.f)
 	{
 		SpawnDeathBurst(ctx);
+		// Counted toward any hunt under way for its kind, in its place.
+		Quests::NoteKill(Zone(), m_Kind == Kind::Knight, m_Alignment == Alignment::Light);
 		Destroy();
 		return;
 	}

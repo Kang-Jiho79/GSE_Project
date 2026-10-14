@@ -34,6 +34,7 @@
 #include "ArenaActor.h"
 #include "LandmarkActor.h"
 #include "ThroneRoomActor.h"
+#include "Quests.h"
 #include "Combat.h"
 
 namespace
@@ -89,6 +90,12 @@ namespace
 	const float kMinimapMargin = 18.f;  // from the window's corner
 	const float kMinimapRange = 30.f;   // tiles out from him it shows
 	const float kMinimapScale = 4.f;    // pixels across a tile's diamond
+	// The main road's next step: its marker on the minimap (kept this far
+	// inside its edge when the place is out of reach), and its line under it.
+	const float kGoalMarker = 10.f;
+	const float kGoalInset = 8.f;
+	const float kGoalDrop = 26.f;
+	const float kGoalLabelRise = 20.f;
 	const int kMinimapCell = 2;         // tiles to one diamond of ground
 	const float kMinimapHeightShade = 0.012f; // lighter per pixel of rise
 }
@@ -210,6 +217,10 @@ Scene::Interaction Scene::AvailableInteraction() const
 	if (m_AtKing)
 	{
 		return Interaction::Duel;
+	}
+	if (m_AtBoard)
+	{
+		return Interaction::Board;
 	}
 	if (m_AtKingToTalk || m_Listener != nullptr)
 	{
@@ -805,6 +816,7 @@ void Scene::Activate(int region)
 {
 	m_Active[region] = true;
 	SpawnMonsters(region);
+	Npcs::SpawnErrands(region, m_Progress, m_Settlements[region], m_Graph);
 
 	BossActor* boss = Bosses::Spawn(region, m_Progress, m_Settlements[region], m_Graph);
 	if (boss != nullptr)
@@ -834,6 +846,15 @@ void Scene::Deactivate(int region)
 		m_King = nullptr;
 		m_AtKing = false;
 		m_AtKingToTalk = false;
+	}
+}
+
+void Scene::RefreshRegion(int region)
+{
+	// Cleared now, and set out again as soon as he is near enough.
+	if (m_InWorld && region >= 0 && m_Active[region])
+	{
+		Deactivate(region);
 	}
 }
 
@@ -1114,6 +1135,21 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		m_DoorTarget = (m_Region == Regions::Lumen) ? Regions::LumenCastle : Regions::TenebraeCastle;
 	}
 
+	// A notice board, where one has requests on it.
+	m_AtBoard = false;
+	if (Quests::HasBoard(m_Region))
+	{
+		for (size_t i = 0; i < settlement.buildings.size(); i++)
+		{
+			const Settlement::Building& building = settlement.buildings[i];
+			if (building.type == Settlement::BuildingType::NoticeBoard
+				&& IsNear(building.col, building.row, Tuning::Quest::kBoardReach))
+			{
+				m_AtBoard = true;
+			}
+		}
+	}
+
 	m_AtKing = false;
 	if (m_King != nullptr && m_King->CanChallenge())
 	{
@@ -1372,7 +1408,12 @@ void Scene::RenderText(TextRenderer* text) const
 		}
 		else if (interaction == Interaction::Talk)
 		{
-			prompt = "F  대화";
+			bool reading = !m_AtKingToTalk && m_Listener != nullptr && m_Listener->IsReadable();
+			prompt = reading ? "F  읽기" : "F  대화";
+		}
+		else if (interaction == Interaction::Board)
+		{
+			prompt = "F  게시판";
 		}
 		else if (interaction == Interaction::Door)
 		{
@@ -1411,6 +1452,17 @@ void Scene::RenderText(TextRenderer* text) const
 			std::string line = std::string(kTitlePrefix) + title;
 			text->Draw(TextRenderer::Face::Body, line.c_str(), 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
 		}
+	}
+
+	// The main road's next step, under the minimap.
+	const char* goal = Quests::MainGoal(m_Progress);
+	if (goal != nullptr && m_Fade == Fade::None)
+	{
+		float right = m_WindowSizeX / 2.f - kMinimapMargin;
+		float lineY = top - kMinimapMargin - kMinimapSize - kMinimapBorder * 2.f - kGoalDrop;
+		text->Draw(TextRenderer::Face::Small, "목표", right, lineY + kGoalLabelRise, Palette::kMapGoal, 0.9f,
+			TextRenderer::Align::Right);
+		text->Draw(TextRenderer::Face::Body, goal, right, lineY, Palette::kUiBone, 0.9f, TextRenderer::Align::Right);
 	}
 
 	if (m_Fade == Fade::Death)
@@ -1666,6 +1718,33 @@ void Scene::RenderMinimap(Renderer* renderer)
 	});
 
 	renderer->ClearClip();
+
+	// Where the main road leads: on the map if it is in reach, or pinned to
+	// its edge in that direction if not.
+	if (m_InWorld)
+	{
+		int targets[2];
+		int count = Quests::MainTargets(m_Progress, targets);
+		float half = kMinimapSize / 2.f - kGoalInset;
+		for (int i = 0; i < count; i++)
+		{
+			float col, row, x, y;
+			Regions::Center(targets[i], col, row);
+			toMap(col, row, x, y);
+			float dx = x - centerX;
+			float dy = y - centerY;
+			float outward = (fabsf(dx) > fabsf(dy)) ? fabsf(dx) : fabsf(dy);
+			if (outward > half)
+			{
+				dx *= half / outward;
+				dy *= half / outward;
+			}
+			renderer->DrawSolidDiamond(centerX + dx, centerY + dy, kGoalMarker + 4.f, kGoalMarker + 4.f,
+				Palette::kUiInk.r, Palette::kUiInk.g, Palette::kUiInk.b, 1.f);
+			renderer->DrawSolidDiamond(centerX + dx, centerY + dy, kGoalMarker, kGoalMarker,
+				Palette::kMapGoal.r, Palette::kMapGoal.g, Palette::kMapGoal.b, 1.f);
+		}
+	}
 
 	// The player is always exactly at the center and always on top.
 	renderer->DrawSolidRect(centerX, centerY, 8.f, 8.f, Palette::kMapPlayerRim.r, Palette::kMapPlayerRim.g, Palette::kMapPlayerRim.b, 1.f);

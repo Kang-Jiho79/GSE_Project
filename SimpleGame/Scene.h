@@ -105,6 +105,7 @@ public:
 		Duel,     // before a king who will still fight him
 		Talk,     // beside someone who will talk to him
 		Door,     // at a castle's door, outside or in
+		Board,    // at a notice board with requests on it
 	};
 	// Nothing at all while a duel is under way.
 	Interaction AvailableInteraction() const;
@@ -120,6 +121,10 @@ public:
 
 	// The conversation the person beside him would start, or -1.
 	int TalkScript() const;
+
+	// A place's errands set out afresh - a request just taken there may have
+	// someone or something to put in it. Nothing if it is not set out now.
+	void RefreshRegion(int region);
 
 private:
 	enum class Fade
@@ -212,6 +217,8 @@ private:
 	// under way is through such a door, to be set down before it.
 	int m_DoorTarget = -1;
 	bool m_DoorTravel = false;
+	// Standing at this place's notice board.
+	bool m_AtBoard = false;
 
 	Prologue m_Prologue;
 	StoryEvents m_Events;

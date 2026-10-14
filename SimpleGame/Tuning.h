@@ -268,6 +268,32 @@ namespace Tuning
 		const int kLogEntries = 200;       // lines the log keeps
 	}
 
+	// The requests on the villages' notice boards.
+	namespace Quest
+	{
+		const float kBoardReach = 1.4f; // tiles from a notice board to read it
+
+		// How many of the gray each hunt asks for, and what each request
+		// pays in light and dark when it is reported.
+		const int kWoodsKnights = 5;
+		const float kWoodsReward = 10.f;
+		const int kSoldiers = 6;
+		const float kSoldiersReward = 25.f;
+		const float kMerchantReward = 15.f;
+		const int kGateMages = 4;
+		const float kGateMagesReward = 30.f;
+		const int kGraveKnights = 4;
+		const float kGraveKnightsReward = 30.f;
+		const int kMarchHorde = 8;
+		const float kMarchHordeReward = 25.f;
+
+		// The gray round the stranded merchant: how many, how far out from
+		// him, and how near one must still be for him to be besieged.
+		const int kBesiegers = 5;
+		const float kBesiegeRing = 4.f;
+		const float kBesiegeReach = 8.f;
+	}
+
 	// The special (R): a gauge of its own, filled by blows landed and taken,
 	// apart from the vessel and the balance. Full, R plays a cut-in - his eyes
 	// across the screen, the world stopped - and the form's special goes off.

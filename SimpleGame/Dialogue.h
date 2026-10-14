@@ -137,6 +137,41 @@ namespace Dialogue
 		// What became of everyone, after the true ending.
 		EpilogueTrue,
 
+		// The villages between: the border's keeper and a child, the
+		// battlefield's guide and two neighbours who have never asked each
+		// other's names, the pilgrims on the roads to the capitals, and the
+		// refugees at the gray's edge.
+		EveningKeeper,
+		EveningKeeperAgain,
+		VesperaChild,
+		TreugaGuide,
+		TreugaCapitals,
+		TreugaNeighbours,
+		PilgrimCandida,
+		PilgrimObscura,
+		RefugeeWidow,
+		RefugeeElder,
+
+		// The squares with no name: their people, and what is left written.
+		HamletMother,
+		HamletSmith,
+		Wayfarer,
+		PilgrimRest,
+		PilgrimRestKnowing,
+		HideoutNote,
+		FallenKingPlaque,
+		RuinedAltarWords,
+
+		// What the notice boards' requests lead to.
+		Signpost,
+		MerchantBesieged,
+		MerchantSaved,
+		AlbaMother,
+		AlbaMotherLetter,
+		LostLantern,
+		LanternOwner,
+		LetterSender,
+
 		Count,
 	};
 
