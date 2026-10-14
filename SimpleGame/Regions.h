@@ -121,6 +121,10 @@ namespace Regions
 		int cellRow;
 
 		Feature feature;
+
+		// How thickly what is left of light and dark lies on its ground, 1
+		// at the thickest; which of the two, by lightShare (Traces).
+		float traceDensity;
 	};
 
 	// How a region feels to stand in: the dark the world fades into at its

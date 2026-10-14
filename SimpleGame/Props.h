@@ -26,6 +26,8 @@ namespace Props
 	// A clearing round a point where nothing stands - a waystone, a village,
 	// where a boss waits.
 	void AddClearing(float col, float row, float radius);
+	// Whether a tile lies in one of those clearings.
+	bool IsClear(int col, int row);
 
 	// What stands on a tile. variant and grain vary its look.
 	Kind At(int col, int row, int& variant, float& grain);

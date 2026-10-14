@@ -193,6 +193,11 @@ Props::Kind Props::At(int col, int row, int& variant, float& grain)
 	return Kind::None;
 }
 
+bool Props::IsClear(int col, int row)
+{
+	return InClearing(WorldGrid::ZoneAt(col, row), col, row);
+}
+
 Props::Kind Props::At(int col, int row)
 {
 	int variant;

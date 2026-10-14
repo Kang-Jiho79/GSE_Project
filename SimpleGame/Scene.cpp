@@ -14,6 +14,8 @@
 
 #include "TerrainActor.h"
 #include "PropsActor.h"
+#include "Traces.h"
+#include "TracesActor.h"
 #include "Props.h"
 #include "PlayerActor.h"
 #include "MonsterActor.h"
@@ -561,6 +563,7 @@ void Scene::BuildWorld()
 	Actor* environment = m_Graph.Root().AddChild(std::unique_ptr<Actor>(new Actor()));
 	TerrainActor* terrain = static_cast<TerrainActor*>(environment->AddChild(std::unique_ptr<Actor>(new TerrainActor())));
 	Props::Clear();
+	Traces::Clear();
 	std::vector<std::unique_ptr<ArenaActor>> arenas;
 
 	for (int region = 0; region < Regions::Count; region++)
@@ -577,6 +580,10 @@ void Scene::BuildWorld()
 		float centerCol, centerRow;
 		Regions::Center(region, centerCol, centerRow);
 		Props::SetDensity(region, info.propDensity);
+		// What is left of light and dark on its ground, leaning as its
+		// monsters do; on the battlefields, some of both at once.
+		bool battlefield = (info.style == Regions::Style::Mixed || region == Regions::Divisio);
+		Traces::SetPlace(region, info.traceDensity, info.lightShare, battlefield ? Tuning::Trace::kMixedShare : 0.f);
 		float clearing = (m_Settlements[region].radius > kWaystoneClearing) ? m_Settlements[region].radius : kWaystoneClearing;
 		Props::AddClearing(centerCol, centerRow, clearing);
 		if (Bosses::HasBoard(region) || region == Regions::Kinera)
@@ -620,6 +627,7 @@ void Scene::BuildWorld()
 		}
 	}
 	environment->AddChild(std::unique_ptr<Actor>(new PropsActor()));
+	environment->AddChild(std::unique_ptr<Actor>(new TracesActor()));
 	for (size_t i = 0; i < arenas.size(); i++)
 	{
 		environment->AddChild(std::move(arenas[i]));
@@ -700,6 +708,8 @@ void Scene::BuildIsolated(int region)
 	}
 	Props::Clear();
 	Props::SetDensity(0, info.propDensity);
+	// Off the map there is nothing left lying of either.
+	Traces::Clear();
 	Props::AddClearing(waystoneCol, waystoneRow, kWaystoneClearing);
 	environment->AddChild(std::unique_ptr<Actor>(new PropsActor()));
 
@@ -973,6 +983,9 @@ void Scene::SpawnMonsters(int region)
 
 	for (int i = 0; i < info.monsterCount; i++)
 	{
+		// Each side keeps to its own patches of the ground, as long as there
+		// are any to be found.
+		Alignment alignment = (i < lightCount) ? Alignment::Light : Alignment::Dark;
 		int col = 0;
 		int row = 0;
 		for (int attempt = 0; attempt < kSpawnTries; attempt++)
@@ -998,13 +1011,17 @@ void Scene::SpawnMonsters(int region)
 				float br = (float)(row - boardRow);
 				clear = bc * bc + br * br >= Tuning::Travel::kArenaQuiet * Tuning::Travel::kArenaQuiet;
 			}
+			if (clear && attempt < kSpawnTries / 2)
+			{
+				float lean = Traces::LightLean(col, row);
+				clear = (alignment == Alignment::Light) ? lean >= 0.5f : lean <= 0.5f;
+			}
 			if (clear)
 			{
 				break;
 			}
 		}
 
-		Alignment alignment = (i < lightCount) ? Alignment::Light : Alignment::Dark;
 		MonsterActor::Kind kind = (Random::Unit() < info.mageShare) ? MonsterActor::Kind::Mage : MonsterActor::Kind::Knight;
 
 		std::unique_ptr<MonsterActor> monster(new MonsterActor(kind, alignment));

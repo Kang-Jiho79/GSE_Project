@@ -268,6 +268,27 @@ namespace Tuning
 		const int kLogEntries = 200;       // lines the log keeps
 	}
 
+	// What is left of light and dark on the gray ground.
+	namespace Trace
+	{
+		// Chance of a trace on a tile where they lie thickest; a place's own
+		// density scales it.
+		const float kChance = 0.07f;
+		// The patches within a place: tiles across, and how far either way
+		// they swing its lean.
+		const float kPatchCell = 14.f;
+		const float kPatchSwing = 1.4f;
+		// How hard a patch is pushed toward one side: past 1, the other
+		// side's traces thin out fast - in the light's own land its violet
+		// shows only in a few spots, and the other way round.
+		const float kContrast = 2.f;
+		// What share of a battlefield's traces are of both sides at once.
+		const float kMixedShare = 0.3f;
+		// Drawn at most this many to a frame, and of those, this many alight.
+		const int kMaxDrawn = 160;
+		const int kMaxGlowing = 80;
+	}
+
 	// The requests on the villages' notice boards.
 	namespace Quest
 	{
