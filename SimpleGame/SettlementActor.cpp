@@ -15,6 +15,10 @@ namespace
 
 	const float kCapitalScale = 1.3f;
 	const float kDoorShade = 0.05f;
+	// The footprint a palace's heights were made for; a wider castle stands
+	// taller. And how much larger a capital's great altar is.
+	const float kPalaceBase = 5.f;
+	const float kGreatAltarScale = 1.6f;
 	const float kAltarBobRate = 1.8f;
 
 	struct Look
@@ -107,7 +111,7 @@ void SettlementActor::OnUpdate(const ActorContext& ctx)
 void SettlementActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 {
 	DrawSquare(out, ctx);
-	if (m_Layout.hasThrone)
+	if (m_Layout.hasCarpet)
 	{
 		DrawCarpet(out, ctx);
 	}
@@ -149,6 +153,11 @@ void SettlementActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 		case Settlement::BuildingType::Palace:
 		{
 			DrawPalace(out, depth, x, groundY, building);
+			break;
+		}
+		case Settlement::BuildingType::CityGate:
+		{
+			DrawGateTower(out, depth, x, groundY, building);
 			break;
 		}
 		default:
@@ -365,6 +374,9 @@ void SettlementActor::DrawPalace(DrawList& out, float depth, float x, float grou
 	float doorX, doorY;
 	LeftFace(x, groundY, f, doorX, doorY);
 
+	// A capital's castle stands taller the wider it is.
+	float tall = 0.6f + 0.4f * f / kPalaceBase;
+
 	// The four corners of the footprint on screen, pulled in a little: left,
 	// right, back, front.
 	float reachX = f * kHalfW * 0.8f;
@@ -377,48 +389,70 @@ void SettlementActor::DrawPalace(DrawList& out, float depth, float x, float grou
 	{
 		// Tall and pale, a tower at every corner, each with a gilded spire,
 		// and a sun over the door that still shines.
-		float wall = 52.f;
+		float wall = 52.f * tall;
 		Box(out, depth, x, groundY, f * 1.1f, 6.f, plinth);
 		Box(out, depth + 0.01f, x, groundY + 6.f, f * 0.92f, wall, look.wall);
-		out.AddTaperedBox(depth + 0.03f, x, groundY + 6.f + wall, f * 0.96f, f * 0.96f, 14.f, 0.55f, 0.f, 0.f,
+		out.AddTaperedBox(depth + 0.03f, x, groundY + 6.f + wall, f * 0.96f, f * 0.96f, 14.f * tall, 0.55f, 0.f, 0.f,
 			look.roof.r, look.roof.g, look.roof.b);
-		out.AddTaperedBox(depth + 0.04f, x, groundY + 20.f + wall, 0.5f, 0.5f, 46.f, 0.1f, 0.f, 0.f,
-			look.trim.r, look.trim.g, look.trim.b);
+		out.AddTaperedBox(depth + 0.04f, x, groundY + 6.f + 14.f * tall + wall, 0.5f * tall, 0.5f * tall, 46.f * tall, 0.1f,
+			0.f, 0.f, look.trim.r, look.trim.g, look.trim.b);
 
 		for (int i = 0; i < 4; i++)
 		{
 			float baseY = groundY + 6.f + cornerY[i];
-			Box(out, depth + cornerDepth[i], cornerX[i], baseY, 0.9f, 72.f, tower);
-			out.AddTaperedBox(depth + cornerDepth[i] + 0.005f, cornerX[i], baseY + 72.f, 0.95f, 0.95f, 26.f, 0.1f, 0.f, 0.f,
-				look.trim.r, look.trim.g, look.trim.b);
+			Box(out, depth + cornerDepth[i], cornerX[i], baseY, 0.9f * tall, 72.f * tall, tower);
+			out.AddTaperedBox(depth + cornerDepth[i] + 0.005f, cornerX[i], baseY + 72.f * tall, 0.95f * tall, 0.95f * tall,
+				26.f * tall, 0.1f, 0.f, 0.f, look.trim.r, look.trim.g, look.trim.b);
 		}
 
-		out.AddRect(depth + 0.05f, doorX, doorY + 6.f + 17.f, 16.f, 34.f, kDoorShade, kDoorShade, kDoorShade * 1.2f, 1.f);
+		out.AddRect(depth + 0.05f, doorX, doorY + 6.f + 17.f * tall, 16.f * tall, 34.f * tall, kDoorShade, kDoorShade,
+			kDoorShade * 1.2f, 1.f);
 		out.SetGlow(0.7f);
-		out.AddDiamond(depth + 0.055f, doorX, doorY + 6.f + 44.f, 10.f, 13.f, look.trim.r, look.trim.g, look.trim.b, 1.f);
+		out.AddDiamond(depth + 0.055f, doorX, doorY + 6.f + 44.f * tall, 10.f * tall, 13.f * tall,
+			look.trim.r, look.trim.g, look.trim.b, 1.f);
 		out.SetGlow(0.f);
 		return;
 	}
 
 	// The dark's: low and enormous, a second slab set on the first, barbed at
 	// every corner, and one black spire rising out of the middle.
-	float wall = 30.f;
+	float wall = 30.f * tall;
 	Box(out, depth, x, groundY, f * 1.15f, 4.f, plinth);
 	Box(out, depth + 0.01f, x, groundY + 4.f, f, wall, look.wall);
 	Box(out, depth + 0.02f, x, groundY + 4.f + wall, f * 1.12f, 5.f, look.roof);
-	Box(out, depth + 0.03f, x, groundY + 9.f + wall, f * 0.62f, 24.f, look.wall);
-	out.AddTaperedBox(depth + 0.04f, x, groundY + 33.f + wall, 0.7f, 0.7f, 90.f, 0.05f, 0.f, 0.f,
-		look.roof.r, look.roof.g, look.roof.b);
+	Box(out, depth + 0.03f, x, groundY + 9.f + wall, f * 0.62f, 24.f * tall, look.wall);
+	out.AddTaperedBox(depth + 0.04f, x, groundY + 9.f + 24.f * tall + wall, 0.7f * tall, 0.7f * tall, 90.f * tall, 0.05f,
+		0.f, 0.f, look.roof.r, look.roof.g, look.roof.b);
 
 	for (int i = 0; i < 4; i++)
 	{
 		float lean = (i == 0) ? -4.f : ((i == 1) ? 4.f : 0.f);
 		Spike(out, depth + 0.02f + cornerDepth[i], cornerX[i] * 1.f + (cornerX[i] - x) * 0.3f,
-			groundY + 9.f + wall + cornerY[i] * 1.3f, 22.f, lean, look.roof);
+			groundY + 9.f + wall + cornerY[i] * 1.3f, 22.f * tall, lean, look.roof);
 	}
 
-	out.AddRect(depth + 0.05f, doorX, doorY + 4.f + 13.f, 20.f, 26.f, 0.f, 0.f, 0.f, 1.f);
-	out.AddRect(depth + 0.055f, doorX, doorY + 4.f + 33.f, 2.f, 10.f, look.trim.r, look.trim.g, look.trim.b, 1.f);
+	out.AddRect(depth + 0.05f, doorX, doorY + 4.f + 13.f * tall, 20.f * tall, 26.f * tall, 0.f, 0.f, 0.f, 1.f);
+	out.AddRect(depth + 0.055f, doorX, doorY + 4.f + 33.f * tall, 2.f, 10.f * tall, look.trim.r, look.trim.g, look.trim.b, 1.f);
+}
+
+void SettlementActor::DrawGateTower(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const
+{
+	// A square tower of the city wall, crenellated, a banner of its land
+	// hanging on the side facing the road.
+	Look look = LookFor(m_Style);
+	float f = building.footprint;
+	const float kHeight = 64.f;
+	Box(out, depth, x, groundY, f, kHeight, look.wall);
+	for (int i = -1; i <= 1; i += 2)
+	{
+		Box(out, depth + 0.01f, x + i * f * kHalfW * 0.4f, groundY + kHeight - f * kHalfH * 0.1f, 0.35f, 8.f, look.wall);
+	}
+	Box(out, depth + 0.015f, x, groundY + kHeight + f * kHalfH * 0.4f, 0.35f, 8.f, look.wall);
+	float side = (building.variant > 0) ? -1.f : 1.f;
+	out.SetGlow(m_Style == Regions::Style::Light ? 0.4f : 0.f);
+	out.AddRect(depth + 0.03f, x + side * f * kHalfW * 0.5f, groundY + kHeight * 0.6f, 12.f, 26.f,
+		look.trim.r, look.trim.g, look.trim.b, 1.f);
+	out.SetGlow(0.f);
 }
 
 void SettlementActor::DrawCarpet(DrawList& out, const ActorContext& ctx) const
@@ -432,10 +466,9 @@ void SettlementActor::DrawCarpet(DrawList& out, const ActorContext& ctx) const
 		return;
 	}
 
-	// Out from the door to a little past where the king stands, edged in his
-	// people's colour.
+	// Out from the castle's door to the square, edged in its people's colour.
 	Look look = LookFor(m_Style);
-	float length = m_Layout.throneRow - m_Layout.carpetRow + 1.f;
+	float length = m_Layout.carpetLength;
 	float groundY = y + WorldGrid::GroundHeightAt(worldX, worldY) + 1.f;
 	// Laid on the ground, under the palace's door and the king on it - but
 	// over the paving, being pushed after it.
@@ -461,14 +494,16 @@ void SettlementActor::DrawAltar(DrawList& out, const ActorContext& ctx) const
 	float groundY = y + WorldGrid::GroundHeightAt(worldX, worldY);
 	float depth = WorldGrid::TileDepth(worldX, worldY) + 0.5f;
 
-	out.AddShadow(depth - 0.01f, x, groundY, 26.f, 13.f);
-	out.AddBox(depth, x, groundY, 0.6f, 0.6f, 7.f, 0.36f, 0.36f, 0.37f);
-	out.AddBox(depth + 0.01f, x, groundY + 7.f, 0.75f, 0.75f, 2.f, 0.42f, 0.42f, 0.43f);
+	// A capital's great altar stands larger - but its mark is the same.
+	float s = m_Capital ? kGreatAltarScale : 1.f;
+	out.AddShadow(depth - 0.01f, x, groundY, 26.f * s, 13.f * s);
+	out.AddBox(depth, x, groundY, 0.6f * s, 0.6f * s, 7.f * s, 0.36f, 0.36f, 0.37f);
+	out.AddBox(depth + 0.01f, x, groundY + 7.f * s, 0.75f * s, 0.75f * s, 2.f * s, 0.42f, 0.42f, 0.43f);
 
 	// The same pale mark hangs over every altar, in every land.
 	float bob = sinf(m_Time * kAltarBobRate) * 1.5f;
 	out.SetGlow(0.6f);
-	out.AddDiamond(depth + 0.02f, x, groundY + 16.f + bob, 6.f, 8.f,
+	out.AddDiamond(depth + 0.02f, x, groundY + 16.f * s + bob, 6.f * s, 8.f * s,
 		Palette::kUiBone.r, Palette::kUiBone.g, Palette::kUiBone.b, 1.f);
 	out.SetGlow(0.f);
 }

@@ -519,9 +519,10 @@ void Idle(void)
 			{
 			case Scene::Interaction::WorldMap:
 			{
+				int where;
 				float col, row;
-				g_Scene.PlayerTile(col, row);
-				g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions(), col, row, true);
+				g_Scene.MapLocation(where, col, row);
+				g_WorldMap.Open(where, g_Scene.VisitedRegions(), col, row, true);
 				g_AttackHeld = false;
 				break;
 			}
@@ -537,6 +538,11 @@ void Idle(void)
 			case Scene::Interaction::Duel:
 			{
 				g_Scene.BeginDuel(g_Status);
+				break;
+			}
+			case Scene::Interaction::Door:
+			{
+				g_Scene.UseDoor();
 				break;
 			}
 			case Scene::Interaction::Talk:
@@ -751,12 +757,12 @@ void KeyInput(unsigned char key, int x, int y)
 	}
 	case InputMap::kDebugToLumen:
 	{
-		g_Scene.BeginTravel(Regions::Lumen);
+		g_Scene.BeginTravel(Regions::LumenCastle);
 		break;
 	}
 	case InputMap::kDebugToTenebrae:
 	{
-		g_Scene.BeginTravel(Regions::Tenebrae);
+		g_Scene.BeginTravel(Regions::TenebraeCastle);
 		break;
 	}
 	case InputMap::kDebugEscapeGod:
@@ -818,9 +824,10 @@ void KeyInput(unsigned char key, int x, int y)
 		// cutscene has the screen.
 		if (!g_Scene.IsInCutscene())
 		{
+			int where;
 			float col, row;
-			g_Scene.PlayerTile(col, row);
-			g_WorldMap.Open(g_Scene.CurrentRegion(), g_Scene.VisitedRegions(), col, row, false);
+			g_Scene.MapLocation(where, col, row);
+			g_WorldMap.Open(where, g_Scene.VisitedRegions(), col, row, false);
 			g_AttackHeld = false;
 		}
 		break;

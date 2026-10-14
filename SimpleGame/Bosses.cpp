@@ -101,13 +101,13 @@ void Bosses::BoardCenter(int region, int& col, int& row)
 
 BossActor* Bosses::Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph)
 {
-	// The kings, waiting at the ends of their carpets whether he has beaten
-	// them or not.
-	if (settlement.hasThrone && region == Regions::Lumen)
+	// The kings, in their throne rooms at the ends of their carpets, whether
+	// he has beaten them or not.
+	if (settlement.hasThrone && region == Regions::LumenCastle)
 	{
 		return PlaceAt(graph, new LuciusActor(region, progress.recognizedByLucius), settlement.throneCol, settlement.throneRow);
 	}
-	if (settlement.hasThrone && region == Regions::Tenebrae)
+	if (settlement.hasThrone && region == Regions::TenebraeCastle)
 	{
 		return PlaceAt(graph, new NoctisActor(region, progress.recognizedByNoctis), settlement.throneCol, settlement.throneRow);
 	}

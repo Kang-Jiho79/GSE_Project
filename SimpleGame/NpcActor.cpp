@@ -103,7 +103,21 @@ void NpcActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.SetFigure(true);
 
 	float shoulderY;
-	if (m_Kind == Kind::Priest)
+	if (m_Kind == Kind::Queen)
+	{
+		// A long gown to the floor, its hem spread wide, in her land's
+		// colours - pale and gold, or near-black and violet.
+		const float kGownHeight = 36.f;
+		bool light = (m_Style != Regions::Style::Dark);
+		const Palette::Color& gown = light ? Palette::kRobeLight : Palette::kRobeDark;
+		out.AddTaperedBox(depth, x, groundY, 0.38f, 0.32f, kGownHeight + breathe, 0.45f, 0.f, 0.f,
+			gown.r, gown.g, gown.b);
+		shoulderY = groundY + kGownHeight + breathe;
+		float tr, tg, tb;
+		AlignmentColor::Core(light ? Alignment::Light : Alignment::Dark, tr, tg, tb);
+		out.AddRect(depth + 0.01f, x, groundY + kGownHeight * 0.55f, 10.f, 2.f, tr, tg, tb, 1.f);
+	}
+	else if (m_Kind == Kind::Priest)
 	{
 		// One long robe to the ground, widening toward the hem.
 		const float kRobeHeight = 34.f;
@@ -153,6 +167,24 @@ void NpcActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.AddTaperedBox(depth + 0.035f, headX - f * 1.f, headBase + 6.f * s, 0.2f * s, 0.2f * s, 5.f * s, 0.7f, 0.f, 0.f,
 		hair.r * hairShade, hair.g * hairShade, hair.b * hairShade);
 	out.AddRect(depth + 0.04f, headX + f * 3.f * s, headBase + 5.f * s, 1.5f, 1.5f, Palette::kOutline.r, Palette::kOutline.g, Palette::kOutline.b, 1.f);
+
+	// A queen: long hair down her back, and a crown in her land's colour.
+	if (m_Kind == Kind::Queen)
+	{
+		bool light = (m_Style != Regions::Style::Dark);
+		const Palette::Color& gown = light ? Palette::kRobeLight : Palette::kRobeDark;
+		out.AddTaperedBox(depth + 0.025f, headX - f * 2.5f, headBase - 12.f, 0.16f, 0.12f, 20.f, 1.f, 0.f, 0.f,
+			gown.r * 0.5f, gown.g * 0.5f, gown.b * 0.5f);
+		float tr, tg, tb;
+		AlignmentColor::Core(light ? Alignment::Light : Alignment::Dark, tr, tg, tb);
+		out.SetGlow(light ? 0.6f : 0.f);
+		for (int i = -1; i <= 1; i++)
+		{
+			out.AddTaperedBox(depth + 0.045f, headX + i * 3.f, headBase + 10.f, 0.04f, 0.04f, (i == 0) ? 6.f : 4.f, 0.2f,
+				0.f, 0.f, tr, tg, tb);
+		}
+		out.SetGlow(0.f);
+	}
 }
 
 void NpcActor::DrawKinis(DrawList& out, float depth, float x, float groundY) const

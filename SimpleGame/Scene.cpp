@@ -33,6 +33,7 @@
 #include "GodMarkActor.h"
 #include "ArenaActor.h"
 #include "LandmarkActor.h"
+#include "ThroneRoomActor.h"
 #include "Combat.h"
 
 namespace
@@ -47,6 +48,8 @@ namespace
 	const int kApproachLength = 9;
 	// Open ground round what stands in a square with no name.
 	const float kLandmarkClearing = 9.f;
+	// Out of a castle, he is set down this far before its door.
+	const float kDoorOutside = 1.5f;
 	// The window height the regions' light and fog distances were set for;
 	// a taller window stretches them to match, so the larger view is seen
 	// rather than fogged over.
@@ -165,6 +168,33 @@ void Scene::PlayerTile(float& col, float& row) const
 	WorldGrid::InverseIso(m_Player->WorldX(), m_Player->WorldY(), col, row);
 }
 
+void Scene::MapLocation(int& region, float& col, float& row) const
+{
+	region = Regions::MapRegion(m_Region);
+	if (region == m_Region)
+	{
+		PlayerTile(col, row);
+		return;
+	}
+	// Inside a castle: at its door, in its capital.
+	Settlement::Layout capital = Settlement::Generate(region, 0.f, 0.f);
+	float centerCol, centerRow;
+	Regions::Center(region, centerCol, centerRow);
+	col = centerCol + capital.doorCol;
+	row = centerRow + capital.doorRow;
+}
+
+void Scene::UseDoor()
+{
+	if (m_DoorTarget < 0)
+	{
+		return;
+	}
+	int target = m_DoorTarget;
+	BeginTravel(target);
+	m_DoorTravel = (m_Fade == Fade::Travel);
+}
+
 Scene::Interaction Scene::AvailableInteraction() const
 {
 	if (m_Fade != Fade::None || m_Cutscene.IsPlaying())
@@ -184,6 +214,10 @@ Scene::Interaction Scene::AvailableInteraction() const
 	if (m_AtKingToTalk || m_Listener != nullptr)
 	{
 		return Interaction::Talk;
+	}
+	if (m_DoorTarget >= 0)
+	{
+		return Interaction::Door;
 	}
 	if (m_AtAltar)
 	{
@@ -422,6 +456,13 @@ void Scene::WaystoneTile(float& col, float& row) const
 void Scene::ArrivalPoint(int region, float& x, float& y) const
 {
 	float col, row;
+	// Into a castle: just inside its door.
+	if (Regions::IsCastle(region))
+	{
+		ThroneRoomActor::Arrival(col, row);
+		WorldGrid::IsoPosition(col, row, x, y);
+		return;
+	}
 	Regions::Center(region, col, row);
 	WorldGrid::IsoPosition(col + kArrivalOffset, row + kArrivalOffset, x, y);
 }
@@ -632,8 +673,20 @@ void Scene::BuildIsolated(int region)
 		WorldGrid::AddBlocker(-1.f, -1.f, edge, boardRow + from);
 		WorldGrid::AddBlocker(-1.f, boardRow + to, edge, edge);
 	}
+	// A throne room: its floor a board too, walled round, the throne at its
+	// far end.
+	if (Regions::IsCastle(region))
+	{
+		int reach = ThroneRoomActor::FloorReach();
+		terrain->AddBoard((int)waystoneCol, (int)waystoneRow, -reach, reach, -reach, reach, true);
+	}
 	environment->AddChild(std::move(terrain));
 	BuildSettlement(region, environment);
+	if (Regions::IsCastle(region))
+	{
+		m_Settlements[region] = ThroneRoomActor::Layout();
+		environment->AddChild(std::unique_ptr<Actor>(new ThroneRoomActor(info.style)));
+	}
 	Props::Clear();
 	Props::SetDensity(0, info.propDensity);
 	Props::AddClearing(waystoneCol, waystoneRow, kWaystoneClearing);
@@ -643,6 +696,14 @@ void Scene::BuildIsolated(int region)
 	ArrivalPoint(region, x, y);
 	AddPlayer(x, y);
 	SpawnMonsters(region);
+
+	// The king at the carpet's end, and the queen by the throne.
+	if (Regions::IsCastle(region))
+	{
+		m_King = dynamic_cast<KingActor*>(Bosses::Spawn(region, m_Progress, m_Settlements[region], m_Graph));
+		m_AskedKing = AskedKing();
+		Npcs::Spawn(region, m_Progress, m_Settlements[region], m_Graph);
+	}
 
 	m_InWorld = false;
 	m_Region = region;
@@ -1037,6 +1098,22 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	m_AtAltar = settlement.hasTemple
 		&& IsNear(settlement.altarCol, settlement.altarRow, Tuning::Travel::kWaystoneReach);
 
+	// A castle's door: in from its capital, or back out.
+	m_DoorTarget = -1;
+	if (Regions::IsCastle(m_Region))
+	{
+		float doorCol, doorRow;
+		ThroneRoomActor::ExitDoor(doorCol, doorRow);
+		if (IsNear(doorCol, doorRow, Tuning::Travel::kWaystoneReach))
+		{
+			m_DoorTarget = Regions::MapRegion(m_Region);
+		}
+	}
+	else if (settlement.hasCastle && IsNear(settlement.doorCol, settlement.doorRow, Tuning::Travel::kWaystoneReach))
+	{
+		m_DoorTarget = (m_Region == Regions::Lumen) ? Regions::LumenCastle : Regions::TenebraeCastle;
+	}
+
 	m_AtKing = false;
 	if (m_King != nullptr && m_King->CanChallenge())
 	{
@@ -1207,6 +1284,17 @@ void Scene::UpdateFade(float deltaTime, PlayerStatus& status)
 		else
 		{
 			EnterRegion(m_TravelTarget);
+			// Out of a castle: set down before its door, not at the waystone.
+			if (m_DoorTravel && !Regions::IsOffMap(m_TravelTarget))
+			{
+				const Settlement::Layout& capital = m_Settlements[m_TravelTarget];
+				float x, y;
+				WorldGrid::IsoPosition(capital.doorCol, capital.doorRow + kDoorOutside, x, y);
+				m_Player->Respawn(x, y);
+				m_CamX = x;
+				m_CamY = y;
+			}
+			m_DoorTravel = false;
 		}
 	}
 
@@ -1286,6 +1374,10 @@ void Scene::RenderText(TextRenderer* text) const
 		{
 			prompt = "F  대화";
 		}
+		else if (interaction == Interaction::Door)
+		{
+			prompt = Regions::IsCastle(m_Region) ? "F  나가기" : "F  성으로";
+		}
 		text->Draw(TextRenderer::Face::Body, prompt, 0.f, bottom + 44.f,
 			Palette::kUiBone, 0.9f, TextRenderer::Align::Center);
 	}
@@ -1315,7 +1407,7 @@ void Scene::RenderText(TextRenderer* text) const
 		if (m_King->HasYielded())
 		{
 			lineY -= kRemarkSpacing;
-			const char* title = (m_Region == Regions::Lumen) ? Titles::kDarkestLight : Titles::kBrightestDark;
+			const char* title = (m_Region == Regions::LumenCastle) ? Titles::kDarkestLight : Titles::kBrightestDark;
 			std::string line = std::string(kTitlePrefix) + title;
 			text->Draw(TextRenderer::Face::Body, line.c_str(), 0.f, lineY, Palette::kUiBone, alpha, TextRenderer::Align::Center);
 		}

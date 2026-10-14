@@ -14,6 +14,10 @@ namespace
 	const float kPriestCol = 1.2f;
 	const float kPriestRow = -2.6f;
 
+	// The queen, a little to the side of where her king stands, by the throne.
+	const float kQueenCol = 3.f;
+	const float kQueenRow = -1.5f;
+
 	// Two places at the edge of the square, clear of the waystone, where he
 	// arrives, and the notice board.
 	const float kSpotCol[2] = { -3.f, 0.8f };
@@ -43,6 +47,14 @@ namespace
 void Npcs::Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph)
 {
 	const Regions::Info& info = Regions::Get(region);
+
+	// In the throne room, the queen at her king's side - Solena of the
+	// light, Nocta of the dark. Not to be spoken to yet.
+	if (Regions::IsCastle(region) && settlement.hasThrone)
+	{
+		Place(graph, NpcActor::Kind::Queen, info.style, -1, settlement.throneCol + kQueenCol, settlement.throneRow + kQueenRow);
+		return;
+	}
 	if (info.kind != Regions::Kind::Village && info.kind != Regions::Kind::Capital)
 	{
 		return;

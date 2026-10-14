@@ -7,9 +7,13 @@
 //
 // Everything is gathered round a paved square with the waystone in its
 // middle: the temple behind it, its altar at the square's edge, a notice
-// board, and houses scattered round the outside. A capital also has its
-// king's palace off to one side, with a carpet laid out from its door to
-// where the king stands.
+// board, and houses scattered round the outside.
+//
+// A capital is laid out from the south, where its road comes in: a city gate
+// between two towers, a street lined with houses up to the square, the great
+// temple to the west of it, and to the north the castle, with a carpet from
+// the square to its door. Inside the castle - a map of its own - the king
+// stands at the end of the throne room's carpet.
 namespace Settlement
 {
 	enum class BuildingType
@@ -18,6 +22,7 @@ namespace Settlement
 		Temple,
 		NoticeBoard,
 		Palace,
+		CityGate, // one of the two towers either side of a capital's gate
 	};
 
 	struct Building
@@ -41,12 +46,21 @@ namespace Settlement
 		float altarCol = 0.f;
 		float altarRow = 0.f;
 
-		// Where the king stands, at the end of the carpet from the palace.
+		// Where the king stands, at the end of the throne room's carpet.
 		bool hasThrone = false;
 		float throneCol = 0.f;
 		float throneRow = 0.f;
-		float carpetCol = 0.f;   // the carpet runs along +row from here
+
+		// A carpet laid along +row from here, this many tiles.
+		bool hasCarpet = false;
+		float carpetCol = 0.f;
 		float carpetRow = 0.f;
+		float carpetLength = 0.f;
+
+		// A capital's castle door: where he stands to go in.
+		bool hasCastle = false;
+		float doorCol = 0.f;
+		float doorRow = 0.f;
 
 		// How far out from the square the settlement reaches; nothing wild
 		// grows inside it.

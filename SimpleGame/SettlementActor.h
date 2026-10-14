@@ -27,6 +27,8 @@ private:
 	void DrawHouse(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const;
 	void DrawTemple(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const;
 	void DrawPalace(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const;
+	// One of the two towers of a capital's city gate.
+	void DrawGateTower(DrawList& out, float depth, float x, float groundY, const Settlement::Building& building) const;
 	void DrawCarpet(DrawList& out, const ActorContext& ctx) const;
 	void DrawAltar(DrawList& out, const ActorContext& ctx) const;
 	void DrawBoard(DrawList& out, float depth, float x, float groundY) const;

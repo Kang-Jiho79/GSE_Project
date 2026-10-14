@@ -65,6 +65,9 @@ namespace
 		{ "버려진 제단",     Kind::Village, Style::Borderborn, true,   60,  2,  1.0f,   8, 0.5f, 0.4f,  0,  6, Feature::RuinedAltar },
 		{ "경계인의 은신처", Kind::Field,   Style::Borderborn, false,  60,  3,  1.2f,   6, 0.5f, 0.3f,  3,  6, Feature::Hideout },
 		{ "순례자 쉼터",     Kind::Field,   Style::Mixed,      false,  60,  1,  0.5f,   4, 0.5f, 0.5f,  4,  6, Feature::PilgrimRest },
+
+		{ "루멘 성",         Kind::Field,   Style::Light,      false,  26,  1,  0.0f,   0, 0.8f, 0.5f,  0,  0, Feature::None },
+		{ "테네브라에 성",   Kind::Field,   Style::Dark,       false,  26,  1,  0.0f,   0, 0.2f, 0.5f,  4,  0, Feature::None },
 	};
 
 	// The world's grid: squares this many tiles across, five across and
@@ -194,7 +197,25 @@ const Regions::Info& Regions::Get(int region)
 
 bool Regions::IsOffMap(int region)
 {
-	return region == Realm;
+	return region == Realm || IsCastle(region);
+}
+
+bool Regions::IsCastle(int region)
+{
+	return region == LumenCastle || region == TenebraeCastle;
+}
+
+int Regions::MapRegion(int region)
+{
+	if (region == LumenCastle)
+	{
+		return Lumen;
+	}
+	if (region == TenebraeCastle)
+	{
+		return Tenebrae;
+	}
+	return region;
 }
 
 const Regions::Atmosphere& Regions::AtmosphereOf(int region)
@@ -229,6 +250,11 @@ const Regions::Atmosphere& Regions::AtmosphereOf(int region)
 	if (region == Realm)
 	{
 		return kRealm;
+	}
+	// Inside a castle, the light of its capital.
+	if (IsCastle(region))
+	{
+		return AtmosphereOf(MapRegion(region));
 	}
 
 	const Info& info = Get(region);

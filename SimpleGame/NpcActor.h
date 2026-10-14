@@ -17,6 +17,7 @@ public:
 		Child,
 		Priest,
 		Kinis,
+		Queen,  // a king's queen, at his throne's side
 	};
 
 	// conversation: the Dialogue::Id it starts when spoken to, or -1 for

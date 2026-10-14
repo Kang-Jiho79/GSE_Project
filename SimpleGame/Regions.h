@@ -59,6 +59,11 @@ namespace Regions
 		Hideout,
 		PilgrimRest,
 
+		// Inside the two castles: the throne rooms, each a map of its own,
+		// entered by the castle's door in its capital.
+		LumenCastle,
+		TenebraeCastle,
+
 		Count,
 	};
 
@@ -135,9 +140,13 @@ namespace Regions
 	};
 
 	const Info& Get(int region);
-	// Not on the world map and with no waystone: reached and left only by
-	// the story.
+	// Not on the world map and with no waystone: a map of its own, reached
+	// and left only by the story or a door.
 	bool IsOffMap(int region);
+	// Inside a castle: which one, and the capital it stands in.
+	bool IsCastle(int region);
+	// Where a place is on the world map: itself, or for a castle its capital.
+	int MapRegion(int region);
 	const Atmosphere& AtmosphereOf(int region);
 	unsigned int Seed(int region);
 

@@ -8,19 +8,29 @@ namespace
 	const float kVillageSquare = 4.f;
 	const float kCapitalSquare = 5.f;
 	const float kVillageReach = 15.f;
-	const float kCapitalReach = 22.f;
+	const float kCapitalReach = 27.f;
 
 	const float kVillageTemple = 3.f;
-	const float kCapitalTemple = 4.f;
+	const float kCapitalTemple = 6.f;
 	// How far in front of the temple's near corner its altar stands.
 	const float kAltarStandOff = 0.9f;
 
-	// The palace stands to the right of the square on screen; the king, this
-	// far out from its near-left face. Nothing is built within kCourt of him,
-	// so a duel has room.
-	const float kPalaceSize = 5.f;
-	const float kThroneStandOff = 2.f;
-	const float kCourt = 5.f;
+	// A capital, from the south: the gate's towers, the street up to the
+	// square with houses either side, the great temple west of the square,
+	// and the castle north of it, its door this far out from its face.
+	const float kCastleSize = 10.f;
+	const float kCastleBack = 17.f;     // from the square's centre to the castle's
+	const float kDoorStandOff = 0.8f;
+	const float kTempleWest = 13.f;
+	const float kTempleSouth = 2.f;
+	const float kGateReach = 26.f;      // from the square's centre to the gate
+	const float kGateHalfWidth = 3.5f;
+	const float kGateTower = 2.f;
+	const float kStreetHalfWidth = 3.f; // kept clear down the middle
+	const float kStreetHouseOffset = 6.f;
+	const float kStreetFirst = 9.f;
+	const float kStreetGap = 4.5f;
+	const int kStreetHouses = 4;        // each side
 
 	const int kVillageHouses = 9;
 	const int kBorderbornHouses = 7;
@@ -96,13 +106,15 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 	SeededRandom random = { Regions::Seed(region) * 2246822519u + 1u };
 
 	// The temple stands behind the square as seen on screen, its altar facing
-	// out onto it.
+	// out onto it; a capital's great temple stands to the west of it.
 	if (info.temple)
 	{
 		float size = capital ? kCapitalTemple : kVillageTemple;
 		float back = layout.squareRadius * 0.75f + size * 0.5f + 1.f;
+		float templeCol = capital ? centerCol - kTempleWest : centerCol - back;
+		float templeRow = capital ? centerRow - kTempleSouth : centerRow - back;
 
-		Building temple = { BuildingType::Temple, centerCol - back, centerRow - back, size, (int)(random.Next() * 8.f) };
+		Building temple = { BuildingType::Temple, templeCol, templeRow, size, (int)(random.Next() * 8.f) };
 		layout.buildings.push_back(temple);
 
 		layout.hasTemple = true;
@@ -112,15 +124,35 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 
 	if (capital)
 	{
-		float back = layout.squareRadius * 0.75f + kPalaceSize * 0.5f + 1.f;
-		Building palace = { BuildingType::Palace, centerCol + back, centerRow - back, kPalaceSize, 0 };
-		layout.buildings.push_back(palace);
+		// The castle to the north, a carpet from the square to its door.
+		Building castle = { BuildingType::Palace, centerCol, centerRow - kCastleBack, kCastleSize, 0 };
+		layout.buildings.push_back(castle);
+		layout.hasCastle = true;
+		layout.doorCol = castle.col;
+		layout.doorRow = castle.row + kCastleSize * 0.5f + kDoorStandOff;
+		layout.hasCarpet = true;
+		layout.carpetCol = castle.col;
+		layout.carpetRow = castle.row + kCastleSize * 0.5f;
+		layout.carpetLength = (centerRow - layout.squareRadius) - layout.carpetRow;
 
-		layout.hasThrone = true;
-		layout.carpetCol = palace.col;
-		layout.carpetRow = palace.row + kPalaceSize * 0.5f;
-		layout.throneCol = palace.col;
-		layout.throneRow = layout.carpetRow + kThroneStandOff;
+		// The city gate to the south, a tower either side of the road.
+		for (int side = -1; side <= 1; side += 2)
+		{
+			Building tower = { BuildingType::CityGate, centerCol + side * kGateHalfWidth, centerRow + kGateReach, kGateTower, side };
+			layout.buildings.push_back(tower);
+		}
+
+		// The street up from the gate, lined with houses.
+		float streetSize = HouseSize(info.style) * 1.2f;
+		for (int i = 0; i < kStreetHouses; i++)
+		{
+			for (int side = -1; side <= 1; side += 2)
+			{
+				Building house = { BuildingType::House, centerCol + side * kStreetHouseOffset,
+					centerRow + kStreetFirst + i * kStreetGap, streetSize, (int)(random.Next() * 8.f) };
+				layout.buildings.push_back(house);
+			}
+		}
 	}
 
 	Building board = { BuildingType::NoticeBoard, centerCol + 2.5f, centerRow - 2.5f, 1.f, 0 };
@@ -169,9 +201,13 @@ Settlement::Layout Settlement::Generate(int region, float centerCol, float cente
 		{
 			clear = Distance(house.col, house.row, layout.altarCol, layout.altarRow) >= size * 0.5f + kOpenGround;
 		}
-		if (clear && layout.hasThrone)
+		// A capital's street and the way up to its castle door stay open.
+		if (clear && capital)
 		{
-			clear = Distance(house.col, house.row, layout.throneCol, layout.throneRow) >= size * 0.5f + kCourt;
+			bool street = fabsf(house.col - centerCol) < kStreetHalfWidth + size * 0.5f && house.row > centerRow;
+			bool approach = fabsf(house.col - centerCol) < kStreetHalfWidth + 1.f + size * 0.5f
+				&& house.row < centerRow && house.row > layout.doorRow - 1.f;
+			clear = !street && !approach;
 		}
 		if (!clear)
 		{

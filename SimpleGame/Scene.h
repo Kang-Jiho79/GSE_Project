@@ -55,6 +55,13 @@ public:
 	const bool* VisitedRegions() const;
 	// Where he stands, in tiles.
 	void PlayerTile(float& col, float& row) const;
+	// Where he is on the world map: his place and tile - or, inside a
+	// castle, its capital and the castle's door.
+	void MapLocation(int& region, float& col, float& row) const;
+
+	// Through the castle door he is at: into the throne room, or back out to
+	// the capital, before its door.
+	void UseDoor();
 	// From the start: the hidden village on its last day. Progress and
 	// status must already be fresh.
 	void NewGame();
@@ -97,6 +104,7 @@ public:
 		Temple,   // at an altar
 		Duel,     // before a king who will still fight him
 		Talk,     // beside someone who will talk to him
+		Door,     // at a castle's door, outside or in
 	};
 	// Nothing at all while a duel is under way.
 	Interaction AvailableInteraction() const;
@@ -199,6 +207,11 @@ private:
 	bool m_AskedKing = false;
 	// The world has gone white over the king: on to Bellum.
 	bool m_Intervening = false;
+
+	// The castle door he stands at leads here, or -1; and whether the travel
+	// under way is through such a door, to be set down before it.
+	int m_DoorTarget = -1;
+	bool m_DoorTravel = false;
 
 	Prologue m_Prologue;
 	StoryEvents m_Events;
