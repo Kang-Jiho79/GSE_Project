@@ -268,6 +268,13 @@ namespace Tuning
 		const int kLogEntries = 200;       // lines the log keeps
 	}
 
+	// Watching the game from a browser on this machine (F4).
+	namespace Monitor
+	{
+		const int kPort = 7777;
+		const float kInterval = 0.5f; // seconds between snapshots
+	}
+
 	// What is left of light and dark on the gray ground.
 	namespace Trace
 	{

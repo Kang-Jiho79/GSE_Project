@@ -56,6 +56,8 @@ namespace InputMap
 	const int kTogglePostProcess = GLUT_KEY_F1;
 	const int kToggleOutline = GLUT_KEY_F2;
 	const int kToggleEffects = GLUT_KEY_F3;
+	// Debug: the monitor's little server on and off, to watch from a browser.
+	const int kToggleMonitor = GLUT_KEY_F4;
 	// Debug: the test cutscene, to see the camera, bars and washes at work.
 	const int kDebugCutscene = GLUT_KEY_F5;
 

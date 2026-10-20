@@ -37,6 +37,8 @@
 #include "LandmarkActor.h"
 #include "ThroneRoomActor.h"
 #include "Quests.h"
+#include "JsonWriter.h"
+#include "Dialogue.h"
 #include "Combat.h"
 
 namespace
@@ -857,6 +859,201 @@ void Scene::Deactivate(int region)
 		m_AtKing = false;
 		m_AtKingToTalk = false;
 	}
+}
+
+namespace
+{
+	const char* StyleName(Regions::Style style)
+	{
+		switch (style)
+		{
+		case Regions::Style::Light:
+		{
+			return "Light";
+		}
+		case Regions::Style::Dark:
+		{
+			return "Dark";
+		}
+		case Regions::Style::Ashen:
+		{
+			return "Ashen";
+		}
+		case Regions::Style::Borderborn:
+		{
+			return "Borderborn";
+		}
+		default:
+		{
+			return "Mixed";
+		}
+		}
+	}
+
+	const char* NpcKindName(NpcActor::Kind kind)
+	{
+		switch (kind)
+		{
+		case NpcActor::Kind::Adult:
+		{
+			return "Adult";
+		}
+		case NpcActor::Kind::Elder:
+		{
+			return "Elder";
+		}
+		case NpcActor::Kind::Child:
+		{
+			return "Child";
+		}
+		case NpcActor::Kind::Priest:
+		{
+			return "Priest";
+		}
+		case NpcActor::Kind::Kinis:
+		{
+			return "Kinis";
+		}
+		case NpcActor::Kind::Queen:
+		{
+			return "Queen";
+		}
+		case NpcActor::Kind::Merchant:
+		{
+			return "Merchant";
+		}
+		case NpcActor::Kind::Sign:
+		{
+			return "Sign";
+		}
+		case NpcActor::Kind::Note:
+		{
+			return "Note";
+		}
+		default:
+		{
+			return "Lantern";
+		}
+		}
+	}
+}
+
+void Scene::WriteSnapshot(JsonWriter& json, float time, bool talking)
+{
+	json.Clear();
+	json.BeginObject();
+	json.Value("type", "snapshot");
+	json.Value("time", time);
+	json.BeginObject("region");
+	json.Value("id", m_Region);
+	json.Value("name", (m_Region >= 0) ? Regions::Get(m_Region).name : "");
+	json.EndObject();
+
+	// The gray, by kind and side - in all, and in each place.
+	int byKind[2][2] = {};
+	int monsters = 0;
+	int monstersIn[Regions::Count] = {};
+	m_Graph.ForEach<MonsterActor>([&](MonsterActor& monster)
+	{
+		if (monster.IsDestroyed())
+		{
+			return;
+		}
+		monsters++;
+		byKind[monster.Side() == Alignment::Light ? 0 : 1][monster.IsKnight() ? 0 : 1]++;
+		if (monster.Zone() >= 0 && monster.Zone() < Regions::Count)
+		{
+			monstersIn[monster.Zone()]++;
+		}
+	});
+
+	// Everyone he could speak to, or read.
+	bool escaped = m_Progress.Has(Story::EscapedGodInfluence);
+	int people = 0;
+	int listed = 0;
+	int peopleIn[Regions::Count] = {};
+	json.BeginArray("npcs");
+	m_Graph.ForEach<NpcActor>([&](NpcActor& npc)
+	{
+		if (npc.IsDestroyed())
+		{
+			return;
+		}
+		float col, row;
+		WorldGrid::InverseIso(npc.WorldX(), npc.WorldY(), col, row);
+		int region = m_InWorld ? Regions::RegionAt((int)floorf(col + 0.5f), (int)floorf(row + 0.5f)) : m_Region;
+		bool person = !npc.IsReadable();
+		if (person)
+		{
+			people++;
+			if (region >= 0 && region < Regions::Count)
+			{
+				peopleIn[region]++;
+			}
+		}
+
+		json.BeginObject();
+		json.Value("id", ++listed);
+		json.Value("kind", NpcKindName(npc.Type()));
+		json.Value("style", StyleName(npc.Dress()));
+		json.Value("region", (region >= 0) ? Regions::Get(region).name : "");
+		json.Value("col", col);
+		json.Value("row", row);
+		int script = (npc.Conversation() >= 0) ? Dialogue::Resolve(npc.Conversation(), m_Progress) : -1;
+		json.Value("dialogue", script);
+		const Dialogue::Script* lines = (script >= 0) ? &Dialogue::Get(script) : nullptr;
+		json.Value("line", (lines != nullptr && lines->lineCount > 0) ? lines->lines[0].text : "");
+		json.Value("talking", talking && &npc == m_Listener);
+		// Everyone but Kinis, and things, is in the god's hold; once he is
+		// out of it, a priest asked about the god can no longer hear it.
+		json.Value("influenced", person && npc.Type() != NpcActor::Kind::Kinis);
+		json.Value("errorReaction", npc.Type() == NpcActor::Kind::Priest && escaped);
+		json.EndObject();
+	});
+	json.EndArray();
+
+	json.BeginObject("counts");
+	json.Value("monsters", monsters);
+	json.BeginObject("monstersByKind");
+	json.Value("lightKnight", byKind[0][0]);
+	json.Value("lightMage", byKind[0][1]);
+	json.Value("darkKnight", byKind[1][0]);
+	json.Value("darkMage", byKind[1][1]);
+	json.EndObject();
+	json.Value("npcs", people);
+	json.EndObject();
+
+	// Each village and capital on the map.
+	json.BeginArray("villages");
+	for (int region = 0; region < Regions::Count; region++)
+	{
+		const Regions::Info& info = Regions::Get(region);
+		if (Regions::IsOffMap(region) || (info.kind != Regions::Kind::Village && info.kind != Regions::Kind::Capital))
+		{
+			continue;
+		}
+		int requests[4];
+		json.BeginObject();
+		json.Value("name", info.name);
+		json.Value("style", StyleName(info.style));
+		json.Value("temple", info.temple);
+		json.Value("npcs", peopleIn[region]);
+		// Only a place set out has any monsters to count.
+		if (m_InWorld && m_Active[region])
+		{
+			json.Value("monsters", monstersIn[region]);
+		}
+		else
+		{
+			json.Null("monsters");
+		}
+		json.Value("visited", m_Progress.visited[region]);
+		json.Value("requests", Quests::OnBoard(region, m_Progress, requests, 4));
+		json.EndObject();
+	}
+	json.EndArray();
+
+	json.EndObject();
 }
 
 void Scene::RefreshRegion(int region)

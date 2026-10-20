@@ -63,6 +63,16 @@ void NpcActor::SetConversation(int conversation)
 	m_Conversation = conversation;
 }
 
+NpcActor::Kind NpcActor::Type() const
+{
+	return m_Kind;
+}
+
+Regions::Style NpcActor::Dress() const
+{
+	return m_Style;
+}
+
 bool NpcActor::IsReadable() const
 {
 	return m_Kind == Kind::Sign || m_Kind == Kind::Note || m_Kind == Kind::Lantern;

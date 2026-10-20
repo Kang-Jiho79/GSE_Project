@@ -28,6 +28,8 @@ but WITHOUT ANY WARRANTY.
 #include "QuestBoard.h"
 #include "QuestLog.h"
 #include "Quests.h"
+#include "Monitor.h"
+#include "JsonWriter.h"
 #include "StatusScreen.h"
 #include "Cutscenes.h"
 #include "DialogueBox.h"
@@ -61,6 +63,9 @@ TemplePanel g_TemplePanel;
 StatusScreen g_StatusScreen;
 QuestBoard g_QuestBoard;
 QuestLog g_QuestLog;
+// Watching from a browser (F4); off until switched on.
+Monitor g_Monitor;
+JsonWriter g_MonitorJson;
 DialogueBox g_Dialogue;
 DialogueLog g_DialogueLog;
 TitleScreen g_Title;
@@ -649,6 +654,13 @@ void Idle(void)
 	}
 	AnnounceGrowth();
 	AutoSave();
+	// Whoever is watching gets the world as it stands - even with a screen
+	// open over it.
+	if (g_Monitor.Poll(deltaTime))
+	{
+		g_Scene.WriteSnapshot(g_MonitorJson, g_MenuTime, g_Dialogue.IsOpen());
+		g_Monitor.Send(g_MonitorJson.Text());
+	}
 	g_Hud.Tick(deltaTime);
 	g_Dialogue.Update(deltaTime);
 	g_Ending.Update(deltaTime);
@@ -1020,6 +1032,23 @@ void SpecialKeyInput(int key, int x, int y)
 	{
 		g_Scene.SetEffectsEnabled(!g_Scene.AreEffectsEnabled());
 		g_Hud.Notify(g_Scene.AreEffectsEnabled() ? "타격 효과 켬" : "타격 효과 끔");
+		break;
+	}
+	case InputMap::kToggleMonitor:
+	{
+		if (g_Monitor.IsRunning())
+		{
+			g_Monitor.Stop();
+			g_Hud.Notify("모니터링 끔");
+		}
+		else if (g_Monitor.Start(Tuning::Monitor::kPort))
+		{
+			g_Hud.Notify("모니터링 켬  ·  http://127.0.0.1:" + std::to_string(Tuning::Monitor::kPort));
+		}
+		else
+		{
+			g_Hud.Notify("모니터링을 켜지 못했다");
+		}
 		break;
 	}
 	case InputMap::kDebugCutscene:

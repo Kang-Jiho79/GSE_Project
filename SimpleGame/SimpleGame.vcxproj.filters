@@ -282,6 +282,15 @@
     <ClInclude Include="TracesActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="JsonWriter.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Monitor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorPage.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="ArenaActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -489,6 +498,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TracesActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonWriter.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Monitor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ArenaActor.cpp">

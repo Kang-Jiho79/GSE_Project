@@ -21,6 +21,10 @@ public:
 
 	MonsterActor(Kind kind, Alignment alignment);
 
+	bool IsKnight() const;
+	// The side it was of, before the gray.
+	Alignment Side() const;
+
 	float TakeHit(float damage) override;
 	// A light knight's shield catches light blows from in front of it.
 	float TakeHit(float damage, float fromX, float fromY) override;

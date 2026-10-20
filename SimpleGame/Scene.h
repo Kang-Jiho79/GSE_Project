@@ -15,6 +15,7 @@ class PlayerActor;
 class KingActor;
 class ArenaActor;
 class NpcActor;
+class JsonWriter;
 struct PlayerStatus;
 struct Progress;
 
@@ -121,6 +122,12 @@ public:
 
 	// The conversation the person beside him would start, or -1.
 	int TalkScript() const;
+
+	// What the monitor sends: where he is, how many of the gray there are of
+	// each kind, every person and what they would say, and each village.
+	// time: seconds since launch; talking: whether a conversation is open,
+	// which is then with whoever he was beside.
+	void WriteSnapshot(JsonWriter& json, float time, bool talking);
 
 	// A place's errands set out afresh - a request just taken there may have
 	// someone or something to put in it. Nothing if it is not set out now.

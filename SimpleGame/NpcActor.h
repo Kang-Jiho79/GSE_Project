@@ -39,6 +39,9 @@ public:
 	void SetConversation(int conversation);
 	// Read rather than spoken to.
 	bool IsReadable() const;
+	Kind Type() const;
+	// Whose people it is dressed as.
+	Regions::Style Dress() const;
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;

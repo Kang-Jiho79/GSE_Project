@@ -171,6 +171,16 @@ void MonsterActor::Shove(float offsetCol, float offsetRow)
 	}
 }
 
+bool MonsterActor::IsKnight() const
+{
+	return m_Kind == Kind::Knight;
+}
+
+Alignment MonsterActor::Side() const
+{
+	return m_Alignment;
+}
+
 void MonsterActor::OnUpdate(const ActorContext& ctx)
 {
 	// The spawn position is only known once it has been placed, so the patch it
