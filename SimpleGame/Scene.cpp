@@ -37,6 +37,8 @@
 #include "LandmarkActor.h"
 #include "ThroneRoomActor.h"
 #include "Quests.h"
+#include "KingPieceActor.h"
+#include "QueenPieceActor.h"
 #include "JsonWriter.h"
 #include "Dialogue.h"
 #include "Combat.h"
@@ -347,6 +349,24 @@ float Scene::Desaturation() const
 	return m_Cutscene.IsGray() ? 1.f : 0.f;
 }
 
+bool Scene::PairRisen() const
+{
+	if (!Regions::IsCastle(m_Region))
+	{
+		return false;
+	}
+	return m_Progress.Has(m_Region == Regions::LumenCastle ? Story::LightPairRisen : Story::DarkPairRisen);
+}
+
+bool Scene::PairBroken() const
+{
+	if (!Regions::IsCastle(m_Region))
+	{
+		return false;
+	}
+	return m_Progress.Has(m_Region == Regions::LumenCastle ? Story::LightPairBroken : Story::DarkPairBroken);
+}
+
 bool Scene::AskedKing() const
 {
 	if (m_King == nullptr)
@@ -408,6 +428,53 @@ void Scene::PlayCue(int cue, PlayerStatus& status)
 	case Cutscenes::CueLimit:
 	{
 		status.limitRelease = true;
+		break;
+	}
+	case Cutscenes::CueTransform:
+	{
+		// The king and queen gone in the white; the board's in their place.
+		if (m_King != nullptr)
+		{
+			m_King->Destroy();
+			m_King = nullptr;
+		}
+		m_AtKing = false;
+		m_AtKingToTalk = false;
+		m_Graph.ForEach<NpcActor>([&](NpcActor& npc)
+		{
+			if (npc.Type() == NpcActor::Kind::Queen)
+			{
+				npc.Destroy();
+			}
+		});
+		m_Listener = nullptr;
+		Bosses::Spawn(m_Region, m_Progress, m_Settlements[m_Region], m_Graph);
+		break;
+	}
+	case Cutscenes::CueRestorePair:
+	{
+		// The pieces gone; the king and queen left fallen where they stood.
+		m_Graph.ForEach<KingPieceActor>([&](KingPieceActor& king)
+		{
+			king.Destroy();
+		});
+		m_Graph.ForEach<QueenPieceActor>([&](QueenPieceActor& queen)
+		{
+			queen.Destroy();
+		});
+		m_King = dynamic_cast<KingActor*>(Bosses::Spawn(m_Region, m_Progress, m_Settlements[m_Region], m_Graph));
+		m_AskedKing = AskedKing();
+		Npcs::Spawn(m_Region, m_Progress, m_Settlements[m_Region], m_Graph);
+		break;
+	}
+	case Cutscenes::CueCheckmateRise:
+	{
+		m_Events.RaiseCheckmate(m_Graph, m_Progress, m_Player->WorldX(), m_Player->WorldY());
+		break;
+	}
+	case Cutscenes::CueCheckmateEnd:
+	{
+		m_Events.EndInCheckmate();
 		break;
 	}
 	default:
@@ -733,6 +800,8 @@ void Scene::BuildIsolated(int region)
 	m_Progress.visited[region] = true;
 	m_Events.Enter(region, m_Progress, m_Settlements[region], m_Graph, waystoneCol, waystoneRow);
 	m_BannerTimer = kBannerTime;
+	m_PairRisen = PairRisen();
+	m_PairBroken = PairBroken();
 }
 
 void Scene::EnterRegion(int region)
@@ -1390,6 +1459,11 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 	if (m_Fade == Fade::None && m_Conversation < 0)
 	{
 		m_Conversation = m_Events.Update(m_Graph, m_Progress, status, m_Player->WorldX(), m_Player->WorldY());
+		int cutscene = m_Events.TakeCutscene();
+		if (cutscene >= 0)
+		{
+			PlayCutscene(cutscene, m_Player->WorldX(), m_Player->WorldY());
+		}
 	}
 
 	// Having taken up the gray, he holds it - and nothing else.
@@ -1439,6 +1513,28 @@ void Scene::Update(const InputState& input, float deltaTime, PlayerStatus& statu
 		PlayCutscene(Cutscenes::Intervention, m_King->WorldX(), m_King->WorldY());
 	}
 	m_AskedKing = asked;
+
+	// Back before a king, free of the god - its words just broken off - and
+	// the god takes king and queen back as its pieces. Later, the king of
+	// the board falls: checkmate. Each waits, if a cut-in is still playing,
+	// until it can begin.
+	if (PairRisen() && !m_PairRisen && m_King != nullptr)
+	{
+		PlayCutscene(Cutscenes::Transform, m_King->WorldX(), m_King->WorldY());
+		m_PairRisen = m_Cutscene.IsPlaying();
+	}
+	if (PairBroken() && !m_PairBroken)
+	{
+		float x = m_Player->WorldX();
+		float y = m_Player->WorldY();
+		m_Graph.ForEach<KingPieceActor>([&](KingPieceActor& king)
+		{
+			x = king.WorldX();
+			y = king.WorldY();
+		});
+		PlayCutscene(Cutscenes::Checkmate, x, y);
+		m_PairBroken = m_Cutscene.IsPlaying();
+	}
 
 	RecordPopulation();
 }

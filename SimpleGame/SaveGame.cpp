@@ -63,6 +63,10 @@ namespace
 		"RescuedDark",
 		"SawRenewedWar",
 		"MetTheGod",
+		"LightPairRisen",
+		"DarkPairRisen",
+		"LightPairBroken",
+		"DarkPairBroken",
 	};
 	static_assert(sizeof(kStoryNames) / sizeof(kStoryNames[0]) == Story::Count, "a story flag has no name to save it by");
 

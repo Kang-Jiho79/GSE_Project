@@ -65,9 +65,12 @@ SimpleGame/
 │  ├─ TaintedBishopActor   잠식된 비숍 (대각선 순간이동, 칸 색별 빛 광선/어둠 구체, 직선 한 칸으로 색 바꾸기, 대각선 격자 공격)
 │  ├─ TaintedRookActor     잠식된 룩 (가로·세로 돌진, 성벽 세우기, 기둥에 부딪히면 기절) + ArenaStoneActor (돌기둥·성벽)
 │  ├─ GodPieceActor        신의 말 (룩/나이트, 결계)
+│  ├─ KingPieceActor, QueenPieceActor  킹·퀸 듀오전(영향 이탈 뒤 알현실): `TaintedPieceActor`의 온전한 말(whole — 균열 없음, 판 = 알현실 바닥). 퀸 = 8방향 연속 돌진·별 모양 탄, 살아 있는 동안 킹 무적 / 킹 = 한 칸 걸음·3×3 내려찍기·체크(가로·세로 칸줄 불)·나라 속성 보호막(빛의 킹은 어둠폼으로만). 킹이 쓰러지면 `LightPairBroken`/`DarkPairBroken`. `still`이면 체크메이트 엔딩용 조각상
+│  ├─ WitnessLampActor     루키우스의 증인 등불(결투 기믹, 광탄으로 끔)
+│  ├─ NoctisLikenessActor  녹티스의 분신(결투 기믹 그림자 셈, 그림자 없음, 치면 묶임)
 │  ├─ KingActor            왕 공통: 결투 신청·폼 고정·패배 시 살려 줌·도망·항복·축복·대사 (자동 벨룸 송환은 없음 — 추궁 시 신의 개입은 `Scene`)
-│  ├─ LuciusActor          빛의 왕 (창 연사, 심판, 빛의 고리, 성역 방벽)
-│  ├─ NoctisActor          어둠의 왕 (반격 자세, 베기, 돌진, 덫, 분신, 구체)
+│  ├─ LuciusActor          빛의 왕 (창 연사, 심판, 빛의 고리, 성역 방벽, 증인의 등불 — 체력 60% 아래, 10초 안에 세 등불을 끄지 못하면 판결, 기둥 뒤는 안전)
+│  ├─ NoctisActor          어둠의 왕 (반격 자세, 베기, 돌진, 덫, 분신, 구체, 그림자 셈 — 체력 60% 아래, 그림자 있는 진짜를 쳐야 함)
 │  ├─ SnareActor           녹티스의 숨겨진 덫
 │  └─ ShadeActor           녹티스의 그림자 분신
 ├─ 전투
@@ -235,7 +238,9 @@ SimpleGame/
     - 오류 연출용 효과음·화면 효과는 왕의 오류 반응과 **같은 연출 리소스를 공용으로 사용**
 - **스토리 진행**: 진행 단계와 선택은 플래그로 관리
   - 분기 플래그: `askedKingAboutCollusion` (왕에게 결탁을 물어봄 — 대화 선택지), `hasKingRecognition` (빛·어둠 두 왕 모두에게 인정받음), `escapedGodInfluence` (신의 영향 이탈)
-  - `trueEndCondition = hasKingRecognition && escapedGodInfluence` (`StoryEvents::TrueEndReached`. 킹·퀸 격파 조건은 E단계에서 추가)
+  - `trueEndCondition = hasKingRecognition && escapedGodInfluence && 두 나라 킹·퀸 격파` (`StoryEvents::TrueEndReached`, 앞의 둘만 = `FreeOfGod`, 격파 = `Progress::HasBrokenBothPairs`)
+  - **킹·퀸 (E단계)**: 영향 이탈 뒤 인정한 왕에게 말을 걸면 말이 끊기고(`KingLuciusRise`/`KingNoctisRise` → `LightPairRisen`/`DarkPairRisen`) 컷신 `Cutscenes::Transform`(흰 표식 → 하얗게 번짐 → 신호 `CueTransform`에서 왕·왕비 대신 `KingPieceActor`·`QueenPieceActor`) → 폼 자유 듀오전. 킹이 쓰러지면 `Cutscenes::Checkmate`(느려짐·「체크메이트」 → `CueRestorePair`에서 쓰러진 왕(`KingActor::SetFallen`)과 왕비(`NpcActor::SetFallen`)), 둘 다 오류 대사만. 보상은 빛·어둠 각 40. 쓰러지면 알현실 입구에서 재도전(이미 말인 채로)
+  - **체크메이트 엔딩**: `FreeOfGod`인데 한 나라라도 킹·퀸이 남았으면 키니스는 대화 없이 전투 → 선택지 없는 유언(`KinisLastUnchosen`) → `Cutscenes::CheckmateEnd`(신호 `CueCheckmateRise`에서 남은 나라의 킹·퀸 조각상이 둘러쌈 → 「체크.」「체크메이트.」 → `CueCheckmateEnd`) → `Dialogue::Checkmate`
   - 선택 플래그 (선택 지점이 조건에 따라 다름):
     - `acceptAshOffer`: **보스전 전** 대화에서 보스의 제안(함께 잿빛이 되어 빛과 어둠을 없앰) 수락 여부 — `trueEndCondition == false`일 때만 대화 발생
     - `acceptAsh`: **보스 처치 후** 잿빛을 받아들일지 — `trueEndCondition == true`일 때만 선택지 발생
@@ -245,8 +250,9 @@ SimpleGame/
     |---|---|---|
     | false | `acceptAshOffer == false` → 보스전 | 구원자 엔딩 (전쟁 재개) |
     | false | `acceptAshOffer == true` (보스전 없음) | 잿빛 엔딩 (주인공이 빛과 어둠을 버리고 잿빛의 존재가 됨) |
-    | true | `acceptAsh == false` | 신의 계략 엔딩 (신에게 제거됨, 이름 확정 필요) |
+    | true | `acceptAsh == false` | 버려진 말 엔딩 (신에게 제거됨, 옛 이름 신의 계략 엔딩) |
     | true | `acceptAsh == true` | 진엔딩 (신과의 최종 전투) |
+    | (인정·이탈만, 킹·퀸 남음) | 선택 없음 | 체크메이트 엔딩 |
 
   - 잿빛 엔딩의 변이는 게임 중 균형 붕괴로 인한 잿빛 침식(사망)과 **별개 처리** (스토리 이벤트로 연출)
   - `escapedGodInfluence`는 두 왕 추궁(`sawKingAnomaly`) + 구원 두 번 + 엿듣기(`knowsOneGod`) + 빛·어둠 누적치 합 400(`Tuning::Story::kChosenPower`)으로 얻음 → 추궁은 대화 선택지라 플레이어가 안 할 수 있음
@@ -304,6 +310,7 @@ SimpleGame/
 - B단계 (v1.1): 결투 승리 후 자동 텔레포트 삭제, 왕 추궁 시 신의 개입(흰 표식·하얗게 번짐·벨룸 이동·"……뭐지?"), 잿빛 수락 시 빛·어둠 상실(잿빛폼 고정, 균형 해제, HUD 잿빛 표시), 잿빛폼 개편(4단 낫 콤보·대시 베기·흘려 베기·고정 위력, 파문·교대 스킬 삭제), 신 리디자인(흰 거인·얼굴의 흰 표식·흑백 체스판과 벽·월드 줌 0.8), 신 전투 재설계(빛→어둠→흰 결계, 핵을 E로 깨면 8초 틈, 흰 힘 `Alignment::Divine`, 잿빛 공격 제거)
 - C단계 (v1.1): 필드 보스를 잠식된 신의 말로 통일 — 잿빛 변이체(`MutantActor`) 삭제, 잠식된 폰(프롤로그, 졸병 2체·막아서기·승격)·비숍(크레푸스, 칸 색·대각선 격자)·룩(디비시오, 돌진·성벽·기둥 기절), 보스 자리 체스판 무늬, 넘어져 구르는 최후. 블로커 제거(`WorldGrid::RemoveBlocker`)
 - D-1단계 (v1.1): 하나로 이어진 월드 — 5×7 격자에 60타일 판을 맞붙임(새 마을 5곳 자리와 이름 없는 판 9곳 포함), 잿빛 지대 둘레만 절벽·안개, 오른쪽 위 미니맵(화면 방향, 땅 색·높이·건물·보스 자리·사람·몬스터), 지역별 지형 단계·지형지물, 경계에서 섞이는 분위기, 지역 진입 시 이름·자동 저장, 가까운 지역만 몬스터·보스(40타일 재생성 규칙, 신전 휴식 시 전체), 월드 안 빠른 이동·부활, 프롤로그 중 리미나 봉쇄. 보스 지역 규칙(16번): 벽으로 둘러싼 보스 자리, 문턱 기둥, 체스판 진입로와 조각상, 멀리서 보이는 킹 조각상, 고요 구간, 전투 중 봉쇄, 문턱 앞 재도전
+- E단계 (v1.1): 킹·퀸 듀오전(알현실, 변모 컷신, 퀸 방벽·킹 속성 보호막·체크, 체크메이트 연출, 쓰러진 왕·왕비 오류 대사), 인정 결투 새 기믹(루키우스 증인의 등불, 녹티스 그림자 셈 — 묶임 `PlayerStatus::rootTimer`), 왕비 솔레나·녹타 대사, 진엔딩 조건에 킹·퀸 격파, 체크메이트 엔딩, "버려진 말 엔딩" 이름 변경. 초안 `Docs/E_DialogueDraft.md`
 - D2단계 (v1.1): 모니터링 — 게임 안 로컬 서버 + SSE, F4로 켜고 끔, 필수 항목(NPC·마을·몬스터 수)만. 추가 항목은 나중에
 - D-4단계 (v1.1): 빛·어둠·섞임의 흔적(발광 소품·입자, 지역별 농도, 지역 안 얼룩, 화면당 상한 160·발광 80), 몬스터가 자기 소속 흔적 얼룩에 더 많이 나옴
 - D-3단계 (v1.1): 새 마을 5곳과 이름 없는 판의 사람·읽을 것(대사 초안 `Docs/D3_DialogueDraft.md`), 메인 목표(한 줄·미니맵/월드맵 마커·의뢰 기록 J), 게시판 의뢰 10개(소탕·탐험·구출·전달, 게시판에 보고해야 보상, 정보 보상 = 빠른 이동 개방·왕 공략 소문), 저장

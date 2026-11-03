@@ -24,6 +24,7 @@ namespace
 		{ &Palette::kEndingAshBack, &Palette::kEndingAshName },
 		{ &Palette::kEndingSchemeBack, &Palette::kEndingSchemeName },
 		{ &Palette::kEndingTrueBack, &Palette::kEndingTrueName },
+		{ &Palette::kEndingCheckmateBack, &Palette::kEndingCheckmateName },
 	};
 }
 

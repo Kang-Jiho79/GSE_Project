@@ -30,6 +30,12 @@ namespace Story
 		SawRenewedWar,
 		// He has stood before the god and heard what he is.
 		MetTheGod,
+		// Free of the god, back before each king: the god took king and queen
+		// back as its pieces, and he faced them; and he broke them.
+		LightPairRisen,
+		DarkPairRisen,
+		LightPairBroken,
+		DarkPairBroken,
 
 		Count,
 	};

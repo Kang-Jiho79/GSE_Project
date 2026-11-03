@@ -241,6 +241,10 @@
     <ClInclude Include="BurstActor.h" />
     <ClInclude Include="LandmarkActor.h" />
     <ClInclude Include="ThroneRoomActor.h" />
+    <ClInclude Include="KingPieceActor.h" />
+    <ClInclude Include="QueenPieceActor.h" />
+    <ClInclude Include="WitnessLampActor.h" />
+    <ClInclude Include="NoctisLikenessActor.h" />
     <ClInclude Include="Quests.h" />
     <ClInclude Include="QuestBoard.h" />
     <ClInclude Include="QuestLog.h" />
@@ -334,6 +338,10 @@
     <ClCompile Include="BurstActor.cpp" />
     <ClCompile Include="LandmarkActor.cpp" />
     <ClCompile Include="ThroneRoomActor.cpp" />
+    <ClCompile Include="KingPieceActor.cpp" />
+    <ClCompile Include="QueenPieceActor.cpp" />
+    <ClCompile Include="WitnessLampActor.cpp" />
+    <ClCompile Include="NoctisLikenessActor.cpp" />
     <ClCompile Include="Quests.cpp" />
     <ClCompile Include="QuestBoard.cpp" />
     <ClCompile Include="QuestLog.cpp" />

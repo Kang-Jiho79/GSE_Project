@@ -23,6 +23,16 @@ namespace Cutscenes
 		LimitLight,
 		LimitDark,
 		LimitAsh,
+		// Free of the god, before a king: the mark over king and queen, the
+		// world washing white, and the two of them standing as pieces of its
+		// board. Anchored at the king.
+		Transform,
+		// The king of the board fallen: the world slowing on it, checkmate,
+		// and the white again, taking the pieces away. Anchored at the king.
+		Checkmate,
+		// The very end, one nation's pair left standing: they rise round him
+		// out of the white, check, and checkmate. Anchored at him.
+		CheckmateEnd,
 
 		Count,
 	};
@@ -35,6 +45,10 @@ namespace Cutscenes
 		CueGodMark,   // the pale mark over the king
 		CueIntervene, // the world gone white: on to Bellum
 		CueLimit,     // the cut-in over: his special goes off
+		CueTransform,   // the white at its height: king and queen become pieces
+		CueRestorePair, // the pieces gone: king and queen left fallen
+		CueCheckmateRise, // the pieces left standing close round him
+		CueCheckmateEnd,  // and that is the end
 	};
 
 	// Where the camera looks over the shot.

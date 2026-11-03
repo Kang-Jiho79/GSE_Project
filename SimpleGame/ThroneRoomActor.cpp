@@ -79,6 +79,12 @@ int ThroneRoomActor::FloorReach()
 	return kFloorReach;
 }
 
+void ThroneRoomActor::Center(float& col, float& row)
+{
+	col = (float)kCenter;
+	row = (float)kCenter;
+}
+
 void ThroneRoomActor::Arrival(float& col, float& row)
 {
 	col = (float)kCenter;

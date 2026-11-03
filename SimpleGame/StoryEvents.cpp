@@ -6,6 +6,9 @@
 #include "MonsterActor.h"
 #include "SparkActor.h"
 #include "Dialogue.h"
+#include "Cutscenes.h"
+#include "KingPieceActor.h"
+#include "QueenPieceActor.h"
 #include "Progress.h"
 #include "PlayerStatus.h"
 #include "Regions.h"
@@ -62,6 +65,53 @@ int StoryEvents::RescueLeft() const
 	return (m_Stage == Stage::Rescue) ? m_Left : -1;
 }
 
+int StoryEvents::TakeCutscene()
+{
+	int cutscene = m_Cutscene;
+	m_Cutscene = -1;
+	return cutscene;
+}
+
+void StoryEvents::RaiseCheckmate(SceneGraph& graph, const Progress& progress, float playerX, float playerY)
+{
+	// The pair of each nation left standing, close on either side of him and
+	// before and behind.
+	float col, row;
+	WorldGrid::InverseIso(playerX, playerY, col, row);
+	const float kClose = 1.8f;
+	for (int nation = 0; nation < 2; nation++)
+	{
+		bool light = (nation == 0);
+		if (progress.Has(light ? Story::LightPairBroken : Story::DarkPairBroken))
+		{
+			continue;
+		}
+		int region = light ? Regions::LumenCastle : Regions::TenebraeCastle;
+		float side = light ? -1.f : 1.f;
+		std::unique_ptr<KingPieceActor> king(new KingPieceActor(region, light, true));
+		float x, y;
+		WorldGrid::IsoPosition(col + side * kClose, row, x, y);
+		king->SetLocalPosition(x, y);
+		king->SetZone(kZone);
+		graph.Spawn(std::move(king));
+
+		std::unique_ptr<QueenPieceActor> queen(new QueenPieceActor(region, light, true));
+		WorldGrid::IsoPosition(col, row + side * kClose, x, y);
+		queen->SetLocalPosition(x, y);
+		queen->SetZone(kZone);
+		graph.Spawn(std::move(queen));
+	}
+}
+
+void StoryEvents::EndInCheckmate()
+{
+	if (m_Stage == Stage::Checkmate)
+	{
+		m_Ending = Dialogue::Checkmate;
+		m_Stage = Stage::Done;
+	}
+}
+
 int StoryEvents::TakeTravel()
 {
 	int travel = m_Travel;
@@ -80,12 +130,17 @@ bool StoryEvents::HoldsSave() const
 {
 	return m_Stage == Stage::KinisTalked || m_Stage == Stage::KinisFight || m_Stage == Stage::KinisLastWords
 		|| m_Stage == Stage::GodTalked || m_Stage == Stage::GodFight || m_Stage == Stage::GodFalling
-		|| m_Stage == Stage::Done;
+		|| m_Stage == Stage::Checkmate || m_Stage == Stage::Done;
+}
+
+bool StoryEvents::FreeOfGod(const Progress& progress) const
+{
+	return progress.HasKingRecognition() && progress.Has(Story::EscapedGodInfluence);
 }
 
 bool StoryEvents::TrueEndReached(const Progress& progress) const
 {
-	return progress.HasKingRecognition() && progress.Has(Story::EscapedGodInfluence);
+	return FreeOfGod(progress) && progress.HasBrokenBothPairs();
 }
 
 NpcActor* StoryEvents::SpawnPerson(SceneGraph& graph, NpcActor::Kind kind, Regions::Style style, int conversation, float col, float row)
@@ -287,7 +342,7 @@ int StoryEvents::Update(SceneGraph& graph, Progress& progress, const PlayerStatu
 		if (DistanceTo(*m_Kinis, playerX, playerY) <= Tuning::Story::kKinisTalk)
 		{
 			m_Stage = Stage::KinisTalked;
-			return TrueEndReached(progress) ? Dialogue::KinisSilent : Dialogue::KinisOffer;
+			return FreeOfGod(progress) ? Dialogue::KinisSilent : Dialogue::KinisOffer;
 		}
 		return -1;
 	}
@@ -309,7 +364,11 @@ int StoryEvents::Update(SceneGraph& graph, Progress& progress, const PlayerStatu
 		if (m_Kinis->HasFallen())
 		{
 			m_Stage = Stage::KinisLastWords;
-			return TrueEndReached(progress) ? Dialogue::KinisLastClear : Dialogue::KinisLastBroken;
+			if (TrueEndReached(progress))
+			{
+				return Dialogue::KinisLastClear;
+			}
+			return FreeOfGod(progress) ? Dialogue::KinisLastUnchosen : Dialogue::KinisLastBroken;
 		}
 		return -1;
 	}
@@ -318,9 +377,15 @@ int StoryEvents::Update(SceneGraph& graph, Progress& progress, const PlayerStatu
 		Dissolve(graph, *m_Kinis);
 		m_Kinis = nullptr;
 		m_Stage = Stage::Done;
-		if (!TrueEndReached(progress))
+		if (!FreeOfGod(progress))
 		{
 			m_Ending = Dialogue::Savior;
+		}
+		else if (!TrueEndReached(progress))
+		{
+			// A nation's pair left standing: they close in.
+			m_Stage = Stage::Checkmate;
+			m_Cutscene = Cutscenes::CheckmateEnd;
 		}
 		else if (progress.Has(Story::AcceptAsh))
 		{

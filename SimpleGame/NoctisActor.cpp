@@ -14,6 +14,9 @@
 #include "Palette.h"
 #include "Tuning.h"
 #include "Dialogue.h"
+#include "NoctisLikenessActor.h"
+#include "ThroneRoomActor.h"
+#include "Random.h"
 #include <cmath>
 
 namespace
@@ -99,7 +102,27 @@ float NoctisActor::Resist(float damage)
 		m_Countered = true;
 		return 0.f;
 	}
+	// Found out among his likenesses: the reckoning is broken.
+	if (m_State == State::Reckon)
+	{
+		m_ReckonBroken = true;
+	}
 	return damage;
+}
+
+const char* NoctisActor::Hint() const
+{
+	return (IsDueling() && m_State == State::Reckon) ? "진짜는 그림자를 드리운다" : nullptr;
+}
+
+void NoctisActor::Drink(float amount)
+{
+	Mend(amount);
+}
+
+void NoctisActor::DrawLikeness(DrawList& out, float depth, float x, float groundY) const
+{
+	DrawBody(out, depth, x, groundY, false);
 }
 
 void NoctisActor::Fight(const ActorContext& ctx)
@@ -112,6 +135,10 @@ void NoctisActor::Fight(const ActorContext& ctx)
 	if (m_ShadeCooldown > 0.f)
 	{
 		m_ShadeCooldown -= ctx.deltaTime;
+	}
+	if (m_ReckonCooldown > 0.f)
+	{
+		m_ReckonCooldown -= ctx.deltaTime;
 	}
 	if (m_StrikeFlash > 0.f)
 	{
@@ -204,7 +231,127 @@ void NoctisActor::Fight(const ActorContext& ctx)
 		}
 		break;
 	}
+	case State::Reckon:
+	{
+		UpdateReckoning(ctx, dirCol, dirRow);
+		break;
 	}
+	case State::Stagger:
+	{
+		if (m_StateTime >= m_StaggerTime)
+		{
+			Finish();
+		}
+		break;
+	}
+	}
+}
+
+void NoctisActor::StartReckoning(const ActorContext& ctx)
+{
+	for (int i = 0; i < Tuning::Noctis::kLikenesses; i++)
+	{
+		std::unique_ptr<NoctisLikenessActor> likeness(new NoctisLikenessActor(this));
+		likeness->SetLocalPosition(WorldX(), WorldY());
+		ctx.graph->Spawn(std::move(likeness));
+	}
+	SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkActor::Style::Dark, kCastSparks * 2, kCastSparkSpeed, kSparkLift);
+
+	m_State = State::Reckon;
+	m_StateTime = 0.f;
+	m_ReckonBroken = false;
+	m_ReckonTurn = 0.f;
+	m_RealSlot = 0;
+	m_SwapTimer = Tuning::Noctis::kReckonSwap;
+	m_ReckonCooldown = Tuning::Noctis::kReckonCooldown;
+	m_LastBlow = Blow::Cut;
+}
+
+void NoctisActor::UpdateReckoning(const ActorContext& ctx, float dirCol, float dirRow)
+{
+	// Found out: the likenesses come apart, and he reels.
+	if (m_ReckonBroken)
+	{
+		ctx.graph->ForEach<NoctisLikenessActor>([&](NoctisLikenessActor& likeness)
+		{
+			likeness.Dissolve();
+		});
+		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkActor::Style::Dark, kCastSparks * 2, kCastSparkSpeed * 1.5f,
+			kSparkLift);
+		ctx.impact->Shake(Tuning::Noctis::kCounterShake);
+		m_State = State::Stagger;
+		m_StateTime = 0.f;
+		m_StaggerTime = Tuning::Noctis::kReckonStagger;
+		return;
+	}
+
+	// Too long: all four at him at once.
+	if (m_StateTime >= Tuning::Noctis::kReckonTime)
+	{
+		float playerCol, playerRow;
+		WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+		ctx.graph->ForEach<NoctisLikenessActor>([&](NoctisLikenessActor& likeness)
+		{
+			float col, row;
+			WorldGrid::InverseIso(likeness.WorldX(), likeness.WorldY(), col, row);
+			float dc = playerCol - col;
+			float dr = playerRow - row;
+			float length = sqrtf(dc * dc + dr * dr);
+			if (length > 0.f)
+			{
+				likeness.Rush(dc / length, dr / length);
+			}
+		});
+		Start(Blow::Lunge, Tuning::Noctis::kReckonRush, dirCol, dirRow);
+		return;
+	}
+
+	// Round the hall, every so often trading places.
+	m_ReckonTurn += Tuning::Noctis::kReckonTurn * ctx.deltaTime;
+	m_SwapTimer -= ctx.deltaTime;
+	if (m_SwapTimer <= 0.f)
+	{
+		m_RealSlot = (m_RealSlot + 1 + Random::Range(0, 2)) % 4;
+		m_SwapTimer = Tuning::Noctis::kReckonSwap;
+	}
+
+	float centerCol, centerRow;
+	ThroneRoomActor::Center(centerCol, centerRow);
+	auto slot = [&](int index, float& col, float& row)
+	{
+		float angle = m_ReckonTurn + index * kPi * 0.5f;
+		col = centerCol + cosf(angle) * Tuning::Noctis::kReckonRing;
+		row = centerRow + sinf(angle) * Tuning::Noctis::kReckonRing;
+	};
+
+	// His own place, and the rest for his likenesses in turn.
+	float toCol, toRow, col, row;
+	slot(m_RealSlot, toCol, toRow);
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+	float dc = toCol - col;
+	float dr = toRow - row;
+	float distance = sqrtf(dc * dc + dr * dr);
+	if (distance > 0.05f)
+	{
+		float step = 6.f * ctx.deltaTime;
+		StepAlong(dc / distance, dr / distance, (step < distance) ? step : distance);
+		m_Moving = true;
+		m_Gait += step * kGaitPerTile;
+	}
+	FaceAlong(dirCol, dirRow);
+
+	int next = 0;
+	ctx.graph->ForEach<NoctisLikenessActor>([&](NoctisLikenessActor& likeness)
+	{
+		if (next == m_RealSlot)
+		{
+			next++;
+		}
+		float likeCol, likeRow;
+		slot(next % 4, likeCol, likeRow);
+		likeness.MoveTo(likeCol, likeRow);
+		next++;
+	});
 }
 
 void NoctisActor::Stalk(const ActorContext& ctx, float distance, float dirCol, float dirRow)
@@ -235,6 +382,13 @@ void NoctisActor::Stalk(const ActorContext& ctx, float distance, float dirCol, f
 
 void NoctisActor::Choose(const ActorContext& ctx, float distance, float dirCol, float dirRow)
 {
+	// Worn down, he makes his reckoning.
+	if (HealthFraction() < Tuning::Noctis::kReckonShare && m_ReckonCooldown <= 0.f)
+	{
+		StartReckoning(ctx);
+		return;
+	}
+
 	int snareEvery = Cunning() ? 3 : 4;
 	if (m_BlowCount % snareEvery == snareEvery - 1
 		&& SnaresLaid(ctx) + Tuning::Noctis::kSnares <= Tuning::Noctis::kMaxSnares)
@@ -444,6 +598,8 @@ void NoctisActor::ResetMoves()
 	m_Pressure = 0.f;
 	m_Countered = false;
 	m_StrikeFlash = 0.f;
+	m_ReckonCooldown = 0.f;
+	m_ReckonBroken = false;
 }
 
 void NoctisActor::Reward(const ActorContext& ctx)
@@ -505,7 +661,7 @@ void NoctisActor::DrawTelegraph(DrawList& out, float x, float groundY) const
 	}
 }
 
-void NoctisActor::DrawBody(DrawList& out, float depth, float x, float groundY) const
+void NoctisActor::DrawBody(DrawList& out, float depth, float x, float groundY, bool shadow) const
 {
 	const Palette::Color& armor = Palette::kNoctisArmor;
 	const Palette::Color& mantle = Palette::kNoctisMantle;
@@ -532,7 +688,10 @@ void NoctisActor::DrawBody(DrawList& out, float depth, float x, float groundY) c
 	float crouch = (lunging ? 5.f : 0.f) + (stance ? 3.f : 0.f) + kneel * 12.f;
 	float lean = f * ((lunging ? 7.f : 0.f) - windup * 2.f + strike * 4.f);
 
-	out.AddShadow(depth - 0.01f, x, groundY, 44.f, 22.f);
+	if (shadow)
+	{
+		out.AddShadow(depth - 0.01f, x, groundY, 44.f, 22.f);
+	}
 	out.SetFigure(true);
 
 	// A long ragged mantle behind him.
@@ -644,5 +803,5 @@ void NoctisActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	{
 		out.SetFlash(HitFlash() * 0.75f);
 	}
-	DrawBody(out, depth, x, groundY);
+	DrawBody(out, depth, x, groundY, true);
 }

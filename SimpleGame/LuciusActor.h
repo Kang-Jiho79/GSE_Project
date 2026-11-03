@@ -10,6 +10,11 @@
 // His goodness is the twisted kind - between blows he shields and heals
 // himself under a sanctuary that turns every blow aside. Only a beam, going
 // straight through, breaks it, and leaves him reeling and open for a while.
+//
+// Worn down, he calls witnesses: lamps hung in three corners of his hall,
+// to be shot out before their time is up. Put them all out and he reels;
+// leave any lit, and judgment fills the hall - a pillar between him and
+// the king is the only shelter.
 class LuciusActor : public KingActor
 {
 public:
@@ -17,6 +22,7 @@ public:
 
 	float BodyRadius() const override;
 	void Pierce() override;
+	const char* Hint() const override;
 
 protected:
 	void Fight(const ActorContext& ctx) override;
@@ -32,7 +38,8 @@ private:
 		Windup,
 		Volley,    // throwing wave after wave
 		Sanctuary, // shielded and healing
-		Stagger,   // the sanctuary broken under him
+		Stagger,   // the sanctuary broken under him, or his witnesses put out
+		Witness,   // his lamps lit, waiting on judgment
 		Recover,
 	};
 
@@ -48,6 +55,13 @@ private:
 	void Start(Blow blow, float windup);
 	void Release(const ActorContext& ctx, float dirCol, float dirRow);
 	void ThrowWave(const ActorContext& ctx, float dirCol, float dirRow);
+	// One fan of spears toward him.
+	void ThrowFan(const ActorContext& ctx, float dirCol, float dirRow);
+	void CallWitnesses(const ActorContext& ctx);
+	void UpdateWitness(const ActorContext& ctx, float dirCol, float dirRow);
+	// Judgment over the whole hall, for every lamp still lit.
+	void PassVerdict(const ActorContext& ctx, int lit);
+	void Stagger(float seconds);
 	void Finish(float cooldown);
 
 	// Judgment falls along both axes, and once he is worn down along both
@@ -66,6 +80,9 @@ private:
 	float m_Windup = 0.f;
 	float m_Cooldown = 1.f;
 	float m_SanctuaryCooldown = 0.f;
+	float m_WitnessCooldown = 0.f;
+	float m_StaggerTime = 0.f;
+	float m_VerdictFlash = 0.f;
 	int m_BlowCount = 0;
 
 	int m_WavesLeft = 0;

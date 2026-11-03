@@ -126,10 +126,23 @@ void Npcs::Spawn(int region, const Progress& progress, const Settlement::Layout&
 	const Regions::Info& info = Regions::Get(region);
 
 	// In the throne room, the queen at her king's side - Solena of the
-	// light, Nocta of the dark. Not to be spoken to yet.
+	// light, Nocta of the dark - unless the god has taken her back as its
+	// queen of the board; once that is broken, sunk to the floor there.
 	if (Regions::IsCastle(region) && settlement.hasThrone)
 	{
-		Place(graph, NpcActor::Kind::Queen, info.style, -1, settlement.throneCol + kQueenCol, settlement.throneRow + kQueenRow);
+		bool light = (region == Regions::LumenCastle);
+		bool risen = progress.Has(light ? Story::LightPairRisen : Story::DarkPairRisen);
+		bool broken = progress.Has(light ? Story::LightPairBroken : Story::DarkPairBroken);
+		if (risen && !broken)
+		{
+			return;
+		}
+		NpcActor* queen = Place(graph, NpcActor::Kind::Queen, info.style, light ? Dialogue::QueenSolena : Dialogue::QueenNocta,
+			settlement.throneCol + kQueenCol, settlement.throneRow + kQueenRow);
+		if (queen != nullptr)
+		{
+			queen->SetFallen(broken);
+		}
 		return;
 	}
 	// The squares with no name: whoever has stopped there, or what was left.

@@ -23,12 +23,14 @@ struct PlayerStatus;
 //   heart, it comes back to him.
 // - Free of the god, at the front: the two he saved, at each other's throats
 //   again for no reason they can give.
-// - At the gray's heart, Kinis. Short of the true ending's conditions - both
+// - At the gray's heart, Kinis. Short of being free of the god - both
 //   kings' recognition and the god's hold broken - they talk first, and he
 //   offers to take the gray together; accepted, that is the end. Otherwise
 //   they fight, and his last words come broken or whole, and the ending
 //   follows from them - and, for one who heard them whole, from whether he
-//   takes up the gray Kinis leaves.
+//   takes up the gray Kinis leaves. Free of the god but with a nation's
+//   king and queen of the board still standing, there is no choice: those
+//   pieces close in round him, and it is checkmate.
 //
 // Owned by the scene, which sets it up for each region and asks it each
 // frame whether a conversation should start.
@@ -60,6 +62,12 @@ public:
 	bool HoldsSave() const;
 	// A region the story sends him to now, or -1. Taken once.
 	int TakeTravel();
+	// A cutscene to play now, anchored at him, or -1. Taken once.
+	int TakeCutscene();
+	// Checkmate, as its cutscene goes: the pieces left standing set round
+	// him, and then the end.
+	void RaiseCheckmate(SceneGraph& graph, const Progress& progress, float playerX, float playerY);
+	void EndInCheckmate();
 
 private:
 	enum class Stage
@@ -79,9 +87,13 @@ private:
 		GodTalked,
 		GodFight,
 		GodFalling,   // has spoken its last; gone as soon as that ends
+		Checkmate,    // the pieces left on the board closing in
 		Done,
 	};
 
+	// Both kings' recognition and the god's hold broken.
+	bool FreeOfGod(const Progress& progress) const;
+	// And both nations' king and queen of the board broken too.
 	bool TrueEndReached(const Progress& progress) const;
 	NpcActor* SpawnPerson(SceneGraph& graph, NpcActor::Kind kind, Regions::Style style, int conversation, float col, float row);
 	void Dissolve(SceneGraph& graph, Actor& actor) const;
@@ -105,4 +117,5 @@ private:
 	GodActor* m_God = nullptr;
 	int m_Ending = -1;
 	int m_Travel = -1;
+	int m_Cutscene = -1;
 };

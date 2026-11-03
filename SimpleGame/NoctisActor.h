@@ -10,13 +10,23 @@
 // that turns every blow aside and answers it far harder - and the ground
 // round the king is sown with snares. Keep away instead, and shades rise
 // beside him and dark shot bends after him. Worn down, the king thinks
-// faster: shorter windups, snares more often.
+// faster: shorter windups, snares more often - and he makes his reckoning:
+// three likenesses of him circling the hall with him, trading places. Only
+// he casts a shadow. Strike him and the reckoning is broken and he reels;
+// strike a likeness and it bursts on him, holding him fast, and the king
+// drinks from it. Too long, and all four come at him at once.
 class NoctisActor : public KingActor
 {
 public:
 	NoctisActor(int region, bool recognized);
 
 	float BodyRadius() const override;
+	const char* Hint() const override;
+
+	// A likeness of his burst on him: the king drinks from it.
+	void Drink(float amount);
+	// Drawn as he stands now, for a likeness of him: no shadow under it.
+	void DrawLikeness(DrawList& out, float depth, float x, float groundY) const;
 
 protected:
 	void Fight(const ActorContext& ctx) override;
@@ -34,6 +44,8 @@ private:
 		Counter, // the stance, waiting to be struck
 		Riposte, // struck in it: the answer coming
 		Recover,
+		Reckon,  // circling with his likenesses
+		Stagger, // the reckoning broken under him
 	};
 
 	enum class Blow
@@ -54,11 +66,13 @@ private:
 	void LaySnares(const ActorContext& ctx);
 	void RaiseShades(const ActorContext& ctx);
 	void ThrowOrbs(const ActorContext& ctx);
+	void StartReckoning(const ActorContext& ctx);
+	void UpdateReckoning(const ActorContext& ctx, float dirCol, float dirRow);
 	int SnaresLaid(const ActorContext& ctx) const;
 	void Finish();
 
 	void DrawTelegraph(DrawList& out, float x, float groundY) const;
-	void DrawBody(DrawList& out, float depth, float x, float groundY) const;
+	void DrawBody(DrawList& out, float depth, float x, float groundY, bool shadow) const;
 
 	State m_State = State::Stalk;
 	Blow m_Blow = Blow::Cut;
@@ -68,6 +82,16 @@ private:
 	float m_Cooldown = 1.f;
 	float m_ShadeCooldown = 0.f;
 	int m_BlowCount = 0;
+
+	// The reckoning: when he may make it again, whether he has been found
+	// out, how far round the hall it has turned, which of the four places
+	// is his, and until they trade places.
+	float m_ReckonCooldown = 0.f;
+	bool m_ReckonBroken = false;
+	float m_ReckonTurn = 0.f;
+	int m_RealSlot = 0;
+	float m_SwapTimer = 0.f;
+	float m_StaggerTime = 0.f;
 
 	// Seconds he has been kept close, slowly forgotten while he keeps away.
 	float m_Pressure = 0.f;

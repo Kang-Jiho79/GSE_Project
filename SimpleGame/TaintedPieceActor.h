@@ -12,6 +12,11 @@
 //
 // How it moves and strikes is each piece's own (TaintedPawnActor,
 // TaintedBishopActor, TaintedRookActor), as is its head.
+//
+// The same grammar serves a piece the gray has not touched - a king and a
+// queen the god has taken back into its hand (KingPieceActor,
+// QueenPieceActor): whole, its stone clean and uncracked, on the throne
+// room's floor for a board.
 class TaintedPieceActor : public BossActor
 {
 public:
@@ -23,6 +28,9 @@ public:
 	};
 
 	TaintedPieceActor(const char* name, int region, Origin origin, float maxHealth, float furyTime);
+	// whole: not tainted at all. wakeRange as BossActor's.
+	TaintedPieceActor(const char* name, int region, Origin origin, float maxHealth, float furyTime, float wakeRange,
+		float leashRange, bool whole);
 
 	float BodyRadius() const override;
 
@@ -44,6 +52,8 @@ protected:
 	virtual float Scale() const;
 	// How far off the ground it is drawn, mid-leap or mid-charge.
 	virtual float Lift() const;
+	// Its board's reach, in squares each way from the centre.
+	virtual int BoardHalf() const;
 
 	// One piece of its body: a tapered box from `from` to `from + height`
 	// pixels up its length, toppled as it falls. foot in tiles.
@@ -74,6 +84,7 @@ protected:
 private:
 	int m_Region;
 	Origin m_Origin;
+	bool m_Whole = false;
 	bool m_Fallen = false;
 	float m_FallTime = 0.f;
 	float m_FallFacing = 1.f;

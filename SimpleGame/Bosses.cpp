@@ -12,6 +12,9 @@
 #include "GodPieceActor.h"
 #include "LuciusActor.h"
 #include "NoctisActor.h"
+#include "KingPieceActor.h"
+#include "QueenPieceActor.h"
+#include "ThroneRoomActor.h"
 
 namespace
 {
@@ -24,6 +27,9 @@ namespace
 	// threshold, past the opening.
 	const int kWallReach = 6;
 	const float kThresholdReach = 8.5f;
+
+	// The queen of the board, a little to her king's side.
+	const float kQueenBeside = 3.f;
 
 	BossActor* PlaceAt(SceneGraph& graph, BossActor* boss, float col, float row)
 	{
@@ -44,6 +50,12 @@ namespace
 
 void Bosses::Arena(int region, float& col, float& row)
 {
+	// In a throne room, its floor is the board.
+	if (Regions::IsCastle(region))
+	{
+		ThroneRoomActor::Center(col, row);
+		return;
+	}
 	float minCol, minRow, maxCol, maxRow;
 	Regions::Bounds(region, minCol, minRow, maxCol, maxRow);
 	float size = (float)Regions::Get(region).size;
@@ -102,14 +114,28 @@ void Bosses::BoardCenter(int region, int& col, int& row)
 BossActor* Bosses::Spawn(int region, const Progress& progress, const Settlement::Layout& settlement, SceneGraph& graph)
 {
 	// The kings, in their throne rooms at the ends of their carpets, whether
-	// he has beaten them or not.
-	if (settlement.hasThrone && region == Regions::LumenCastle)
+	// he has beaten them or not - unless the god has taken king and queen
+	// back as its pieces, and they wait for him there as a king and queen of
+	// the board. Once those are broken, the king is left fallen where it
+	// stood.
+	if (settlement.hasThrone && Regions::IsCastle(region))
 	{
-		return PlaceAt(graph, new LuciusActor(region, progress.recognizedByLucius), settlement.throneCol, settlement.throneRow);
-	}
-	if (settlement.hasThrone && region == Regions::TenebraeCastle)
-	{
-		return PlaceAt(graph, new NoctisActor(region, progress.recognizedByNoctis), settlement.throneCol, settlement.throneRow);
+		bool light = (region == Regions::LumenCastle);
+		bool risen = progress.Has(light ? Story::LightPairRisen : Story::DarkPairRisen);
+		bool broken = progress.Has(light ? Story::LightPairBroken : Story::DarkPairBroken);
+		if (risen && !broken)
+		{
+			QueenPieceActor* queen = new QueenPieceActor(region, light);
+			PlaceAt(graph, queen, settlement.throneCol + kQueenBeside, settlement.throneRow);
+			return PlaceAt(graph, new KingPieceActor(region, light), settlement.throneCol, settlement.throneRow);
+		}
+		KingActor* king = light ? (KingActor*)new LuciusActor(region, progress.recognizedByLucius)
+			: (KingActor*)new NoctisActor(region, progress.recognizedByNoctis);
+		if (broken)
+		{
+			king->SetFallen();
+		}
+		return PlaceAt(graph, king, settlement.throneCol, settlement.throneRow);
 	}
 
 	if (progress.bossDefeated[region])

@@ -639,13 +639,144 @@ namespace
 		{ "순례자", "어머니가 잘 받으셨다고요? ……다행이오. 폐하 이야기는 편지에 다 썼으니, 그대도 읽었겠구려.", Style::Speech },
 	};
 
+	// ---- The queens ----
+
+	const Line kQueenSolena[] =
+	{
+		{ "솔레나", "폐하와 겨루러 오셨나요. 폐하는 지는 법을 모르세요. 그래서 이기는 법만 아시죠.", Style::Speech },
+		{ "솔레나", "쓰러져도 너무 고마워하지는 마세요. 폐하께서 쓰러진 자를 살려 보내시는 건 자비라기보다 습관이니까요.", Style::Speech },
+	};
+	const Choice kQueenSolenaChoices[] =
+	{
+		{ "신에 대해 묻는다", Story::NoFlag, Dialogue::QueenSolenaOnGod },
+		{ "아무것도 아니다", Story::NoFlag, kEnd },
+	};
+
+	const Line kQueenSolenaAfter[] =
+	{
+		{ "솔레나", "폐하께서 무릎을 꿇으셨다니. 그분은 그것마저 자비라고 부르시겠죠.", Style::Speech },
+		{ "솔레나", "오래 곁에 있으면 보여요. 가끔 무언가가 그분의 말을 대신 고르고 있다는 게. ……그래도 저는 고개를 숙였어요. 늘 그랬듯이.", Style::Speech },
+	};
+
+	const Line kQueenSolenaOnGod[] =
+	{
+		{ kHero, "폐하께서 섬기는 신은 어떤 분이오?", Style::Speech },
+		{ "솔레나", "빛을 지으신 분이요. 폐하의 모든 판단은 그분께 닿아 있다고 하셨어요.", Style::Speech },
+		{ "솔레나", "……저는 그분의 얼굴을 떠올리려 하면 늘 흰 것만 떠올라요. 이상하죠.", Style::Speech },
+	};
+
+	const Line kQueenSolenaError[] =
+	{
+		{ kHero, "폐하께서 섬기는 신은 어떤 분이오?", Style::Speech },
+		{ "솔레나", "빛을 지으신 분이요. 폐하의 모든 판단은 그분께 닿아 있다고 하셨어요.", Style::Error },
+		{ kHero, "그걸 물은 게 아니오.", Style::Speech },
+		{ "솔레나", "빛을 지으신 분이요. 폐하의 모든 판단은 그분께 닿아 있다고 하셨어요.", Style::Error },
+		{ "솔레나", "……어째서 그런 눈으로 보세요. 물러가 주세요!", Style::Speech },
+	};
+
+	const Line kQueenSolenaFallen[] =
+	{
+		{ "솔레나", "폐하께서…… 폐하께서 무릎을—", Style::Error },
+		{ "솔레나", "폐하께서…… 폐하께서 무릎을—", Style::Error },
+	};
+
+	const Line kQueenNocta[] =
+	{
+		{ "녹타", "저이를 보러 왔어? 저이는 너를 숫자로 볼 거야. 나는 아니고.", Style::Speech },
+		{ "녹타", "지더라도 살아서 나가. 저이 장부에 빚으로 남는 건 그다음 얘기니까.", Style::Speech },
+	};
+	const Choice kQueenNoctaChoices[] =
+	{
+		{ "신에 대해 묻는다", Story::NoFlag, Dialogue::QueenNoctaOnGod },
+		{ "아무것도 아니다", Story::NoFlag, kEnd },
+	};
+
+	const Line kQueenNoctaAfter[] =
+	{
+		{ "녹타", "저이가 졌다고? ……웃기네. 처음으로 계산이 틀렸나 봐.", Style::Speech },
+		{ "녹타", "그런데 이상하지. 저이는 틀린 계산에 한 번도 아파한 적이 없어. 누가 대신 맞춰 주는 것처럼.", Style::Speech },
+	};
+
+	const Line kQueenNoctaOnGod[] =
+	{
+		{ kHero, "왕이 섬기는 신은 어떤 존재요?", Style::Speech },
+		{ "녹타", "어둠을 지은 분. 저이는 그분께 빚진 게 없다고 하지만, 장부 맨 첫 줄은 늘 비어 있더라.", Style::Speech },
+	};
+
+	const Line kQueenNoctaError[] =
+	{
+		{ kHero, "왕이 섬기는 신은 어떤 존재요?", Style::Speech },
+		{ "녹타", "어둠을 지은 분. 저이는 그분께 빚진 게 없다고 하지만, 장부 맨 첫 줄은 늘 비어 있더라.", Style::Error },
+		{ kHero, "그걸 물은 게 아니오.", Style::Speech },
+		{ "녹타", "어둠을 지은 분. 저이는 그분께 빚진 게 없다고 하지만, 장부 맨 첫 줄은 늘 비어 있더라.", Style::Error },
+		{ "녹타", "……그만 쳐다봐. 나가!", Style::Speech },
+	};
+
+	const Line kQueenNoctaFallen[] =
+	{
+		{ "녹타", "저이는 계산이 틀린 적이—", Style::Error },
+		{ "녹타", "저이는 계산이 틀린 적이—", Style::Error },
+	};
+
+	// ---- The kings, taken back as pieces ----
+
+	const Line kKingLuciusRise[] =
+	{
+		{ "루키우스", "다시 왔군, 경계에서 온 자여. 이번에는 무엇을 [묻—]", Style::Broken },
+		{ "솔레나", "폐하? ……폐하, 눈이—", Style::Speech },
+	};
+
+	const Line kKingNoctisRise[] =
+	{
+		{ "녹티스", "또 왔군. 이번 셈은 네가 [치르—]", Style::Broken },
+		{ "녹타", "여보? 대답해. ……이게 무슨—", Style::Speech },
+	};
+
+	const Line kKingLuciusFallen[] =
+	{
+		{ "루키우스", "판은 아직 끝나지 않았다.", Style::Error },
+		{ kHero, "루키우스.", Style::Speech },
+		{ "루키우스", "판은 아직 끝나지 않았다.", Style::Error },
+		{ kHero, "……아직 이 사람 안에 있다. 그것이.", Style::Thought },
+	};
+
+	const Line kKingNoctisFallen[] =
+	{
+		{ "녹티스", "셈은 아직 끝나지 않았다.", Style::Error },
+		{ kHero, "녹티스.", Style::Speech },
+		{ "녹티스", "셈은 아직 끝나지 않았다.", Style::Error },
+		{ kHero, "……아직 이 사람 안에 있다. 그것이.", Style::Thought },
+	};
+
+	// ---- Checkmate ----
+
+	const Line kKinisLastUnchosen[] =
+	{
+		{ nullptr, "쓰러진 키니스의 눈에서, 낯선 빛이 걷혔다.", Style::Speech },
+		{ "키니스", "……이제야 네 목소리가 들리는군. 늦었지만.", Style::Speech },
+		{ "키니스", "들어라. 이 세상은 처음부터 신이 벌여 놓은 놀이였다. 빛과 어둠은 서로를 죽이도록 본능을 새겨 받았다. 그것이 놀이의 규칙이다.", Style::Speech },
+		{ "키니스", "두 왕의 결탁도, 내가 판을 흔들었기에 신의 뜻대로 움직인 것이다. 잿빛은…… 신도 몰랐던 어긋남이었지.", Style::Speech },
+		{ "키니스", "내가 남긴 잿빛을 받아들여라. 빛과 어둠, 그리고 잿빛. 셋을 쥔 자라면 판 위에 머물지 않을 수 있다.", Style::Speech },
+		{ nullptr, "그의 몸이 잿빛 먼지가 되어 흩어졌다. 남은 잿빛이 @의 발치에 고였다.", Style::Speech },
+		{ nullptr, "그때, 판 위에 남은 말들이 움직였다.", Style::Speech },
+	};
+
+	const Line kEndingCheckmate[] =
+	{
+		{ nullptr, "판을 벗어났다고 믿었다. 그러나 판 위에는 아직 그를 잡을 말이 남아 있었다.", Style::Speech },
+		{ nullptr, "킹은 한 칸씩 다가왔고, 퀸은 모든 길을 막았다. 남은 칸은 없었다.", Style::Speech },
+		{ nullptr, "판의 주인은 말 하나를 잃고, 말 하나를 잡았다. 그것으로 셈은 맞았다.", Style::Speech },
+		{ nullptr, "놀이는 계속되었다.", Style::Speech },
+	};
+
 	// In the order of Dialogue::EndingId.
 	const Dialogue::Ending kEndings[Dialogue::EndingCount] =
 	{
 		{ Dialogue::EndingSavior, "구원자 엔딩", -1 },
 		{ Dialogue::EndingAsh, "잿빛 엔딩", -1 },
-		{ Dialogue::EndingScheme, "신의 계략 엔딩", -1 },
+		{ Dialogue::EndingScheme, "버려진 말 엔딩", -1 },
 		{ Dialogue::EndingTrue, "진엔딩", Dialogue::EpilogueTrue },
+		{ Dialogue::EndingCheckmate, "체크메이트 엔딩", -1 },
 	};
 
 	// In the order of Dialogue::Id.
@@ -740,6 +871,25 @@ namespace
 		{ kLostLantern, CountOf(kLostLantern), nullptr, 0 },
 		{ kLanternOwner, CountOf(kLanternOwner), nullptr, 0 },
 		{ kLetterSender, CountOf(kLetterSender), nullptr, 0 },
+
+		{ kQueenSolena, CountOf(kQueenSolena), kQueenSolenaChoices, CountOf(kQueenSolenaChoices) },
+		{ kQueenSolenaAfter, CountOf(kQueenSolenaAfter), kQueenSolenaChoices, CountOf(kQueenSolenaChoices) },
+		{ kQueenSolenaOnGod, CountOf(kQueenSolenaOnGod), nullptr, 0 },
+		{ kQueenSolenaError, CountOf(kQueenSolenaError), nullptr, 0 },
+		{ kQueenSolenaFallen, CountOf(kQueenSolenaFallen), nullptr, 0 },
+		{ kQueenNocta, CountOf(kQueenNocta), kQueenNoctaChoices, CountOf(kQueenNoctaChoices) },
+		{ kQueenNoctaAfter, CountOf(kQueenNoctaAfter), kQueenNoctaChoices, CountOf(kQueenNoctaChoices) },
+		{ kQueenNoctaOnGod, CountOf(kQueenNoctaOnGod), nullptr, 0 },
+		{ kQueenNoctaError, CountOf(kQueenNoctaError), nullptr, 0 },
+		{ kQueenNoctaFallen, CountOf(kQueenNoctaFallen), nullptr, 0 },
+
+		{ kKingLuciusRise, CountOf(kKingLuciusRise), nullptr, 0 },
+		{ kKingNoctisRise, CountOf(kKingNoctisRise), nullptr, 0 },
+		{ kKingLuciusFallen, CountOf(kKingLuciusFallen), nullptr, 0 },
+		{ kKingNoctisFallen, CountOf(kKingNoctisFallen), nullptr, 0 },
+
+		{ kKinisLastUnchosen, CountOf(kKinisLastUnchosen), nullptr, 0 },
+		{ kEndingCheckmate, CountOf(kEndingCheckmate), nullptr, 0 },
 	};
 }
 
@@ -792,16 +942,58 @@ int Dialogue::Resolve(int id, const Progress& progress)
 		bool carrying = Quests::StageOf(progress, Quests::PilgrimLetter) == Quests::Active;
 		return carrying ? AlbaMotherLetter : AlbaMother;
 	}
-	// Only once he has heard of the collusion is there anything to ask.
+	// Only once he has heard of the collusion is there anything to ask. Free
+	// of the god, he finds the god taking the king back mid-word - and once
+	// that pair is broken, the king can only repeat itself.
 	case KingLucius:
 	{
+		if (progress.Has(Story::LightPairBroken))
+		{
+			return KingLuciusFallen;
+		}
+		if (escaped)
+		{
+			return KingLuciusRise;
+		}
 		bool ask = progress.Has(Story::KnowsCollusion) && !progress.Has(Story::AskedLucius);
 		return ask ? KingLuciusAsk : KingLucius;
 	}
 	case KingNoctis:
 	{
+		if (progress.Has(Story::DarkPairBroken))
+		{
+			return KingNoctisFallen;
+		}
+		if (escaped)
+		{
+			return KingNoctisRise;
+		}
 		bool ask = progress.Has(Story::KnowsCollusion) && !progress.Has(Story::AskedNoctis);
 		return ask ? KingNoctisAsk : KingNoctis;
+	}
+	case QueenSolena:
+	{
+		if (progress.Has(Story::LightPairBroken))
+		{
+			return QueenSolenaFallen;
+		}
+		return progress.recognizedByLucius ? QueenSolenaAfter : QueenSolena;
+	}
+	case QueenSolenaOnGod:
+	{
+		return escaped ? QueenSolenaError : QueenSolenaOnGod;
+	}
+	case QueenNocta:
+	{
+		if (progress.Has(Story::DarkPairBroken))
+		{
+			return QueenNoctaFallen;
+		}
+		return progress.recognizedByNoctis ? QueenNoctaAfter : QueenNocta;
+	}
+	case QueenNoctaOnGod:
+	{
+		return escaped ? QueenNoctaError : QueenNoctaOnGod;
 	}
 	default:
 	{
@@ -872,6 +1064,17 @@ void Dialogue::Finish(int id, Progress& progress)
 	case EveningKeeper:
 	{
 		progress.metEveningKeeper = true;
+		break;
+	}
+	// The king's words broken off: the god takes the pair back as its pieces.
+	case KingLuciusRise:
+	{
+		progress.Set(Story::LightPairRisen);
+		break;
+	}
+	case KingNoctisRise:
+	{
+		progress.Set(Story::DarkPairRisen);
 		break;
 	}
 	// The notice boards' requests, done.

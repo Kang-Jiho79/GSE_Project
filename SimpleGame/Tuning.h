@@ -824,6 +824,19 @@ namespace Tuning
 		const float kStaggerDamageScale = 1.5f;
 		const float kBreakShake = 8.f;
 
+		// The witnesses' lamps (worn down past kWitnessShare): lit in three of
+		// the throne room's four corners, they must all be shot out in time,
+		// or judgment fills the whole hall - harder for every lamp still lit,
+		// stopped only by a pillar between him and the king.
+		const float kWitnessShare = 0.6f;
+		const float kWitnessCooldown = 24.f;
+		const int kWitnessLamps = 3;
+		const float kWitnessCorner = 7.5f;   // tiles out from the hall's centre
+		const float kWitnessTime = 10.f;
+		const float kWitnessHealth = 20.f;
+		const float kVerdictDamage = 14.f;   // for each lamp still lit
+		const float kVerdictShake = 9.f;
+		const float kWitnessStagger = 3.f;
 	}
 
 	// The dark's king. A schemer: he does not come to him but makes him come,
@@ -906,6 +919,84 @@ namespace Tuning
 		const float kOrbTurn = 1.6f;
 		const float kOrbLifetime = 3.f;
 		const float kOrbDamage = 10.f;
+
+		// The reckoning (worn down past kReckonShare): he and three likenesses
+		// of him circle the hall, trading places. Only he casts a shadow.
+		// Strike him and it is broken; strike a likeness and it bursts,
+		// holding him fast, and the king drinks from it. Too long, and all
+		// four come at him at once.
+		const float kReckonShare = 0.6f;
+		const float kReckonCooldown = 22.f;
+		const int kLikenesses = 3;
+		const float kReckonRing = 4.f;       // tiles from the hall's centre
+		const float kReckonTurn = 0.9f;      // radians a second round it
+		const float kReckonSwap = 1.6f;      // seconds between trading places
+		const float kReckonTime = 8.f;
+		const float kLikenessLift = 3.f;     // pixels off the ground
+		const float kLikenessRoot = 1.f;     // seconds held fast
+		const float kLikenessBurst = 1.4f;   // tiles
+		const float kLikenessBurstDamage = 8.f;
+		const float kLikenessHeal = 45.f;
+		const float kReckonRush = 0.6f;      // the rush when time runs out: windup
+		const float kReckonRushDamage = 20.f;
+		const float kReckonStagger = 3.f;
+	}
+
+	// The king and queen of each nation, once the god has taken them back as
+	// its pieces (after he is free of it): fought together in the throne
+	// room, in any form. The queen guards the king until she falls; the king
+	// wears his nation's ward, broken only by the other power. Beaten, each
+	// leaves light and dark alike, as the god's pieces do.
+	namespace RoyalPiece
+	{
+		const float kWakeRange = 6.f;
+		const float kLeashRange = 30.f;
+		// Standing taller than the field's pieces.
+		const float kScale = 1.25f;
+	}
+
+	namespace QueenPiece
+	{
+		const float kMaxHealth = 600.f;
+		const float kFuryTime = 240.f;
+		const float kCooldown = 0.9f;
+		// Dashes along one of the eight lines, two or three running.
+		const int kDashes = 3;
+		const float kDashWindup = 0.5f;
+		const float kDashLength = 7.f;
+		const float kDashTime = 0.25f;
+		const float kDashWidth = 1.2f;
+		const float kDashDamage = 16.f;
+		const float kDashGap = 0.25f;
+		// Every third move, a star of shot along all eight lines.
+		const float kStarWindup = 0.6f;
+		const int kStarRings = 2;
+		const float kStarGap = 0.35f;
+		const float kStarSpeed = 5.f;
+		const float kStarLifetime = 3.f;
+		const float kStarDamage = 10.f;
+		const int kRewardMotes = 15;  // of each power
+	}
+
+	namespace KingPiece
+	{
+		const float kMaxHealth = 900.f;
+		const float kFuryTime = 240.f;
+		const float kCooldown = 0.8f;
+		const float kStepTime = 0.5f;      // one square, as a king moves
+		// The slam: every square round him.
+		const float kSlamReach = 1.8f;     // he slams when he is this near
+		const float kSlamWindup = 0.9f;
+		const float kSlamDamage = 28.f;
+		const float kSlamShake = 7.f;
+		// Check: the row and the column through where he stands, lit and
+		// burning for a while.
+		const float kCheckWindup = 1.f;
+		const float kCheckTime = 3.f;
+		const float kCheckTick = 0.5f;
+		const float kCheckDamage = 7.f;    // each tick he stands in it
+		const float kPhaseShare = 0.5f;    // below this, check comes every other move
+		const int kRewardMotes = 25;       // of each power
 	}
 
 	// Eroded mage of the light: keeps its distance and chants standing still.

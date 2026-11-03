@@ -31,6 +31,13 @@ struct Progress
 		return recognizedByLucius && recognizedByNoctis;
 	}
 
+	// Both nations' king and queen of the board broken: the last of what
+	// the true ending asks.
+	bool HasBrokenBothPairs() const
+	{
+		return story[Story::LightPairBroken] && story[Story::DarkPairBroken];
+	}
+
 	// What he is called; what he typed when he began.
 	std::string heroName = "이름 없는 자";
 

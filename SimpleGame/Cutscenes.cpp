@@ -74,6 +74,44 @@ namespace
 		{ 0.25f,    Aim::Player,  0.f,  0.f,  1.0f, false, false, Wash::Black, 0.15f, 0.f,   Clock::Run,   nullptr, nullptr, Cutscenes::NoCue,          -1,           Cutscenes::NoPortrait,     false },
 	};
 
+	// Anchored at the king he has come back to. The mark over it, the white
+	// - and out of it, a king and a queen of the board.
+	const Cutscenes::Shot kTransform[] =
+	{
+		// seconds  aim           col   row   zoom  cut    bars   wash         from  to    clock         speaker  caption               cue                        conversation  portrait                   gray
+		{ 0.8f,     Aim::Anchor,  1.f,  0.f,  1.5f, false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr,              Cutscenes::CueGodMark,     -1, Cutscenes::NoPortrait, false },
+		{ 1.6f,     Aim::Anchor,  1.f,  0.f,  1.8f, false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr,              Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 1.0f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::White, 0.f,  1.f,  Clock::Run,   nullptr, nullptr,              Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 0.3f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::White, 1.f,  1.f,  Clock::Run,   nullptr, nullptr,              Cutscenes::CueTransform,   -1, Cutscenes::NoPortrait, false },
+		{ 1.8f,     Aim::Anchor,  1.f,  0.f,  1.2f, false, true,  Wash::White, 1.f,  0.f,  Clock::Run,   nullptr, "판이 말을 되찾는다.",  Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 0.6f,     Aim::Player,  0.f,  0.f,  1.0f, false, false, Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, nullptr,              Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+	};
+
+	// Anchored at the king of the board as it falls: slowed, named, and gone
+	// in the white.
+	const Cutscenes::Shot kCheckmate[] =
+	{
+		// seconds  aim           col   row   zoom  cut    bars   wash         from  to    clock         speaker  caption       cue                        conversation  portrait                   gray
+		{ 1.6f,     Aim::Anchor,  0.f,  0.f,  1.7f, false, true,  Wash::None,  0.f,  0.f,  Clock::Slow,  nullptr, "체크메이트",   Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 1.3f,     Aim::Anchor,  0.f,  0.f,  1.4f, false, true,  Wash::None,  0.f,  0.f,  Clock::Run,   nullptr, "체크메이트",   Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 0.5f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::White, 0.f,  1.f,  Clock::Run,   nullptr, nullptr,      Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+		{ 0.2f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::White, 1.f,  1.f,  Clock::Run,   nullptr, nullptr,      Cutscenes::CueRestorePair, -1, Cutscenes::NoPortrait, false },
+		{ 1.0f,     Aim::Player,  0.f,  0.f,  1.0f, true,  false, Wash::White, 1.f,  0.f,  Clock::Run,   nullptr, nullptr,      Cutscenes::NoCue,          -1, Cutscenes::NoPortrait, false },
+	};
+
+	// Anchored at him, at the gray's heart: the white, and out of it the
+	// pieces left on the board, close round him.
+	const Cutscenes::Shot kCheckmateEnd[] =
+	{
+		// seconds  aim           col   row   zoom  cut    bars   wash         from  to    clock         speaker  caption       cue                         conversation  portrait                   gray
+		{ 0.7f,     Aim::Player,  0.f,  0.f,  1.3f, false, true,  Wash::White, 0.f,  1.f,  Clock::Run,   nullptr, nullptr,      Cutscenes::NoCue,           -1, Cutscenes::NoPortrait, false },
+		{ 0.2f,     Aim::Player,  0.f,  0.f,  0.f,  false, true,  Wash::White, 1.f,  1.f,  Clock::Run,   nullptr, nullptr,      Cutscenes::CueCheckmateRise, -1, Cutscenes::NoPortrait, false },
+		{ 1.4f,     Aim::Player,  0.f,  0.f,  1.5f, false, true,  Wash::White, 1.f,  0.f,  Clock::Run,   nullptr, "체크.",       Cutscenes::NoCue,           -1, Cutscenes::NoPortrait, false },
+		{ 1.8f,     Aim::Player,  0.f,  0.f,  1.9f, false, true,  Wash::None,  0.f,  0.f,  Clock::Stop,  nullptr, "체크메이트.",  Cutscenes::NoCue,           -1, Cutscenes::NoPortrait, false },
+		{ 1.2f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::Black, 0.f,  1.f,  Clock::Stop,  nullptr, nullptr,      Cutscenes::NoCue,           -1, Cutscenes::NoPortrait, false },
+		{ 0.3f,     Aim::Hold,    0.f,  0.f,  0.f,  false, true,  Wash::Black, 1.f,  1.f,  Clock::Stop,  nullptr, nullptr,      Cutscenes::CueCheckmateEnd,  -1, Cutscenes::NoPortrait, false },
+	};
+
 	const Cutscenes::Script kScripts[Cutscenes::Count] =
 	{
 		{ kTest, sizeof(kTest) / sizeof(kTest[0]) },
@@ -82,6 +120,9 @@ namespace
 		{ kLimitLight, sizeof(kLimitLight) / sizeof(kLimitLight[0]) },
 		{ kLimitDark, sizeof(kLimitDark) / sizeof(kLimitDark[0]) },
 		{ kLimitAsh, sizeof(kLimitAsh) / sizeof(kLimitAsh[0]) },
+		{ kTransform, sizeof(kTransform) / sizeof(kTransform[0]) },
+		{ kCheckmate, sizeof(kCheckmate) / sizeof(kCheckmate[0]) },
+		{ kCheckmateEnd, sizeof(kCheckmateEnd) / sizeof(kCheckmateEnd[0]) },
 	};
 }
 

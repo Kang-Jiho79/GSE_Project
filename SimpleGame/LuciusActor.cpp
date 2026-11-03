@@ -12,6 +12,8 @@
 #include "Palette.h"
 #include "Tuning.h"
 #include "Dialogue.h"
+#include "WitnessLampActor.h"
+#include "ThroneRoomActor.h"
 #include <cmath>
 
 namespace
@@ -99,10 +101,21 @@ void LuciusActor::Pierce()
 	}
 
 	// Straight through the dome: it shatters, and the same beam lands on him.
-	m_State = State::Stagger;
-	m_StateTime = 0.f;
+	Stagger(Tuning::Lucius::kStaggerTime);
 	m_SanctuaryCooldown = Tuning::Lucius::kSanctuaryCooldown;
 	m_BreakPending = true;
+}
+
+void LuciusActor::Stagger(float seconds)
+{
+	m_State = State::Stagger;
+	m_StateTime = 0.f;
+	m_StaggerTime = seconds;
+}
+
+const char* LuciusActor::Hint() const
+{
+	return (IsDueling() && m_State == State::Witness) ? "증인의 등불을 꺼라" : nullptr;
 }
 
 float LuciusActor::Resist(float damage)
@@ -166,6 +179,14 @@ void LuciusActor::Fight(const ActorContext& ctx)
 	{
 		m_SanctuaryCooldown -= ctx.deltaTime;
 	}
+	if (m_WitnessCooldown > 0.f)
+	{
+		m_WitnessCooldown -= ctx.deltaTime;
+	}
+	if (m_VerdictFlash > 0.f)
+	{
+		m_VerdictFlash -= ctx.deltaTime / kFlashTime;
+	}
 	if (m_JudgmentFlash > 0.f)
 	{
 		m_JudgmentFlash -= ctx.deltaTime / kFlashTime;
@@ -228,10 +249,16 @@ void LuciusActor::Fight(const ActorContext& ctx)
 	}
 	case State::Stagger:
 	{
-		if (m_StateTime >= Tuning::Lucius::kStaggerTime)
+		if (m_StateTime >= m_StaggerTime)
 		{
 			Finish(Tuning::Lucius::kCooldown * 0.5f);
 		}
+		break;
+	}
+	case State::Witness:
+	{
+		FaceAlong(dirCol, dirRow);
+		UpdateWitness(ctx, dirCol, dirRow);
 		break;
 	}
 	case State::Recover:
@@ -278,6 +305,13 @@ void LuciusActor::Walk(const ActorContext& ctx, float distance, float dirCol, fl
 
 void LuciusActor::Choose(const ActorContext& ctx, float distance)
 {
+	// Worn down, he calls witnesses against him.
+	if (HealthFraction() < Tuning::Lucius::kWitnessShare && m_WitnessCooldown <= 0.f)
+	{
+		CallWitnesses(ctx);
+		return;
+	}
+
 	if (HealthFraction() < Tuning::Lucius::kSanctuaryShare && m_SanctuaryCooldown <= 0.f)
 	{
 		m_State = State::Sanctuary;
@@ -360,6 +394,111 @@ void LuciusActor::Release(const ActorContext& ctx, float dirCol, float dirRow)
 
 void LuciusActor::ThrowWave(const ActorContext& ctx, float dirCol, float dirRow)
 {
+	ThrowFan(ctx, dirCol, dirRow);
+	m_WavesLeft--;
+	m_NextWave += Tuning::Lucius::kVolleyGap / FurySpeed();
+	if (m_WavesLeft <= 0)
+	{
+		Finish(Tuning::Lucius::kCooldown);
+	}
+}
+
+void LuciusActor::CallWitnesses(const ActorContext& ctx)
+{
+	// Three of the hall's four corners - a different one left dark each time.
+	float centerCol, centerRow;
+	ThroneRoomActor::Center(centerCol, centerRow);
+	int skip = m_BlowCount % 4;
+	float reach = Tuning::Lucius::kWitnessCorner;
+	int lit = 0;
+	for (int corner = 0; corner < 4 && lit < Tuning::Lucius::kWitnessLamps; corner++)
+	{
+		if (corner == skip)
+		{
+			continue;
+		}
+		float col = centerCol + ((corner % 2 == 0) ? -reach : reach);
+		float row = centerRow + ((corner < 2) ? -reach : reach);
+		std::unique_ptr<WitnessLampActor> lamp(new WitnessLampActor(this, Tuning::Lucius::kWitnessTime));
+		float x, y;
+		WorldGrid::IsoPosition(col, row, x, y);
+		lamp->SetLocalPosition(x, y);
+		ctx.graph->Spawn(std::move(lamp));
+		SparkActor::Burst(*ctx.graph, x, y, SparkActor::Style::Light, kStepSparks, kStepSparkSpeed, kSparkLift);
+		lit++;
+	}
+
+	m_State = State::Witness;
+	m_StateTime = 0.f;
+	m_NextWave = Tuning::Lucius::kVolleyGap * 3.f;
+	m_WitnessCooldown = Tuning::Lucius::kWitnessCooldown;
+}
+
+void LuciusActor::UpdateWitness(const ActorContext& ctx, float dirCol, float dirRow)
+{
+	int lit = 0;
+	ctx.graph->ForEach<WitnessLampActor>([&](WitnessLampActor& lamp)
+	{
+		if (!lamp.IsDestroyed() && lamp.IsLit())
+		{
+			lit++;
+		}
+	});
+
+	// Every one put out: he reels.
+	if (lit == 0 && m_StateTime > 0.2f)
+	{
+		SparkActor::Burst(*ctx.graph, WorldX(), WorldY(), SparkActor::Style::Light, kBreakSparks, kBreakSparkSpeed, kSparkLift);
+		ctx.impact->Shake(Tuning::Lucius::kBreakShake);
+		Stagger(Tuning::Lucius::kWitnessStagger);
+		return;
+	}
+	if (m_StateTime >= Tuning::Lucius::kWitnessTime)
+	{
+		PassVerdict(ctx, lit);
+		return;
+	}
+
+	// Meanwhile, spears to keep him from them.
+	if (m_StateTime >= m_NextWave)
+	{
+		ThrowFan(ctx, dirCol, dirRow);
+		m_NextWave += Tuning::Lucius::kVolleyGap * 3.f / FurySpeed();
+	}
+}
+
+void LuciusActor::PassVerdict(const ActorContext& ctx, int lit)
+{
+	ctx.graph->ForEach<WitnessLampActor>([&](WitnessLampActor& lamp)
+	{
+		lamp.Snuff();
+	});
+
+	// A pillar between them shelters him.
+	float col, row, playerCol, playerRow;
+	WorldGrid::InverseIso(WorldX(), WorldY(), col, row);
+	WorldGrid::InverseIso(ctx.playerX, ctx.playerY, playerCol, playerRow);
+	float dc = playerCol - col;
+	float dr = playerRow - row;
+	float length = sqrtf(dc * dc + dr * dr);
+	bool sheltered = false;
+	const float kSample = 0.3f;
+	for (float along = 1.f; along < length - 0.5f && !sheltered; along += kSample)
+	{
+		sheltered = WorldGrid::IsBlocked(col + dc / length * along, row + dr / length * along);
+	}
+	if (!sheltered)
+	{
+		Combat::StrikePlayerRadius(ctx, ctx.playerX, ctx.playerY, 0.5f, Tuning::Lucius::kVerdictDamage * lit * FuryDamage());
+	}
+	ctx.impact->Shake(Tuning::Lucius::kVerdictShake);
+	m_VerdictFlash = 1.f;
+	m_StrikeFlash = 1.f;
+	Finish(Tuning::Lucius::kCooldown);
+}
+
+void LuciusActor::ThrowFan(const ActorContext& ctx, float dirCol, float dirRow)
+{
 	// Aimed afresh every wave, and each fan turned half a step from the last,
 	// so the gap that saved him once does not save him twice.
 	int count = Tuning::Lucius::kVolleySpears;
@@ -379,12 +518,6 @@ void LuciusActor::ThrowWave(const ActorContext& ctx, float dirCol, float dirRow)
 
 	m_StrikeFlash = 1.f;
 	m_WaveIndex++;
-	m_WavesLeft--;
-	m_NextWave += Tuning::Lucius::kVolleyGap / FurySpeed();
-	if (m_WavesLeft <= 0)
-	{
-		Finish(Tuning::Lucius::kCooldown);
-	}
 }
 
 void LuciusActor::Finish(float cooldown)
@@ -401,6 +534,8 @@ void LuciusActor::ResetMoves()
 	m_StateTime = 0.f;
 	m_Cooldown = 1.f;
 	m_SanctuaryCooldown = 0.f;
+	m_WitnessCooldown = 0.f;
+	m_VerdictFlash = 0.f;
 	m_BlowCount = 0;
 	m_WavesLeft = 0;
 	m_JudgmentFlash = 0.f;
@@ -658,6 +793,19 @@ void LuciusActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	if (fighting && m_JudgmentFlash > 0.f)
 	{
 		DrawJudgment(out, ctx, 1.f, m_JudgmentFlash, true);
+	}
+	// Judgment over the whole hall.
+	if (fighting && m_VerdictFlash > 0.f)
+	{
+		float centerCol, centerRow, centerX, centerY, sx, sy;
+		ThroneRoomActor::Center(centerCol, centerRow);
+		WorldGrid::IsoPosition(centerCol, centerRow, centerX, centerY);
+		ctx.ToScreen(centerX, centerY, sx, sy);
+		out.SetGlow(1.f);
+		out.AddGroundArc(centerX, centerY, sx, sy + WorldGrid::GroundHeightAt(centerX, centerY) + kTelegraphLift, 0.f,
+			(float)ThroneRoomActor::FloorReach() + 0.5f, 0.f, 2.f * kPi, kTelegraphSegments,
+			Palette::kLightCore.r, Palette::kLightCore.g, Palette::kLightCore.b, 0.5f * m_VerdictFlash);
+		out.SetGlow(0.f);
 	}
 
 	if (!ctx.IsOnScreen(x, y, 160.f, 220.f))

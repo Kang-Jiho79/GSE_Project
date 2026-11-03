@@ -96,6 +96,8 @@ namespace Palette
 	const Color kEndingTrueBack = { 0.030f, 0.030f, 0.036f };
 	const Color kEndingTrueDawn = { 0.20f, 0.17f, 0.14f };
 	const Color kEndingTrueName = { 0.96f, 0.90f, 0.78f };
+	const Color kEndingCheckmateBack = { 0.020f, 0.020f, 0.026f };
+	const Color kEndingCheckmateName = { 0.82f, 0.82f, 0.84f };
 
 	// The god: a white outline of a man, the colour of nothing that lives.
 	const Color kGodHand = { 0.84f, 0.84f, 0.86f };

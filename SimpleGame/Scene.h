@@ -177,6 +177,10 @@ private:
 	void PlayCue(int cue, PlayerStatus& status);
 	// Whether he has put the collusion to this region's king.
 	bool AskedKing() const;
+	// In a throne room: whether its pair has been taken back as pieces, and
+	// whether it has been broken.
+	bool PairRisen() const;
+	bool PairBroken() const;
 	// The camera onto him at no zoom, or wherever a playing cutscene has it.
 	void SettleCamera();
 	void RecordPopulation();
@@ -219,6 +223,12 @@ private:
 	bool m_AskedKing = false;
 	// The world has gone white over the king: on to Bellum.
 	bool m_Intervening = false;
+
+	// In a throne room: whether its king and queen had been taken back as
+	// pieces, and broken, as of the last frame - the moment either changes,
+	// its cutscene plays.
+	bool m_PairRisen = false;
+	bool m_PairBroken = false;
 
 	// The castle door he stands at leads here, or -1; and whether the travel
 	// under way is through such a door, to be set down before it.

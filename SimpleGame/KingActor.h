@@ -53,6 +53,9 @@ public:
 	// He has asked: he is made whole and held to its power, and it wakes.
 	// His form must already be its power.
 	void BeginDuel(PlayerStatus& status);
+	// Left fallen where it stood once its pair has been broken: down on one
+	// knee from the start, and only able to repeat itself.
+	void SetFallen();
 
 	// Its last words while they are still shown - nullptr once they fade -
 	// and what is written under them.

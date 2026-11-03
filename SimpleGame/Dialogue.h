@@ -172,6 +172,36 @@ namespace Dialogue
 		LanternOwner,
 		LetterSender,
 
+		// The queens, Solena of the light and Nocta of the dark: before and
+		// after their kings yield, asked about the god (and, once he is free
+		// of it, failing to hear), and fallen once their pair is broken.
+		QueenSolena,
+		QueenSolenaAfter,
+		QueenSolenaOnGod,
+		QueenSolenaError,
+		QueenSolenaFallen,
+		QueenNocta,
+		QueenNoctaAfter,
+		QueenNoctaOnGod,
+		QueenNoctaError,
+		QueenNoctaFallen,
+
+		// Free of the god, back before each king: its words break off as the
+		// god takes king and queen back as its pieces - and once they are
+		// broken, the king can only repeat itself.
+		KingLuciusRise,
+		KingNoctisRise,
+		KingLuciusFallen,
+		KingNoctisFallen,
+
+		// Kinis's last words to one free of the god who left a nation's king
+		// and queen standing: whole, but no choice after - the pieces left on
+		// the board move first.
+		KinisLastUnchosen,
+
+		// The ending when they do.
+		EndingCheckmate,
+
 		Count,
 	};
 
@@ -193,6 +223,7 @@ namespace Dialogue
 		Ash,
 		Scheme,
 		True,
+		Checkmate,
 
 		EndingCount,
 	};

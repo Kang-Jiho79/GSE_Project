@@ -267,6 +267,18 @@
     <ClInclude Include="ThroneRoomActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="KingPieceActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="QueenPieceActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WitnessLampActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="NoctisLikenessActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Quests.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -483,6 +495,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ThroneRoomActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="KingPieceActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="QueenPieceActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WitnessLampActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="NoctisLikenessActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Quests.cpp">

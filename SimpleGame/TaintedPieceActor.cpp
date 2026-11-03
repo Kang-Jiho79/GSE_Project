@@ -18,6 +18,9 @@ namespace
 	const Palette::Color kWhiteStone = { 0.70f, 0.70f, 0.72f };
 	const Palette::Color kBlackStone = { 0.15f, 0.14f, 0.17f };
 	const Palette::Color kTaint = { 0.40f, 0.40f, 0.42f };
+	// A piece the gray has not touched: clean white and black.
+	const Palette::Color kWholeWhite = { 0.88f, 0.87f, 0.84f };
+	const Palette::Color kWholeBlack = { 0.09f, 0.08f, 0.11f };
 	const float kTaintShare = 0.35f;
 
 	// The cracks spreading up it as it is hurt: a few from the start, the
@@ -56,10 +59,23 @@ namespace
 }
 
 TaintedPieceActor::TaintedPieceActor(const char* name, int region, Origin origin, float maxHealth, float furyTime)
-	: BossActor(name, maxHealth, region, Tuning::TaintedPiece::kWakeRange, Tuning::TaintedPiece::kLeashRange, furyTime)
+	: TaintedPieceActor(name, region, origin, maxHealth, furyTime, Tuning::TaintedPiece::kWakeRange,
+		Tuning::TaintedPiece::kLeashRange, false)
+{
+}
+
+TaintedPieceActor::TaintedPieceActor(const char* name, int region, Origin origin, float maxHealth, float furyTime,
+	float wakeRange, float leashRange, bool whole)
+	: BossActor(name, maxHealth, region, wakeRange, leashRange, furyTime)
 	, m_Region(region)
 	, m_Origin(origin)
+	, m_Whole(whole)
 {
+}
+
+int TaintedPieceActor::BoardHalf() const
+{
+	return Tuning::TaintedPiece::kBoardHalf;
 }
 
 float TaintedPieceActor::BodyRadius() const
@@ -173,6 +189,10 @@ void TaintedPieceActor::Part(DrawList& out, float depth, float x, float base, fl
 Palette::Color TaintedPieceActor::Stone(int band) const
 {
 	bool white = (m_Origin == Origin::Light) || (m_Origin == Origin::Mixed && band % 2 == 0);
+	if (m_Whole)
+	{
+		return white ? kWholeWhite : kWholeBlack;
+	}
 	return Tainted(white ? kWhiteStone : kBlackStone);
 }
 
@@ -205,7 +225,7 @@ bool TaintedPieceActor::IsOnBoard(float col, float row) const
 {
 	int centerCol, centerRow;
 	BoardCenter(centerCol, centerRow);
-	float half = Tuning::TaintedPiece::kBoardHalf + 0.5f;
+	float half = BoardHalf() + 0.5f;
 	return fabsf(col - centerCol) <= half && fabsf(row - centerRow) <= half;
 }
 
@@ -213,7 +233,7 @@ void TaintedPieceActor::ClampToBoard(float& col, float& row) const
 {
 	int centerCol, centerRow;
 	BoardCenter(centerCol, centerRow);
-	float half = (float)Tuning::TaintedPiece::kBoardHalf;
+	float half = (float)BoardHalf();
 	if (col < centerCol - half)
 	{
 		col = centerCol - half;
@@ -323,8 +343,8 @@ void TaintedPieceActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	out.SetFlash(0.f);
 
 	// The cracks, more of them the more it has been hurt; what it was
-	// shows through - light shines, dark does not.
-	if (!m_Fallen)
+	// shows through - light shines, dark does not. A whole piece has none.
+	if (!m_Fallen && !m_Whole)
 	{
 		int cracks = kFirstCracks + (int)((1.f - HealthFraction()) * (kCracks - kFirstCracks) + 0.5f);
 		float pulse = IsDormant() ? 0.55f : 0.8f + 0.2f * sinf(Time() * 4.f);

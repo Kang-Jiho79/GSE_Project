@@ -63,6 +63,11 @@ void NpcActor::SetConversation(int conversation)
 	m_Conversation = conversation;
 }
 
+void NpcActor::SetFallen(bool fallen)
+{
+	m_Fallen = fallen;
+}
+
 NpcActor::Kind NpcActor::Type() const
 {
 	return m_Kind;
@@ -160,7 +165,8 @@ void NpcActor::OnDraw(DrawList& out, const ActorContext& ctx) const
 	{
 		// A long gown to the floor, its hem spread wide, in her land's
 		// colours - pale and gold, or near-black and violet.
-		const float kGownHeight = 36.f;
+		// Fallen, she has sunk to the floor in it.
+		const float kGownHeight = m_Fallen ? 20.f : 36.f;
 		bool light = (m_Style != Regions::Style::Dark);
 		const Palette::Color& gown = light ? Palette::kRobeLight : Palette::kRobeDark;
 		out.AddTaperedBox(depth, x, groundY, 0.38f, 0.32f, kGownHeight + breathe, 0.45f, 0.f, 0.f,

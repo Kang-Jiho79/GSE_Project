@@ -66,6 +66,10 @@ struct PlayerStatus
 	float parryTimer = 0.f;
 	bool parried = false;
 
+	// Held fast where he stands - a likeness of Noctis burst on him - for
+	// this long: no walking, though he can still strike and turn.
+	float rootTimer = 0.f;
+
 	// The special's gauge (R), apart from the vessel. Filled by blows he
 	// lands (the scene hands over what Combat noted) and blows he takes.
 	float limit = 0.f;

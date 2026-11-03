@@ -42,6 +42,8 @@ public:
 	Kind Type() const;
 	// Whose people it is dressed as.
 	Regions::Style Dress() const;
+	// Sunk to the floor - a queen whose pair has been broken.
+	void SetFallen(bool fallen);
 
 protected:
 	void OnUpdate(const ActorContext& ctx) override;
@@ -54,6 +56,7 @@ private:
 	Kind m_Kind;
 	Regions::Style m_Style;
 	int m_Conversation;
+	bool m_Fallen = false;
 	float m_Facing = 1.f;
 	float m_Time = 0.f;
 };

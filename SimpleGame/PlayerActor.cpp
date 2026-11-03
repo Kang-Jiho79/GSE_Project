@@ -580,7 +580,7 @@ FormMoves& PlayerActor::MovesFor(Form form)
 void PlayerActor::Move(const ActorContext& ctx)
 {
 	float dirCol, dirRow;
-	if (!MoveDirection(ctx.input, dirCol, dirRow))
+	if (ctx.status->rootTimer > 0.f || !MoveDirection(ctx.input, dirCol, dirRow))
 	{
 		return;
 	}

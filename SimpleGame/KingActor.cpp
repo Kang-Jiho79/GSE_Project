@@ -79,6 +79,13 @@ void KingActor::BeginDuel(PlayerStatus& status)
 	Say(m_Lines.challenge, nullptr);
 }
 
+void KingActor::SetFallen()
+{
+	m_Recognized = true;
+	m_Yielded = true;
+	m_YieldTime = kKneelTime;
+}
+
 void KingActor::EndDuel(PlayerStatus& status)
 {
 	m_Dueling = false;

@@ -41,6 +41,10 @@ void PlayerStatus::Tick(float deltaTime)
 	ashSkill.Tick(deltaTime);
 	ashSpecial.Tick(deltaTime);
 	ashParry.Tick(deltaTime);
+	if (rootTimer > 0.f)
+	{
+		rootTimer -= deltaTime;
+	}
 	if (parryTimer > 0.f)
 	{
 		parryTimer -= deltaTime;

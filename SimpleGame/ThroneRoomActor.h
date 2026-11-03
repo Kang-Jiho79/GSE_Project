@@ -18,8 +18,10 @@ public:
 
 	// Where the king stands and where the carpet runs, as a settlement's.
 	static Settlement::Layout Layout();
-	// The floor, in squares from the room's centre on both axes.
+	// The floor, in squares from the room's centre on both axes, and that
+	// centre.
 	static int FloorReach();
+	static void Center(float& col, float& row);
 	// Where he comes in, and the door he goes out by.
 	static void Arrival(float& col, float& row);
 	static void ExitDoor(float& col, float& row);
