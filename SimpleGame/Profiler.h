@@ -7,8 +7,8 @@
 //
 // Deliberately not one line per frame: console output costs more than the frame
 // it would be reporting on, so printing every frame would mostly measure the
-// printing. Averaging over a window also works around GLUT's frame timer only
-// having millisecond resolution - a single fast frame reads as 0 ms on its own.
+// printing. Averaging over a window also evens out the frame-to-frame jitter
+// of any single frame's timing.
 //
 // A global by design: instrumentation should be one line to add anywhere,
 // not a reference threaded through every call.

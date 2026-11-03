@@ -5,7 +5,7 @@
 
 ## 프로젝트 요약
 - 장르: 2.5D 액션 RPG, 쿼터뷰, PC
-- 그래픽: OpenGL 자체 엔진 (GLUT 기반, 아이소 64×32 타일, 직교 투영, 1픽셀 = 1픽셀)
+- 그래픽: OpenGL 자체 엔진 (GLFW 3.4 기반 — 정적 링크, `SimpleGame/Dependencies/GLFW/`에 헤더·x86/x64 lib·라이선스, 아이소 64×32 타일, 직교 투영, 1픽셀 = 1픽셀)
 - 창 크기: 1600×900 (화면이 작으면 비율을 지켜 화면의 90% 안으로 줄임, `SimpleGame.cpp`). 지역별 안개·빛 거리는 창 높이 640 기준으로 정해져 있고 창 높이에 비례해 늘어남
 - 창 제목(프로토타입): "The Darkest Light - Prototype"
 - 이 프로젝트는 **이미 구현된 기존 프로젝트**이며, GDD.md 설계를 이 위에 단계적으로 반영한다
@@ -14,7 +14,7 @@
 ## 폴더 구조 (실제 구조)
 ```
 SimpleGame/
-├─ SimpleGame.cpp          GLUT 진입점, 입력 처리, 메인 루프(Idle → Update → Render)
+├─ SimpleGame.cpp          GLFW 진입점(창·컨텍스트·vsync), 입력 처리(GLFW 키 코드를 글자/특수 키로 바꿔 기존 핸들러에 전달 — `TypedKey`), 메인 루프(PollEvents → Idle(Update → Render) → SwapBuffers)
 ├─ 엔진/렌더링
 │  ├─ Renderer             인스턴싱 배치 렌더러 (프레임당 드로우콜 4~6회), 쿼드마다 빛남·캐릭터 표시
 │  ├─ PostProcess          화면 밖 버퍼 → 블룸(빛 표시된 픽셀만) → 캐릭터 외곽선·림라이트 → 색보정

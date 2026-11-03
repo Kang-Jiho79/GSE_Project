@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-// Typing Korean without the system's input method, which GLUT does not pass
-// through: the keys of a standard two-set (두벌식) keyboard are read as jamo
+// Typing Korean without the system's input method, which the window's key
+// input does not pass through (keys arrive by their place on the board): the keys of a standard two-set (두벌식) keyboard are read as jamo
 // and put together into syllables here, the way the input method would.
 // Tab switches between Korean and plain Latin letters.
 //

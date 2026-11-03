@@ -12,7 +12,9 @@ but WITHOUT ANY WARRANTY.
 #include <iostream>
 #include <cctype>
 #include "Dependencies\glew.h"
-#include "Dependencies\freeglut.h"
+// The window, its context and its input. glew.h has the GL headers already.
+#define GLFW_INCLUDE_NONE
+#include "Dependencies\GLFW\include\GLFW\glfw3.h"
 
 #include "Renderer.h"
 #include "Scene.h"
@@ -51,6 +53,7 @@ const float kScreenShare = 0.9f; // the most of the screen it may take
 int WINDOW_SIZE_X = kWindowWantX;
 int WINDOW_SIZE_Y = kWindowWantY;
 
+GLFWwindow* g_Window = NULL;
 Renderer* g_Renderer = NULL;
 PostProcess* g_PostProcess = NULL;
 TextRenderer* g_Text = NULL;
@@ -241,7 +244,7 @@ void ConfirmTitle()
 	}
 	case TitleScreen::Pick::Quit:
 	{
-		glutLeaveMainLoop();
+		glfwSetWindowShouldClose(g_Window, GLFW_TRUE);
 		break;
 	}
 	default:
@@ -332,7 +335,7 @@ void OverlayKey(int lowered)
 		}
 		case InputMap::kQuit:
 		{
-			glutLeaveMainLoop();
+			glfwSetWindowShouldClose(g_Window, GLFW_TRUE);
 			break;
 		}
 		}
@@ -444,7 +447,9 @@ void OverlayKey(int lowered)
 	}
 }
 
-int g_LastTimeMs = 0;
+// When the last frame began, in seconds since GLFW started; below zero
+// before the first.
+double g_LastTime = -1.0;
 
 // Pixels relative to the window center - the same space the player is drawn
 // in, since the camera always centers on him.
@@ -531,15 +536,15 @@ void RenderScene(void)
 			g_Text->Flush();
 		}
 
-		glutSwapBuffers();
+		glfwSwapBuffers(g_Window);
 	}
 }
 
 void Idle(void)
 {
-	int nowMs = glutGet(GLUT_ELAPSED_TIME);
-	float deltaTime = (g_LastTimeMs == 0) ? 0.f : (nowMs - g_LastTimeMs) / 1000.f;
-	g_LastTimeMs = nowMs;
+	double now = glfwGetTime();
+	float deltaTime = (g_LastTime < 0.0) ? 0.f : (float)(now - g_LastTime);
+	g_LastTime = now;
 	g_MenuTime += deltaTime;
 
 	InputState input;
@@ -676,16 +681,6 @@ void UpdateMousePosition(int x, int y)
 	g_MouseY = WINDOW_SIZE_Y / 2.f - (float)y;
 }
 
-void MouseMotion(int x, int y)
-{
-	UpdateMousePosition(x, y);
-}
-
-void MousePassiveMotion(int x, int y)
-{
-	UpdateMousePosition(x, y);
-}
-
 void MouseInput(int button, int state, int x, int y)
 {
 	UpdateMousePosition(x, y);
@@ -697,7 +692,7 @@ void MouseInput(int button, int state, int x, int y)
 	{
 		if (g_Ending.IsOpen())
 		{
-			if (button == InputMap::kAttackButton && state == GLUT_DOWN)
+			if (button == InputMap::kAttackButton && state == InputMap::kButtonDown)
 			{
 				AdvanceEnding();
 			}
@@ -705,7 +700,7 @@ void MouseInput(int button, int state, int x, int y)
 		}
 		if (g_Title.IsOpen())
 		{
-			if (button == InputMap::kAttackButton && state == GLUT_DOWN && g_Title.SelectAt(g_MouseX, g_MouseY))
+			if (button == InputMap::kAttackButton && state == InputMap::kButtonDown && g_Title.SelectAt(g_MouseX, g_MouseY))
 			{
 				ConfirmTitle();
 			}
@@ -713,7 +708,7 @@ void MouseInput(int button, int state, int x, int y)
 		}
 		if (g_Dialogue.IsOpen())
 		{
-			if (button == InputMap::kAttackButton && state == GLUT_DOWN
+			if (button == InputMap::kAttackButton && state == InputMap::kButtonDown
 				&& (!g_Dialogue.IsChoosing() || g_Dialogue.SelectChoiceAt(g_MouseX, g_MouseY, WINDOW_SIZE_Y)))
 			{
 				g_Dialogue.Advance(g_Progress, g_DialogueLog);
@@ -725,7 +720,7 @@ void MouseInput(int button, int state, int x, int y)
 			return;
 		}
 
-		if (button == InputMap::kAttackButton && state == GLUT_DOWN)
+		if (button == InputMap::kAttackButton && state == InputMap::kButtonDown)
 		{
 			int region = g_WorldMap.RegionAt(g_MouseX, g_MouseY);
 			if (region >= 0)
@@ -741,12 +736,12 @@ void MouseInput(int button, int state, int x, int y)
 	{
 	case InputMap::kAttackButton:
 	{
-		g_AttackHeld = (state == GLUT_DOWN);
+		g_AttackHeld = (state == InputMap::kButtonDown);
 		break;
 	}
 	case InputMap::kDodgeButton:
 	{
-		if (state == GLUT_DOWN)
+		if (state == InputMap::kButtonDown)
 		{
 			g_DodgePressed = true;
 		}
@@ -951,7 +946,7 @@ void KeyInput(unsigned char key, int x, int y)
 	}
 	case InputMap::kQuit:
 	{
-		glutLeaveMainLoop();
+		glfwSetWindowShouldClose(g_Window, GLFW_TRUE);
 		break;
 	}
 	}
@@ -1082,13 +1077,144 @@ void SpecialKeyInputUp(int key, int x, int y)
 	}
 }
 
+// The keys that type a mark or a control code, and what they type.
+struct TypedKeyEntry
+{
+	int key;
+	int typed;
+};
+const TypedKeyEntry kTypedKeys[] =
+{
+	{ GLFW_KEY_SPACE, ' ' },
+	{ GLFW_KEY_ESCAPE, 27 },
+	{ GLFW_KEY_TAB, 9 },
+	{ GLFW_KEY_ENTER, 13 },
+	{ GLFW_KEY_KP_ENTER, 13 },
+	{ GLFW_KEY_BACKSPACE, 8 },
+	{ GLFW_KEY_DELETE, 127 },
+	{ GLFW_KEY_MINUS, '-' },
+	{ GLFW_KEY_EQUAL, '=' },
+	{ GLFW_KEY_COMMA, ',' },
+	{ GLFW_KEY_PERIOD, '.' },
+	{ GLFW_KEY_SLASH, '/' },
+	{ GLFW_KEY_SEMICOLON, ';' },
+	{ GLFW_KEY_APOSTROPHE, '\'' },
+	{ GLFW_KEY_LEFT_BRACKET, '[' },
+	{ GLFW_KEY_RIGHT_BRACKET, ']' },
+	{ GLFW_KEY_BACKSLASH, '\\' },
+	{ GLFW_KEY_GRAVE_ACCENT, '`' },
+};
+
+// What a key types, as the game reads it: a letter as typed - Shift makes
+// it a capital, as naming him needs for the doubled jamo - a digit or a
+// mark, or one of the few control keys as its ASCII code. Keys go by their
+// place on the board, whatever the system's layout, as GLUT gave them
+// without the input method. -1 for a key that types nothing (it goes to
+// SpecialKeyInput as GLFW's own code).
+int TypedKey(int key, int mods)
+{
+	if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
+	{
+		bool capital = (mods & GLFW_MOD_SHIFT) != 0;
+		return (capital ? 'A' : 'a') + (key - GLFW_KEY_A);
+	}
+	if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9)
+	{
+		return '0' + (key - GLFW_KEY_0);
+	}
+	if (key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_9)
+	{
+		return '0' + (key - GLFW_KEY_KP_0);
+	}
+	for (size_t i = 0; i < sizeof(kTypedKeys) / sizeof(kTypedKeys[0]); i++)
+	{
+		if (kTypedKeys[i].key == key)
+		{
+			return kTypedKeys[i].typed;
+		}
+	}
+	return -1;
+}
+
+// GLFW's callbacks, handing everything to the handlers above in the form
+// they were written for.
+void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	// Held keys are tracked by their down/up pair; repeats would only re-fire
+	// single-press actions like the form switch.
+	if (action == GLFW_REPEAT)
+	{
+		return;
+	}
+	double cursorX, cursorY;
+	glfwGetCursorPos(window, &cursorX, &cursorY);
+	int x = (int)cursorX;
+	int y = (int)cursorY;
+
+	int typed = TypedKey(key, mods);
+	if (typed >= 0)
+	{
+		if (action == GLFW_PRESS)
+		{
+			KeyInput((unsigned char)typed, x, y);
+		}
+		else
+		{
+			KeyInputUp((unsigned char)typed, x, y);
+		}
+		return;
+	}
+	if (action == GLFW_PRESS)
+	{
+		SpecialKeyInput(key, x, y);
+	}
+	else
+	{
+		SpecialKeyInputUp(key, x, y);
+	}
+}
+
+void OnMouseButton(GLFWwindow* window, int button, int action, int mods)
+{
+	double cursorX, cursorY;
+	glfwGetCursorPos(window, &cursorX, &cursorY);
+	MouseInput(button, action, (int)cursorX, (int)cursorY);
+}
+
+void OnCursorMove(GLFWwindow* window, double x, double y)
+{
+	UpdateMousePosition((int)x, (int)y);
+}
+
+void OnGlfwError(int code, const char* description)
+{
+	std::cout << "GLFW error " << code << ": " << description << "\n";
+}
+
 int main(int argc, char **argv)
 {
-	// Initialize GL things
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	int screenX = glutGet(GLUT_SCREEN_WIDTH);
-	int screenY = glutGet(GLUT_SCREEN_HEIGHT);
+	glfwSetErrorCallback(OnGlfwError);
+	if (!glfwInit())
+	{
+		std::cout << "GLFW could not be initialized\n";
+		return 1;
+	}
+
+	// The window GLUT made: double buffered RGBA with a depth buffer, a
+	// compatibility context of whatever version the driver has, and a size
+	// that stays as it is.
+	glfwWindowHint(GLFW_RED_BITS, 8);
+	glfwWindowHint(GLFW_GREEN_BITS, 8);
+	glfwWindowHint(GLFW_BLUE_BITS, 8);
+	glfwWindowHint(GLFW_ALPHA_BITS, 8);
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = (monitor != NULL) ? glfwGetVideoMode(monitor) : NULL;
+	int screenX = (mode != NULL) ? mode->width : 0;
+	int screenY = (mode != NULL) ? mode->height : 0;
 	if (screenX > 0 && screenY > 0)
 	{
 		float fit = 1.f;
@@ -1104,9 +1230,32 @@ int main(int argc, char **argv)
 		WINDOW_SIZE_X = (int)(kWindowWantX * fit) / 2 * 2;
 		WINDOW_SIZE_Y = (int)(kWindowWantY * fit) / 2 * 2;
 	}
-	glutInitWindowPosition(0, 0);
-	glutInitWindowSize(WINDOW_SIZE_X, WINDOW_SIZE_Y);
-	glutCreateWindow("The Darkest Light - Prototype");
+	g_Window = glfwCreateWindow(WINDOW_SIZE_X, WINDOW_SIZE_Y, "The Darkest Light - Prototype", NULL, NULL);
+	if (g_Window == NULL)
+	{
+		std::cout << "The window could not be created\n";
+		glfwTerminate();
+		return 1;
+	}
+	// In the middle of the screen's work area, title bar and all on screen.
+	if (monitor != NULL)
+	{
+		int areaX, areaY, areaW, areaH;
+		glfwGetMonitorWorkarea(monitor, &areaX, &areaY, &areaW, &areaH);
+		glfwSetWindowPos(g_Window, areaX + (areaW - WINDOW_SIZE_X) / 2, areaY + (areaH - WINDOW_SIZE_Y) / 2);
+	}
+	glfwMakeContextCurrent(g_Window);
+	// One frame per refresh, as the driver did by default under GLUT.
+	glfwSwapInterval(1);
+
+	// Everything is laid out for the window's own pixels.
+	int framebufferX, framebufferY;
+	glfwGetFramebufferSize(g_Window, &framebufferX, &framebufferY);
+	if (framebufferX != WINDOW_SIZE_X || framebufferY != WINDOW_SIZE_Y)
+	{
+		std::cout << "Framebuffer " << framebufferX << "x" << framebufferY << " differs from the window "
+			<< WINDOW_SIZE_X << "x" << WINDOW_SIZE_Y << "\n";
+	}
 
 	glewInit();
 	// Instanced drawing (glDrawArraysInstanced, glVertexAttribDivisor) is core
@@ -1139,24 +1288,23 @@ int main(int argc, char **argv)
 
 	std::cout << "WASD: move   Shift: run   Left click: attack   Right click: dodge   Space: switch form   E/Q: skills   C: take damage   1/2: +light/+dark   F1: post-processing   F2: outlines   F3: hit effects   Esc: quit\n";
 
-	glutDisplayFunc(RenderScene);
-	glutIdleFunc(Idle);
-	// Held keys are tracked by their down/up pair; repeats would only re-fire
-	// single-press actions like the form switch.
-	glutIgnoreKeyRepeat(1);
-	glutKeyboardFunc(KeyInput);
-	glutKeyboardUpFunc(KeyInputUp);
-	glutMouseFunc(MouseInput);
-	glutMotionFunc(MouseMotion);
-	glutPassiveMotionFunc(MousePassiveMotion);
-	glutSpecialFunc(SpecialKeyInput);
-	glutSpecialUpFunc(SpecialKeyInputUp);
+	glfwSetKeyCallback(g_Window, OnKey);
+	glfwSetMouseButtonCallback(g_Window, OnMouseButton);
+	glfwSetCursorPosCallback(g_Window, OnCursorMove);
 
-	glutMainLoop();
+	// As GLUT's idle loop did: take in what happened, then a whole frame -
+	// update and draw - and on again until the window is closed or he quits.
+	while (!glfwWindowShouldClose(g_Window))
+	{
+		glfwPollEvents();
+		Idle();
+	}
 
 	delete g_Text;
 	delete g_PostProcess;
 	delete g_Renderer;
 
+	glfwDestroyWindow(g_Window);
+	glfwTerminate();
 	return 0;
 }

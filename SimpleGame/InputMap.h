@@ -1,9 +1,17 @@
 #pragma once
 
-#include "Dependencies\freeglut.h"
+// GLFW's key and button codes only - none of the GL headers, which glew.h
+// brings in wherever they are needed.
+#ifndef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_NONE
+#endif
+#include "Dependencies\GLFW\include\GLFW\glfw3.h"
 
 // Which physical key does what. Letters are stored lower-case and compared
 // after lowering the incoming key, so Shift (run) does not change their meaning.
+// Keys that type something arrive as the character (SimpleGame turns GLFW's
+// key codes into them); the rest - function keys, arrows, Shift - as GLFW's
+// own codes.
 namespace InputMap
 {
 	const unsigned char kMoveUp = 'w';
@@ -48,23 +56,25 @@ namespace InputMap
 	const unsigned char kDebugToRealm = '9';
 	const unsigned char kQuit = 27; // Esc
 
-	// Either Shift; freeglut reports them through the special-key callbacks.
-	const int kRunKeyLeft = GLUT_KEY_SHIFT_L;
-	const int kRunKeyRight = GLUT_KEY_SHIFT_R;
+	// Either Shift, reported among the keys that type nothing.
+	const int kRunKeyLeft = GLFW_KEY_LEFT_SHIFT;
+	const int kRunKeyRight = GLFW_KEY_RIGHT_SHIFT;
 
 	// Debug: bloom and grading on and off, to compare and to measure the cost.
-	const int kTogglePostProcess = GLUT_KEY_F1;
-	const int kToggleOutline = GLUT_KEY_F2;
-	const int kToggleEffects = GLUT_KEY_F3;
+	const int kTogglePostProcess = GLFW_KEY_F1;
+	const int kToggleOutline = GLFW_KEY_F2;
+	const int kToggleEffects = GLFW_KEY_F3;
 	// Debug: the monitor's little server on and off, to watch from a browser.
-	const int kToggleMonitor = GLUT_KEY_F4;
+	const int kToggleMonitor = GLFW_KEY_F4;
 	// Debug: the test cutscene, to see the camera, bars and washes at work.
-	const int kDebugCutscene = GLUT_KEY_F5;
+	const int kDebugCutscene = GLFW_KEY_F5;
 
 	// Moving between choices and through the log, besides W and S.
-	const int kMenuUp = GLUT_KEY_UP;
-	const int kMenuDown = GLUT_KEY_DOWN;
+	const int kMenuUp = GLFW_KEY_UP;
+	const int kMenuDown = GLFW_KEY_DOWN;
 
-	const int kAttackButton = GLUT_LEFT_BUTTON;
-	const int kDodgeButton = GLUT_RIGHT_BUTTON;
+	const int kAttackButton = GLFW_MOUSE_BUTTON_LEFT;
+	const int kDodgeButton = GLFW_MOUSE_BUTTON_RIGHT;
+	// A button's state as it changes: pressed, or let go.
+	const int kButtonDown = GLFW_PRESS;
 }
