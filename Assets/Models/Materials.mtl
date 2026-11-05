@@ -1,0 +1,305 @@
+# The Darkest Light - material slots (neutral defaults).
+# npc_* slots are recoloured per NPC by the game (see NpcParts.json).
+
+newmtl npc_main
+Kd 0.500 0.500 0.520
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_under
+Kd 0.360 0.360 0.380
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_trim
+Kd 0.780 0.800 0.830
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_metal
+Kd 0.620 0.640 0.680
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_leather
+Kd 0.340 0.310 0.280
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_accent
+Kd 0.850 0.880 0.920
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.850 0.880 0.920
+
+newmtl npc_skin
+Kd 0.930 0.780 0.660
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_hair
+Kd 0.300 0.200 0.150
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_eye
+Kd 0.080 0.080 0.100
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl npc_wood
+Kd 0.400 0.280 0.180
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl stone_light
+Kd 0.880 0.860 0.780
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl stone_dark
+Kd 0.170 0.150 0.220
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl stone_ash
+Kd 0.450 0.450 0.460
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl stone_ash_dark
+Kd 0.300 0.300 0.320
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl altar_stone
+Kd 0.800 0.800 0.840
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl roof_light
+Kd 0.930 0.800 0.420
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl roof_dark
+Kd 0.220 0.160 0.300
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl roof_ash
+Kd 0.320 0.320 0.340
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl wood
+Kd 0.400 0.280 0.180
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl wood_dark
+Kd 0.250 0.170 0.110
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl thatch
+Kd 0.580 0.520 0.340
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl door
+Kd 0.200 0.130 0.090
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl trim_gold
+Kd 0.950 0.780 0.300
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.450 0.350 0.100
+
+newmtl trim_violet
+Kd 0.500 0.300 0.800
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.200 0.100 0.350
+
+newmtl trim_silver
+Kd 0.750 0.770 0.800
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl cloth_border
+Kd 0.450 0.500 0.350
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl glow_window
+Kd 1.000 0.850 0.500
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 1.000 0.800 0.400
+
+newmtl glow_violet
+Kd 0.700 0.450 1.000
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.550 0.300 0.900
+
+newmtl bark_ash
+Kd 0.330 0.320 0.310
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl bark_dark
+Kd 0.200 0.150 0.200
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl leaf_light
+Kd 0.880 0.800 0.500
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl thorn_dark
+Kd 0.350 0.180 0.450
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl rock_ash
+Kd 0.420 0.420 0.430
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl rock_dark
+Kd 0.220 0.200 0.260
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl rock_light
+Kd 0.700 0.680 0.620
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl crystal_dark
+Kd 0.550 0.300 0.900
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.350 0.150 0.600
+
+newmtl crystal_light
+Kd 1.000 0.880 0.450
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 0.700 0.550 0.150
+
+newmtl mark_white
+Kd 1.000 1.000 1.000
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 1.000 1.000 1.000
+
+newmtl fire
+Kd 1.000 0.600 0.200
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+Ke 1.000 0.500 0.100
+
+newmtl iron
+Kd 0.300 0.300 0.330
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl cloth_light
+Kd 0.950 0.920 0.800
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl cloth_dark
+Kd 0.250 0.150 0.350
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl canvas
+Kd 0.620 0.580 0.480
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl white_stone
+Kd 0.920 0.920 0.940
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl black_stone
+Kd 0.100 0.100 0.120
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl carpet_light
+Kd 0.850 0.700 0.300
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl carpet_dark
+Kd 0.300 0.150 0.400
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl ash_mist
+Kd 0.550 0.550 0.570
+Ka 0 0 0
+Ks 0 0 0
+d 1.0
+
+newmtl ground_scar
+Kd 0.200 0.200 0.210
+Ka 0 0 0
+Ks 0 0 0
+d 1.0

@@ -1,0 +1,443 @@
+{
+ "convention": "Y up, +Z forward, metres, origin = ground point between the feet; every part shares that origin",
+ "heightMetres": 1.8,
+ "headHeadsTall": 3,
+ "slots": {
+  "gender": [
+   "Male",
+   "Female"
+  ],
+  "hair": [
+   "Short",
+   "Long"
+  ],
+  "mark": [
+   "Light",
+   "Dark",
+   "Ashen"
+  ],
+  "outfit": [
+   "Clothes",
+   "Armor",
+   "MageRobe"
+  ],
+  "headgear": [
+   "Hood",
+   "Helm",
+   "Mitre",
+   "Crown",
+   "Cap",
+   "Circlet"
+  ],
+  "beard": [
+   "Short",
+   "Long"
+  ],
+  "prop": [
+   "Staff",
+   "Cane",
+   "Lantern",
+   "Backpack",
+   "Hammer"
+  ]
+ },
+ "slotNote": "A part index of -1 means none. mark is the alignment part (-1 for borderborn and travellers).",
+ "parts": [
+  "Head",
+  "Torso",
+  "ArmL",
+  "ArmR",
+  "LegL",
+  "LegR"
+ ],
+ "meshNames": {
+  "body": "NPC_Body_{gender}_{part}",
+  "hair": "NPC_Hair_{hair}_{gender}",
+  "mark": "NPC_Mark_{mark}",
+  "outfit": "NPC_Outfit_{outfit}_{gender}_{part}",
+  "headgear": "NPC_Head_{headgear}",
+  "beard": "NPC_Beard_{beard}",
+  "prop": "NPC_Prop_{prop}"
+ },
+ "files": {
+  "body": "NPC/NPC_Body.obj",
+  "hair": "NPC/NPC_Hair.obj",
+  "mark": "NPC/NPC_Mark.obj",
+  "outfit": "NPC/NPC_Outfit.obj",
+  "headgear": "NPC/NPC_Headgear.obj",
+  "beard": "NPC/NPC_Beard.obj",
+  "prop": "NPC/NPC_Prop.obj"
+ },
+ "propAttach": {
+  "Staff": "HandGrip",
+  "Cane": "HandGrip",
+  "Lantern": "HandGrip",
+  "Hammer": "HandGrip",
+  "Backpack": "Torso (origin stays at the body origin)"
+ },
+ "joints": {
+  "Male": {
+   "Head": [
+    0.0,
+    1.14,
+    0.0
+   ],
+   "ArmR": [
+    0.285,
+    1.1,
+    0.0
+   ],
+   "ArmL": [
+    -0.285,
+    1.1,
+    0.0
+   ],
+   "LegR": [
+    0.11,
+    0.62,
+    0.0
+   ],
+   "LegL": [
+    -0.11,
+    0.62,
+    0.0
+   ],
+   "Torso": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "HandGrip": [
+    0.285,
+    0.54,
+    0.02
+   ]
+  },
+  "Female": {
+   "Head": [
+    0.0,
+    1.14,
+    0.0
+   ],
+   "ArmR": [
+    0.235,
+    1.1,
+    0.0
+   ],
+   "ArmL": [
+    -0.235,
+    1.1,
+    0.0
+   ],
+   "LegR": [
+    0.095,
+    0.62,
+    0.0
+   ],
+   "LegL": [
+    -0.095,
+    0.62,
+    0.0
+   ],
+   "Torso": [
+    0.0,
+    0.6,
+    0.0
+   ],
+   "HandGrip": [
+    0.235,
+    0.54,
+    0.02
+   ]
+  }
+ },
+ "materialSlots": [
+  "npc_main",
+  "npc_under",
+  "npc_trim",
+  "npc_metal",
+  "npc_leather",
+  "npc_accent",
+  "npc_skin",
+  "npc_hair",
+  "npc_eye",
+  "npc_wood"
+ ],
+ "palettes": [
+  {
+   "name": "Light",
+   "colors": {
+    "npc_main": [
+     0.92,
+     0.9,
+     0.82
+    ],
+    "npc_under": [
+     0.78,
+     0.72,
+     0.58
+    ],
+    "npc_trim": [
+     0.95,
+     0.78,
+     0.3
+    ],
+    "npc_metal": [
+     0.86,
+     0.85,
+     0.8
+    ],
+    "npc_leather": [
+     0.55,
+     0.42,
+     0.28
+    ],
+    "npc_accent": [
+     1.0,
+     0.85,
+     0.35
+    ]
+   }
+  },
+  {
+   "name": "Dark",
+   "colors": {
+    "npc_main": [
+     0.2,
+     0.17,
+     0.27
+    ],
+    "npc_under": [
+     0.12,
+     0.1,
+     0.16
+    ],
+    "npc_trim": [
+     0.55,
+     0.32,
+     0.85
+    ],
+    "npc_metal": [
+     0.28,
+     0.27,
+     0.33
+    ],
+    "npc_leather": [
+     0.2,
+     0.15,
+     0.14
+    ],
+    "npc_accent": [
+     0.65,
+     0.4,
+     1.0
+    ]
+   }
+  },
+  {
+   "name": "Ashen",
+   "colors": {
+    "npc_main": [
+     0.5,
+     0.5,
+     0.52
+    ],
+    "npc_under": [
+     0.36,
+     0.36,
+     0.38
+    ],
+    "npc_trim": [
+     0.78,
+     0.8,
+     0.83
+    ],
+    "npc_metal": [
+     0.62,
+     0.64,
+     0.68
+    ],
+    "npc_leather": [
+     0.34,
+     0.31,
+     0.28
+    ],
+    "npc_accent": [
+     0.85,
+     0.88,
+     0.92
+    ]
+   }
+  },
+  {
+   "name": "Borderborn",
+   "colors": {
+    "npc_main": [
+     0.38,
+     0.45,
+     0.32
+    ],
+    "npc_under": [
+     0.3,
+     0.27,
+     0.2
+    ],
+    "npc_trim": [
+     0.7,
+     0.6,
+     0.35
+    ],
+    "npc_metal": [
+     0.45,
+     0.45,
+     0.42
+    ],
+    "npc_leather": [
+     0.4,
+     0.3,
+     0.2
+    ],
+    "npc_accent": [
+     0.75,
+     0.8,
+     0.5
+    ]
+   }
+  },
+  {
+   "name": "Mixed",
+   "colors": {
+    "npc_main": [
+     0.55,
+     0.45,
+     0.38
+    ],
+    "npc_under": [
+     0.35,
+     0.3,
+     0.28
+    ],
+    "npc_trim": [
+     0.8,
+     0.6,
+     0.55
+    ],
+    "npc_metal": [
+     0.55,
+     0.52,
+     0.5
+    ],
+    "npc_leather": [
+     0.38,
+     0.28,
+     0.2
+    ],
+    "npc_accent": [
+     0.9,
+     0.7,
+     0.8
+    ]
+   }
+  }
+ ],
+ "skinTones": [
+  {
+   "name": "Fair",
+   "color": [
+    0.93,
+    0.78,
+    0.66
+   ]
+  },
+  {
+   "name": "Tan",
+   "color": [
+    0.8,
+    0.62,
+    0.48
+   ]
+  },
+  {
+   "name": "Brown",
+   "color": [
+    0.55,
+    0.38,
+    0.28
+   ]
+  },
+  {
+   "name": "AshPale",
+   "color": [
+    0.75,
+    0.74,
+    0.76
+   ]
+  }
+ ],
+ "hairColors": [
+  {
+   "name": "Blonde",
+   "color": [
+    0.9,
+    0.8,
+    0.5
+   ]
+  },
+  {
+   "name": "Black",
+   "color": [
+    0.1,
+    0.09,
+    0.12
+   ]
+  },
+  {
+   "name": "Gray",
+   "color": [
+    0.6,
+    0.6,
+    0.62
+   ]
+  },
+  {
+   "name": "Brown",
+   "color": [
+    0.4,
+    0.25,
+    0.15
+   ]
+  },
+  {
+   "name": "SilverWhite",
+   "color": [
+    0.85,
+    0.87,
+    0.9
+   ]
+  },
+  {
+   "name": "Auburn",
+   "color": [
+    0.55,
+    0.2,
+    0.15
+   ]
+  },
+  {
+   "name": "VioletBlack",
+   "color": [
+    0.3,
+    0.2,
+    0.45
+   ]
+  }
+ ],
+ "emissiveSlots": [
+  "npc_accent"
+ ],
+ "heightScale": {
+  "Adult": 1.0,
+  "Elder": 0.95,
+  "Child": 0.62
+ }
+}

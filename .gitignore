@@ -14,3 +14,6 @@
 
 SaveData.txt
 Records.txt
+
+# 3D 모델 에셋 (Tools/ModelGen이 생성)
+!/Assets/Models/**/*.obj

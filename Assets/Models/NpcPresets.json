@@ -1,0 +1,1441 @@
+{
+ "note": "indices into NpcParts.json lists; -1 = none. things = NpcActor kinds that are objects, not people",
+ "npcs": [
+  {
+   "id": "limina_elder",
+   "name": "리미나 장로",
+   "kind": "Elder",
+   "region": "Limina",
+   "dialogue": "LiminaElder",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": 1,
+    "prop": 1
+   },
+   "colors": {
+    "palette": 3,
+    "skin": 1,
+    "hairColor": 2
+   },
+   "height": 0.95,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Beard_Long",
+    "NPC_Prop_Cane"
+   ]
+  },
+  {
+   "id": "limina_child",
+   "name": "리미나 아이",
+   "kind": "Child",
+   "region": "Limina",
+   "dialogue": "LiminaChild",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 3,
+    "skin": 1,
+    "hairColor": 3
+   },
+   "height": 0.62,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR"
+   ]
+  },
+  {
+   "id": "wayfarer",
+   "name": "나그네",
+   "kind": "Adult",
+   "region": "WayfarerCamp",
+   "dialogue": "Wayfarer",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": 0,
+    "beard": -1,
+    "prop": 2
+   },
+   "colors": {
+    "palette": 3,
+    "skin": 2,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Head_Hood",
+    "NPC_Prop_Lantern"
+   ]
+  },
+  {
+   "id": "merchant",
+   "name": "행상",
+   "kind": "Merchant",
+   "region": "Wreckage",
+   "dialogue": "MerchantBesieged",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": 4,
+    "beard": 0,
+    "prop": 3
+   },
+   "colors": {
+    "palette": 4,
+    "skin": 1,
+    "hairColor": 3
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Head_Cap",
+    "NPC_Beard_Short",
+    "NPC_Prop_Backpack"
+   ]
+  },
+  {
+   "id": "pilgrim_rest_light",
+   "name": "순례자 쉼터의 빛 노인",
+   "kind": "Elder",
+   "region": "PilgrimRest",
+   "dialogue": "PilgrimRest",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 5,
+    "beard": -1,
+    "prop": 1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 4
+   },
+   "height": 0.95,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Circlet",
+    "NPC_Prop_Cane"
+   ]
+  },
+  {
+   "id": "pilgrim_rest_dark",
+   "name": "순례자 쉼터의 어둠 순례자",
+   "kind": "Adult",
+   "region": "PilgrimRest",
+   "dialogue": "PilgrimRest",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 0,
+    "headgear": 0,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Head_Hood"
+   ]
+  },
+  {
+   "id": "rumor_lucius_alba",
+   "name": "알바의 소문꾼",
+   "kind": "Adult",
+   "region": "Alba",
+   "dialogue": "RumorLucius",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 0,
+    "headgear": 4,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 0
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Head_Cap"
+   ]
+  },
+  {
+   "id": "rumor_lucius_aura",
+   "name": "아우라의 소문꾼",
+   "kind": "Adult",
+   "region": "Aura",
+   "dialogue": "RumorLucius",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 0,
+    "headgear": 5,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 1,
+    "hairColor": 5
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR",
+    "NPC_Head_Circlet"
+   ]
+  },
+  {
+   "id": "alba_mother",
+   "name": "알바의 어머니",
+   "kind": "Elder",
+   "region": "Alba",
+   "dialogue": "AlbaMother",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": 1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 2
+   },
+   "height": 0.95,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR",
+    "NPC_Prop_Cane"
+   ]
+  },
+  {
+   "id": "citizen_lumen",
+   "name": "루멘 시민",
+   "kind": "Adult",
+   "region": "Lumen",
+   "dialogue": "CitizenLumen",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 1,
+    "headgear": 1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 4
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Armor_Male_Torso",
+    "NPC_Outfit_Armor_Male_ArmL",
+    "NPC_Outfit_Armor_Male_ArmR",
+    "NPC_Outfit_Armor_Male_LegL",
+    "NPC_Outfit_Armor_Male_LegR",
+    "NPC_Head_Helm"
+   ]
+  },
+  {
+   "id": "pilgrim_candida",
+   "name": "칸디다의 순례자",
+   "kind": "Adult",
+   "region": "Candida",
+   "dialogue": "PilgrimCandida",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 0,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 1,
+    "hairColor": 0
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Hood",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "hamlet_mother",
+   "name": "이름 없는 마을(빛)의 어머니",
+   "kind": "Adult",
+   "region": "LightHamlet",
+   "dialogue": "HamletMother",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 1,
+    "hairColor": 3
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR"
+   ]
+  },
+  {
+   "id": "treuga_light_neighbour",
+   "name": "트레우가의 빛 이웃",
+   "kind": "Adult",
+   "region": "Treuga",
+   "dialogue": "TreugaNeighbours",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 5
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR"
+   ]
+  },
+  {
+   "id": "rumor_noctis_umbra",
+   "name": "움브라의 소문꾼",
+   "kind": "Adult",
+   "region": "Umbra",
+   "dialogue": "RumorNoctis",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 1,
+    "headgear": 4,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_Armor_Male_Torso",
+    "NPC_Outfit_Armor_Male_ArmL",
+    "NPC_Outfit_Armor_Male_ArmR",
+    "NPC_Outfit_Armor_Male_LegL",
+    "NPC_Outfit_Armor_Male_LegR",
+    "NPC_Head_Cap"
+   ]
+  },
+  {
+   "id": "rumor_noctis_crypta",
+   "name": "크립타의 소문꾼",
+   "kind": "Adult",
+   "region": "Crypta",
+   "dialogue": "RumorNoctis",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 3,
+    "hairColor": 6
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR"
+   ]
+  },
+  {
+   "id": "citizen_tenebrae",
+   "name": "테네브라에 시민",
+   "kind": "Adult",
+   "region": "Tenebrae",
+   "dialogue": "CitizenTenebrae",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 0,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 1,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Hood"
+   ]
+  },
+  {
+   "id": "pilgrim_obscura",
+   "name": "오브스쿠라의 순례자",
+   "kind": "Adult",
+   "region": "Obscura",
+   "dialogue": "PilgrimObscura",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 0,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 6
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Hood",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "hamlet_smith",
+   "name": "이름 없는 마을(어둠)의 대장장이",
+   "kind": "Adult",
+   "region": "DarkHamlet",
+   "dialogue": "HamletSmith",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": 0,
+    "prop": 4
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Beard_Short",
+    "NPC_Prop_Hammer"
+   ]
+  },
+  {
+   "id": "treuga_dark_neighbour",
+   "name": "트레우가의 어둠 이웃",
+   "kind": "Adult",
+   "region": "Treuga",
+   "dialogue": "TreugaNeighbours",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 1,
+    "hairColor": 6
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR"
+   ]
+  },
+  {
+   "id": "vespera_keeper",
+   "name": "베스페라의 저녁지기",
+   "kind": "Elder",
+   "region": "Vespera",
+   "dialogue": "EveningKeeper",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": -1,
+    "outfit": 2,
+    "headgear": 0,
+    "beard": 1,
+    "prop": 2
+   },
+   "colors": {
+    "palette": 4,
+    "skin": 1,
+    "hairColor": 2
+   },
+   "height": 0.95,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Hood",
+    "NPC_Beard_Long",
+    "NPC_Prop_Lantern"
+   ]
+  },
+  {
+   "id": "vespera_child",
+   "name": "베스페라의 아이",
+   "kind": "Child",
+   "region": "Vespera",
+   "dialogue": "VesperaChild",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 4,
+    "skin": 0,
+    "hairColor": 5
+   },
+   "height": 0.62,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR"
+   ]
+  },
+  {
+   "id": "treuga_guide",
+   "name": "트레우가의 길잡이",
+   "kind": "Adult",
+   "region": "Treuga",
+   "dialogue": "TreugaGuide",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": -1,
+    "outfit": 0,
+    "headgear": 4,
+    "beard": -1,
+    "prop": 3
+   },
+   "colors": {
+    "palette": 4,
+    "skin": 2,
+    "hairColor": 3
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR",
+    "NPC_Head_Cap",
+    "NPC_Prop_Backpack"
+   ]
+  },
+  {
+   "id": "refugee_widow",
+   "name": "레푸기움의 미망인",
+   "kind": "Adult",
+   "region": "Refugium",
+   "dialogue": "RefugeeWidow",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 2,
+    "outfit": 0,
+    "headgear": 0,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 2,
+    "skin": 3,
+    "hairColor": 2
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Ashen",
+    "NPC_Outfit_Clothes_Female_Torso",
+    "NPC_Outfit_Clothes_Female_ArmL",
+    "NPC_Outfit_Clothes_Female_ArmR",
+    "NPC_Outfit_Clothes_Female_LegL",
+    "NPC_Outfit_Clothes_Female_LegR",
+    "NPC_Head_Hood"
+   ]
+  },
+  {
+   "id": "refugee_elder",
+   "name": "레푸기움의 노인",
+   "kind": "Elder",
+   "region": "Refugium",
+   "dialogue": "RefugeeElder",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 2,
+    "outfit": 0,
+    "headgear": -1,
+    "beard": 0,
+    "prop": 1
+   },
+   "colors": {
+    "palette": 2,
+    "skin": 3,
+    "hairColor": 4
+   },
+   "height": 0.95,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Ashen",
+    "NPC_Outfit_Clothes_Male_Torso",
+    "NPC_Outfit_Clothes_Male_ArmL",
+    "NPC_Outfit_Clothes_Male_ArmR",
+    "NPC_Outfit_Clothes_Male_LegL",
+    "NPC_Outfit_Clothes_Male_LegR",
+    "NPC_Beard_Short",
+    "NPC_Prop_Cane"
+   ]
+  },
+  {
+   "id": "priest_alba",
+   "name": "알바의 사제",
+   "kind": "Priest",
+   "region": "Alba",
+   "dialogue": "PriestLight",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": 1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 4
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Beard_Long",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_aura",
+   "name": "아우라의 사제",
+   "kind": "Priest",
+   "region": "Aura",
+   "dialogue": "PriestLight",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 0
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_lumen",
+   "name": "루멘 대신전의 사제",
+   "kind": "Priest",
+   "region": "Lumen",
+   "dialogue": "PriestLight",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": 0,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 1,
+    "hairColor": 2
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Beard_Short",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_candida",
+   "name": "칸디다의 사제",
+   "kind": "Priest",
+   "region": "Candida",
+   "dialogue": "PriestLight",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 1,
+    "hairColor": 5
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_light_hamlet",
+   "name": "이름 없는 마을(빛)의 사제",
+   "kind": "Priest",
+   "region": "LightHamlet",
+   "dialogue": "PriestLight",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 3
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_umbra",
+   "name": "움브라의 사제",
+   "kind": "Priest",
+   "region": "Umbra",
+   "dialogue": "PriestDark",
+   "parts": {
+    "gender": 0,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": 0,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Short_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Beard_Short",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_crypta",
+   "name": "크립타의 사제",
+   "kind": "Priest",
+   "region": "Crypta",
+   "dialogue": "PriestDark",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 3,
+    "hairColor": 6
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_tenebrae",
+   "name": "테네브라에 대신전의 사제",
+   "kind": "Priest",
+   "region": "Tenebrae",
+   "dialogue": "PriestDark",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": 1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 1,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Beard_Long",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_obscura",
+   "name": "오브스쿠라의 사제",
+   "kind": "Priest",
+   "region": "Obscura",
+   "dialogue": "PriestDark",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 2,
+    "hairColor": 6
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "priest_dark_hamlet",
+   "name": "이름 없는 마을(어둠)의 사제",
+   "kind": "Priest",
+   "region": "DarkHamlet",
+   "dialogue": "PriestDark",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 2,
+    "beard": -1,
+    "prop": 0
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 3,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Mitre",
+    "NPC_Prop_Staff"
+   ]
+  },
+  {
+   "id": "queen_solena",
+   "name": "빛의 왕비 솔레나",
+   "kind": "Queen",
+   "region": "LumenCastle",
+   "dialogue": "(none)",
+   "parts": {
+    "gender": 1,
+    "hair": 1,
+    "mark": 0,
+    "outfit": 2,
+    "headgear": 3,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 0,
+    "skin": 0,
+    "hairColor": 0
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Long_Female",
+    "NPC_Mark_Light",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Crown"
+   ]
+  },
+  {
+   "id": "queen_nocta",
+   "name": "어둠의 왕비 녹타",
+   "kind": "Queen",
+   "region": "TenebraeCastle",
+   "dialogue": "(none)",
+   "parts": {
+    "gender": 1,
+    "hair": 0,
+    "mark": 1,
+    "outfit": 2,
+    "headgear": 3,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 1,
+    "skin": 3,
+    "hairColor": 1
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Female_Head",
+    "NPC_Body_Female_Torso",
+    "NPC_Body_Female_ArmL",
+    "NPC_Body_Female_ArmR",
+    "NPC_Body_Female_LegL",
+    "NPC_Body_Female_LegR",
+    "NPC_Hair_Short_Female",
+    "NPC_Mark_Dark",
+    "NPC_Outfit_MageRobe_Female_Torso",
+    "NPC_Outfit_MageRobe_Female_ArmL",
+    "NPC_Outfit_MageRobe_Female_ArmR",
+    "NPC_Outfit_MageRobe_Female_LegL",
+    "NPC_Outfit_MageRobe_Female_LegR",
+    "NPC_Head_Crown"
+   ]
+  },
+  {
+   "id": "kinis",
+   "name": "키니스 (임시 외형 — 확정 필요)",
+   "kind": "Kinis",
+   "region": "Belum / Kinera",
+   "dialogue": "KinisFirst",
+   "parts": {
+    "gender": 0,
+    "hair": 1,
+    "mark": 2,
+    "outfit": 2,
+    "headgear": 0,
+    "beard": -1,
+    "prop": -1
+   },
+   "colors": {
+    "palette": 2,
+    "skin": 3,
+    "hairColor": 4
+   },
+   "height": 1.0,
+   "meshes": [
+    "NPC_Body_Male_Head",
+    "NPC_Body_Male_Torso",
+    "NPC_Body_Male_ArmL",
+    "NPC_Body_Male_ArmR",
+    "NPC_Body_Male_LegL",
+    "NPC_Body_Male_LegR",
+    "NPC_Hair_Long_Male",
+    "NPC_Mark_Ashen",
+    "NPC_Outfit_MageRobe_Male_Torso",
+    "NPC_Outfit_MageRobe_Male_ArmL",
+    "NPC_Outfit_MageRobe_Male_ArmR",
+    "NPC_Outfit_MageRobe_Male_LegL",
+    "NPC_Outfit_MageRobe_Male_LegR",
+    "NPC_Head_Hood"
+   ]
+  }
+ ],
+ "things": [
+  {
+   "kind": "Sign",
+   "mesh": "Env_Props_Signpost",
+   "file": "Env_Props"
+  },
+  {
+   "kind": "Note",
+   "mesh": "Env_Props_NoteStone",
+   "file": "Env_Props"
+  },
+  {
+   "kind": "Lantern",
+   "mesh": "Env_Props_LostLantern",
+   "file": "Env_Props"
+  }
+ ]
+}
